@@ -1,0 +1,21 @@
+{
+  "name": "intercoms",
+  "description": "",
+  "main": "index.js",
+  "authors": [
+    "straum"
+  ],
+  "license": "ISC",
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "4.1.1",
+    "jquery": "3.3.1"
+  }
+}

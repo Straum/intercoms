@@ -17,9 +17,7 @@ app.use(bodyParser.urlencoded({
 }));
 
 app.get('/', function(req, res) {
-  res.render('index', {
-    message: 'Future home page'
-  });
+  res.render('index');
 });
 
 app.get('/orders', function(req, res) {
