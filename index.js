@@ -1,16 +1,25 @@
 var express = require('express');
 var path = require('path');
 var logger = require('morgan');
+var bodyParser = require('body-parser');
 var http = require('http');
 var app = express();
+
+app.set('views', path.resolve(__dirname, 'views'));
+app.set('view engine', 'ejs');
 
 var publicPath = path.resolve(__dirname, 'public');
 
 app.use(express.static(publicPath));
-app.use(logger('short'));
+app.use(logger('dev'));
+app.use(bodyParser.urlencoded({
+  extended: false 
+}));
 
 app.get('/', function(req, res) {
-  res.end('Future Home page');
+  res.render('index', {
+    message: 'Future home page'
+  });
 });
 
 app.get('/orders', function(req, res) {

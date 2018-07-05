@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node index",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -17,6 +18,8 @@
   },
   "homepage": "https://gitlab.com/straum/intercoms#README",
   "dependencies": {
+    "body-parser": "^1.18.3",
+    "ejs": "^2.6.1",
     "express": "^4.16.3",
     "morgan": "^1.9.0"
   }
