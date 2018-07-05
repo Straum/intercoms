@@ -1,0 +1,19 @@
+{
+  "name": "intercoms",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/straum/intercoms.git"
+  },
+  "author": "straum",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/straum/intercoms/issues"
+  },
+  "homepage": "https://gitlab.com/straum/intercoms#README"
+}
