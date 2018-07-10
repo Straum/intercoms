@@ -9,28 +9,16 @@ app.set('views', path.resolve(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 var publicPath = path.resolve(__dirname, 'public');
+var staticPath = path.join(__dirname, 'static');
 
+app.use(logger('short'));
 app.use(express.static(publicPath));
-app.use(logger('dev'));
+app.use(express.static(staticPath));
 app.use(bodyParser.urlencoded({
-  extended: false 
+  extended: false
 }));
 
-app.get('/', function(req, res) {
-  res.render('index');
-});
-
-app.get('/orders', function(req, res) {
-  res.end('Future orders');
-});
-
-app.get('/about', function(req, res) {
-  res.end('Future about');
-});
-
-app.use(function (req, res) {
-  res.statusCode = 404;
-  res.end('Error 404');
-});
+app.use('/admin', require('./router/admin/index')());
+app.use('/', require('./router/web/index')());
 
 http.createServer(app).listen(4444);
