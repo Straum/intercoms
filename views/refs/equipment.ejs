@@ -23,8 +23,32 @@
         <% include ../common/full_menu.ejs %>
     </nav>
 
-    <div class="container">
-
+    <div class="container-fluid">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Оборудование</th>
+                    <th scope="col">Гарантия, в годах</th>
+                    <th scope="col">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% for(var i = 0; i < data.length; i++) {%>
+                    <tr>
+                        <td>
+                            <%=data[i].name%>
+                        </td>
+                        <td>
+                            <%=data[i].guarantee_period%>
+                        </td>
+                        <td>
+                            <a href="equipment/edit/<%=data[i].id%>" class="btn btn-info btn-sm" id="edit"></a>
+                            <a href="equipment/confirm_delete/<%=data[i].id%>" class="btn btn-danger btn-xs" id="delete"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span></a>
+                        </td>
+                    </tr>
+                    <%}%>
+            </tbody>
+        </table>
     </div>
 
     <script src="../bower_components/jquery/dist/jquery.slim.min.js"></script>

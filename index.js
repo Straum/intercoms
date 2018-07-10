@@ -3,6 +3,9 @@ var path = require('path');
 var logger = require('morgan');
 var bodyParser = require('body-parser');
 var http = require('http');
+var db = require('./lib/db');
+db.connect();
+
 var app = express();
 
 app.set('views', path.resolve(__dirname, 'views'));
