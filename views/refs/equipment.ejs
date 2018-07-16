@@ -11,10 +11,11 @@
 
     <% include ../common/bootstrap_css.ejs %>
     <% include ../common/font_awesome_css.ejs %>
+    <link href="/navbar-top.css" rel="stylesheet">
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav class="navbar navbar-expand-md navbar-light bg-light mb-4">
         <a class="navbar-brand" href="#">Домофон-Сервис</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
             aria-expanded="false" aria-label="Toggle navigation">
@@ -24,6 +25,12 @@
     </nav>
 
     <div class="container-fluid">
+        <form class="form-inline">
+                <a class="btn btn-primary btn-sm" href="equipment/add" id="add">
+                    <i class="fas fa-plus fa-fw" aria-hidden="true"></i>
+                </a>
+        </form>
+        <p></p>
         <table class="table table-bordered table-hover">
             <thead>
                 <tr>
@@ -42,8 +49,12 @@
                             <%= data[cnt].guarantee_period > 0 ? data[cnt].guarantee_period : '' %>
                         </td>
                         <td class="text-center">
-                            <a class="btn btn-primary btn-sm" href="equipment/edit/<%= data[cnt].id %>" id="edit"><i class="far fa-edit fa-fw" aria-hidden="true"></i></a>
-                            <a class="btn btn-danger btn-sm" href="equipment/confirm_deletion/<%= data[cnt].id %>" id="delete"><i class="far fa-trash-alt fa-fw" aria-hidden="true"></i></a>
+                            <a class="btn btn-primary btn-sm" href="equipment/edit/<%= data[cnt].id %>" id="edit">
+                                <i class="far fa-edit fa-fw" aria-hidden="true"></i>
+                            </a>
+                            <a class="btn btn-danger btn-sm" href="equipment/confirm_deletion/<%= data[cnt].id %>" id="delete">
+                                <i class="far fa-trash-alt fa-fw" aria-hidden="true"></i>
+                            </a>
                         </td>
                     </tr>
                     <%}%>
