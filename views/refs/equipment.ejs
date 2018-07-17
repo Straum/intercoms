@@ -26,7 +26,7 @@
 
     <div class="container-fluid">
         <form class="form-inline">
-            <a class="btn btn-primary btn-sm" href="equipment/add" id="add">
+            <a class="btn btn-primary btn-sm" href="/equipment/add" id="add">
                 <i class="fas fa-plus fa-fw" aria-hidden="true"></i>
             </a>
         </form>
@@ -49,10 +49,10 @@
                             <%= data[cnt].guarantee_period > 0 ? data[cnt].guarantee_period : '' %>
                         </td>
                         <td class="text-center">
-                            <a class="btn btn-primary btn-sm" href="equipment/edit/<%= data[cnt].id %>" id="edit">
+                            <a class="btn btn-primary btn-sm" href="/equipment/edit/<%= data[cnt].id %>" id="edit">
                                 <i class="far fa-edit fa-fw" aria-hidden="true"></i>
                             </a>
-                            <a class="btn btn-danger btn-sm" href="equipment/confirm_deletion/<%= data[cnt].id %>" id="delete">
+                            <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete(+<%= data[cnt].id %>);">
                                 <i class="far fa-trash-alt fa-fw" aria-hidden="true"></i>
                             </a>
                         </td>
@@ -89,7 +89,7 @@
                         </li>
                     <% } else { %>
                         <li class="page-item">
-                            <a class="page-link" href="/equipment/<%= (i - 1) * 20 %>">
+                            <a class="page-link" href="/equipment/<%= (i == 1) ? '' : (i - 1) * 20 %>">
                                 <%= i %>
                             </a>
                         </li>
@@ -114,10 +114,60 @@
           <% } %>
     </div>
 
-    <script src="/bower_components/jquery/dist/jquery.slim.min.js"></script>
+    <div class="modal" id="modalDeleteRecord" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Подтверждение</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <input type="text" hidden id="deletedUID" name="deletedUID" value="">
+                    </form>
+                    <p>Удалить запись?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-warning" id="deleteRecord">Удалить</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/bower_components/jquery/dist/jquery.min.js"></script>
     <script src="/bower_components/bootstrap/assets/js/vendor/popper.min.js"></script>
     <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
     <script src="/bower_components/bootstrap/assets/js/vendor/holder.min.js"></script>
+    <script>
+        function confirmDelete(id) {
+            $('#deletedUID').val(id);
+            $('#modalDeleteRecord').modal({'keyboard': true});
+        }
+
+        $(document).ready(function () {
+            $('#deleteRecord').click(function() {
+                $('#modalDeleteRecord').modal('hide');
+                $.ajax({
+                    type: 'POST',
+                    url: '/equipment/delete',
+                    dataType: 'json',
+                    async: true,
+                    data: {
+                        'id': $('#deletedUID').val()
+                    },
+                    success: function (data) {
+                        var path = window.location.origin + '/equipment';
+                        window.location.href = path;
+                        return;
+                    }
+                });
+                
+            });
+        });
+    </script>
 </body>
 
 </html>
