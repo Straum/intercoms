@@ -10,8 +10,8 @@
     <title>Home page - Оборудование</title>
 
     <% include ../common/bootstrap_css.ejs %>
-    <% include ../common/font_awesome_css.ejs %>
-    <link href="/navbar-top.css" rel="stylesheet">
+        <% include ../common/font_awesome_css.ejs %>
+            <link href="/navbar-top.css" rel="stylesheet">
 </head>
 
 <body>
@@ -26,12 +26,12 @@
 
     <div class="container-fluid">
         <form class="form-inline">
-                <a class="btn btn-primary btn-sm" href="equipment/add" id="add">
-                    <i class="fas fa-plus fa-fw" aria-hidden="true"></i>
-                </a>
+            <a class="btn btn-primary btn-sm" href="equipment/add" id="add">
+                <i class="fas fa-plus fa-fw" aria-hidden="true"></i>
+            </a>
         </form>
         <p></p>
-        <table class="table table-bordered table-hover">
+        <table class="table table-bordered table-hover table-sm">
             <thead>
                 <tr>
                     <th scope="col" style="width: 76%;" class="text-left align-middle">Оборудование</th>
@@ -60,6 +60,58 @@
                     <%}%>
             </tbody>
         </table>
+        <% if (pageCount > 0) { %>
+            <nav aria-label="...">
+            <ul class="pagination text-center table_pagination">
+                <% if (currentPage == 1) { %>
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;</span>
+                    </li>
+                    <% } else { %>
+                        <li class="page-item">
+                            <a class="page-link" href="/equipment">&laquo;
+                        </a>
+                    </li>
+                <% } %>
+                <% var i = (Number(currentPage) > 5 ? Number(currentPage) - 4 : 1) %>
+                <% if (i !== 1) { %>
+                    <li class="page-item disabled">
+                        <a>...</a>
+                    </li>
+                <% } %>
+                <% for (; i <= (Number(currentPage) + 4) && i <= pageCount; i++) { %>
+                    <% if (i == currentPage) { %>
+                        <li class="page-item active">
+                            <span class="page-link">
+                                <%= i %>
+                                <span class="sr-only">(current)</span>
+                            </span>
+                        </li>
+                    <% } else { %>
+                        <li class="page-item">
+                            <a class="page-link" href="/equipment/<%= (i - 1) * 20 %>">
+                                <%= i %>
+                            </a>
+                        </li>
+                    <% } %>
+                    <% if (i == Number(currentPage) + 4 && i < pageCount) { %>
+                        <li class="page-item disabled">
+                            <a class="page-link">...</a>
+                        </li>
+                    <% } %>
+                <% } %>
+                <% if (currentPage == pageCount) { %>
+                    <li class="page-item disabled">
+                        <a class="page-link">&raquo;</a>
+                    </li>
+                <% } else { %>
+                    <li class="page-item">
+                        <a class="page-link" href="/equipment/<%= (pageCount - 1) * 20 %>">&raquo;</a>
+                    </li>
+                <% } %>
+             </ul>
+             </nav>
+          <% } %>
     </div>
 
     <script src="/bower_components/jquery/dist/jquery.slim.min.js"></script>
