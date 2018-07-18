@@ -10,8 +10,8 @@
     <title>Home page - Оборудование</title>
 
     <% include ../common/bootstrap_css.ejs %>
-        <% include ../common/font_awesome_css.ejs %>
-            <link href="/navbar-top.css" rel="stylesheet">
+    <% include ../common/font_awesome_css.ejs %>
+    <link href="/navbar-top.css" rel="stylesheet">
 </head>
 
 <body>
@@ -76,7 +76,7 @@
                 <% var i = (Number(currentPage) > 5 ? Number(currentPage) - 4 : 1) %>
                 <% if (i !== 1) { %>
                     <li class="page-item disabled">
-                        <a>...</a>
+                        <a class="page-link">...</a>
                     </li>
                 <% } %>
                 <% for (; i <= (Number(currentPage) + 4) && i <= pageCount; i++) { %>
@@ -89,7 +89,7 @@
                         </li>
                     <% } else { %>
                         <li class="page-item">
-                            <a class="page-link" href="/equipment/<%= (i == 1) ? '' : (i - 1) * 20 %>">
+                            <a class="page-link" href="/equipment/<%= (i == 1) ? '' : (i - 1) * Number(visibleRows) %>">
                                 <%= i %>
                             </a>
                         </li>
@@ -106,7 +106,7 @@
                     </li>
                 <% } else { %>
                     <li class="page-item">
-                        <a class="page-link" href="/equipment/<%= (pageCount - 1) * 20 %>">&raquo;</a>
+                        <a class="page-link" href="/equipment/<%= (pageCount - 1) * Number(visibleRows) %>">&raquo;</a>
                     </li>
                 <% } %>
              </ul>
@@ -162,6 +162,9 @@
                         var path = window.location.origin + '/equipment';
                         window.location.href = path;
                         return;
+                    },
+                    error: function (data) {
+                        alert(data);
                     }
                 });
                 
