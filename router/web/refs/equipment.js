@@ -2,7 +2,7 @@
 
 const express = require('express');
 var db = require('../../../lib/db.js');
-const visibleRows = 20;
+const visibleRows = require('../../../lib/config').config.visibleRows;
 
 module.exports = function () {
   var router = express.Router();
@@ -14,7 +14,8 @@ module.exports = function () {
         ' SELECT COUNT(*) AS count' +
         ' FROM equipments WHERE equipment_id > 0', [], function (err, rows) {
           connection.release();
-          pageCount = Math.ceil(rows[0].count / visibleRows);
+          pageCount =
+            (rows[0].count / visibleRows) < 1 ? 0 : Math.ceil(rows[0].count / visibleRows);
 
           db.get().getConnection(function (err, connection) {
             connection.query(
@@ -88,7 +89,8 @@ module.exports = function () {
         ' SELECT COUNT(*) AS count' +
         ' FROM equipments WHERE equipment_id > 0', [], function (err, rows) {
           connection.release();
-          pageCount = Math.ceil(rows[0].count / visibleRows);
+          pageCount = 
+            (rows[0].count / visibleRows) < 1 ? 0 : Math.ceil(rows[0].count / visibleRows);
           if ((offset > pageCount * visibleRows)) {
             offset = (pageCount - 1) * visibleRows;
           }
@@ -167,9 +169,9 @@ module.exports = function () {
           ' DELETE FROM equipments WHERE equipment_id = ?', [+req.body.id], function (err) {
             connection.release();
             if (err) {
-              res.status(500).send({ 
-                'code': 500, 
-                'msg': 'Database Error', 
+              res.status(500).send({
+                'code': 500,
+                'msg': 'Database Error',
                 'err': JSON.stringify(err)
               });
             } else {

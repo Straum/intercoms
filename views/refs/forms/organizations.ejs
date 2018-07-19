@@ -7,7 +7,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <!-- <link rel="icon" href="../../../../favicon.ico"> -->
-    <title>Home page - Оборудование</title>
+    <title>Home page - Организация</title>
 
     <% include ../../common/bootstrap_css.ejs %>
     <% include ../../common/font_awesome_css.ejs %>
@@ -27,10 +27,10 @@
     <div class="container">
         <div class="card">
             <div class="card-header">
-                Оборудование
+                Организация
             </div>
             <div class="card-body">
-                <form action="/equipment/save" method="post">
+                <form action="/organizations/save" method="post">
                     <input type="text" hidden id="id" name="id" value="<%= typeof data != 'undefined' ? data.id : ''  %>">
                     <div class="row">
                         <div class="col-md-8">
@@ -41,8 +41,8 @@
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="years">Гарантия, в годах</label>
-                                <input type="text" class="form-control" id="years" name="years" placeholder="" value="<%= typeof data != 'undefined' ? (data.guarantee_period > 0 ? data.guarantee_period : '') : ''  %>">
+                                <label for="years">Код</label>
+                                <input type="text" class="form-control" id="code" name="code" placeholder="" value="<%= typeof data != 'undefined' ? (data.code > 0 ? data.code : '') : ''  %>">
                             </div>
                         </div>
                     </div>
