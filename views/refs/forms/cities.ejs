@@ -7,7 +7,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <!-- <link rel="icon" href="../../../../favicon.ico"> -->
-    <title>Home page - Организация</title>
+    <title>Home page - Города</title>
 
     <% include ../../common/bootstrap_css.ejs %>
     <% include ../../common/font_awesome_css.ejs %>
@@ -27,22 +27,42 @@
     <div class="container">
         <div class="card">
             <div class="card-header">
-                Организация
+                Город
             </div>
             <div class="card-body">
-                <form action="/organizations/save" method="post">
+                <form action="/cities/save" method="post">
                     <input type="text" hidden id="id" name="id" value="<%= typeof data != 'undefined' ? data.id : ''  %>">
                     <div class="row">
                         <div class="col-md-8">
                             <div class="form-group">
                                 <label for="name">Наименование</label>
-                                <input type="text" class="form-control" id="name" name="name" placeholder="" autofocus="autofocus" value="<%= typeof data != 'undefined' ? data.name : ''  %>">
+                                <input type="text" class="form-control" id="name" name="name" placeholder="" autofocus="autofocus" value="<%= typeof data != 'undefined' ? data.name : '' %>">
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="code">Код</label>
-                                <input type="text" class="form-control" id="code" name="code" placeholder="" value="<%= typeof data != 'undefined' ? (data.code > 0 ? data.code : '') : ''  %>">
+                                <label for="print_type">Тип печати</label>
+                                <input type="number" class="form-control" id="printType" name="printType" placeholder="" value="<%= typeof data != 'undefined' ? (data.print_type > 0 ? data.print_type : '') : '' %>">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="normal_payment">Обычная плата</label>
+                                <input type="number" class="form-control" id="normalPayment" name="normalPayment" placeholder="" value="<%= typeof data != 'undefined' ? (data.normal_payment > 0.00 ? data.normal_payment : '') : '' %>">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="privilege_payment">Льготная плата</label>
+                                <input type="number" class="form-control" id="privilegePayment" name="privilegePayment" placeholder="" value="<%= typeof data != 'undefined' ? (data.privilege_payment > 0.00 ? data.privilege_payment : '') : '' %>">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="phone">Телефон</label>
+                                <input type="text" class="form-control" id="phone" name="phone" placeholder="" value="<%= typeof data != 'undefined' ? data.phone : '' %>">
                             </div>
                         </div>
                     </div>

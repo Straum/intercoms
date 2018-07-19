@@ -6,7 +6,6 @@ module.exports = function () {
   var router = express.Router();
   
   // References
-  router.use('/brigades',require('./refs/brigades')());
   router.use('/equipment',require('./refs/equipment')());
   router.use('/clients',require('./refs/clients')());
   router.use('/cities',require('./refs/cities')());
