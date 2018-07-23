@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <!-- <link rel="icon" href="../../../../favicon.ico"> -->
+    <title>Home page - Реестр</title>
+
+    <% include ../../common/bootstrap_css.ejs %>
+    <% include ../../common/font_awesome_css.ejs %>
+    <link href="/navbar-top.css" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-light bg-light mb-4">
+        <a class="navbar-brand" href="#">Домофон-Сервис</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+            aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <% include ../../common/full_menu.ejs %>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                Реестр
+            </div>
+            <div class="card-body">
+                <form action="/registers/save" method="post">
+                    <input type="text" hidden id="id" name="id" value="<%= typeof data != 'undefined' ? data.id : ''  %>">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="create_date">Дата создания</label>
+                                <input type="text" class="form-control" id="create_date" name="create_date" placeholder="" autofocus="autofocus" readonly value="<%= typeof data != 'undefined' ? moment(data.create_date).format( 'DD.MM.YYYY') : ''  %>">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="start_date">Период с</label>
+                                <input type="text" class="form-control" id="start_date" name="start_date" placeholder="" value="<%= typeof data != 'undefined' ? moment(data.start_date).format( 'DD.MM.YYYY') : ''  %>">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="end_date">Период по</label>
+                                <input type="text" class="form-control" id="end_date" name="end_date" placeholder="" value="<%= typeof data != 'undefined' ? moment(data.end_date).format( 'DD.MM.YYYY') : ''  %>">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="last_modify_date">Последнее изменение</label>
+                                <input type="text" class="form-control" id="last_modify_date" name="last_modify_date" placeholder="" readonly value="<%= typeof data != 'undefined' ? moment(data.last_modify_date).format( 'DD.MM.YYYY HH:mm:ss') : '' %>">
+                            </div>
+                        </div>
+                    </div>
+                    <table class="table table-bordered table-sm" id="registerTable" name="registerTable">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th scope="col" rowsspan="2" style="width: 33%;" class="text-center align-middle">Номер договора</th>
+                                <th scope="col" rowsspan="2" style="width: 33%;" class="text-center align-middle">Пролонгированный договор</th>
+                                <th scope="col" rowsspan="2" style="width: 34%;" class="text-center align-middle">Дата ТО с</th>
+                            </tr>
+                            <tr>
+                                <th scope="col" class="text-center align-middle">Дата договора</th>
+                                <th scope="col" class="text-center align-middle">Дата пролонгации</th>
+                                <th scope="col" class="text-center align-middle">Дата ТО по</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                    <div class="row">
+                        <div class="col">
+                            <button type="submit" class="btn btn-success" id="save">Записать</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="/bower_components/bootstrap/assets/js/vendor/popper.min.js"></script>
+    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="/bower_components/bootstrap/assets/js/vendor/holder.min.js"></script>
+    <script>
+        var dataTable = [];
+
+        $(document).ready(function () {
+            $.ajax({
+                type: 'GET',
+                url: '/registers/table',
+                dataType: 'json',
+                async: true,
+                data: {
+                    'id': $('#id').val()
+                },
+                success: function (data) {
+                    // alert(data);
+                    dataTable = [];
+                    if ((data.table) && (data.table instanceof Array)) {
+                        dataTable = data.table;
+                        var registerTable = document.getElementById('registerTable');
+                        // Очистить строки у таблицы заранее
+                        var innerString = registerTable.innerHTML;
+                        var s = '';
+                        for (var ind = 0; ind < 10; ind++) {
+                            s += '<tr' + (ind % 2 ? ' class="table-info">' : '>') + 
+                                '<td class="text-center align-middle">' + dataTable[ind].contract_number + '</td>' +
+                                '<td class="text-center align-middle">' + dataTable[ind].m_contract_number + '</td>' +
+                                '<td class="text-center align-middle">' + dataTable[ind].start_service + '</td>' + 
+                            '</tr>' +
+                            '<tr' + (ind % 2 ? ' class="table-info">' : '>') + 
+                                '<td class="text-center align-middle">' + dataTable[ind].create_date + '</td>' +
+                                '<td class="text-center align-middle">' + dataTable[ind].end_service + '</td>' +
+                                '<td class="text-center align-middle">' + dataTable[ind].end_service + '</td>' +
+                            '</tr>'
+                        }
+                        registerTable.innerHTML = innerString + s;
+                    }
+                },
+                error: function (data) {
+                    alert(data);
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

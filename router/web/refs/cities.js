@@ -72,7 +72,7 @@ module.exports = function () {
             });
           } else {
             res.render('refs/forms/cities.ejs', {
-              data: rows[0]
+              'data': rows[0]
             });
           }
         });

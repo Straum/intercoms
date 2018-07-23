@@ -6,7 +6,8 @@ module.exports = function () {
   var router = express.Router();
 
   router.get('/', function (req, res) {
-    res.render('docs/registry.ejs');
+    res.render('refs/streets.ejs');
   });
+
   return router;
 };

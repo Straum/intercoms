@@ -8,12 +8,13 @@ module.exports = function () {
   // References
   router.use('/equipment',require('./refs/equipment')());
   router.use('/clients',require('./refs/clients')());
-  router.use('/cities',require('./refs/cities')());
   router.use('/organizations',require('./refs/organizations')());
+  router.use('/cities',require('./refs/cities')());
+  router.use('/streets',require('./refs/streets')());
   
   // Docs
   router.use('/orders',require('./docs/orders')());
-  router.use('/registry',require('./docs/registry')());
+  router.use('/registers',require('./docs/registers')());
   router.use('/payments',require('./docs/payments')());
   
   // Other

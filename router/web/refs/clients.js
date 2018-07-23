@@ -70,7 +70,7 @@ module.exports = function () {
             });
           } else {
             res.render('refs/forms/clients.ejs', {
-              data: rows[0]
+              'data': rows[0]
             });
           }
         });

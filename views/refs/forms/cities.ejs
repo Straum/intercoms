@@ -41,7 +41,7 @@
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="print_type">Тип печати</label>
+                                <label for="printType">Тип печати</label>
                                 <input type="number" class="form-control" id="printType" name="printType" placeholder="" value="<%= typeof data != 'undefined' ? (data.print_type > 0 ? data.print_type : '') : '' %>">
                             </div>
                         </div>
@@ -49,13 +49,13 @@
                     <div class="row">
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="normal_payment">Обычная плата</label>
+                                <label for="normalPayment">Обычная плата</label>
                                 <input type="number" class="form-control" id="normalPayment" name="normalPayment" placeholder="" value="<%= typeof data != 'undefined' ? (data.normal_payment > 0.00 ? data.normal_payment : '') : '' %>">
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="privilege_payment">Льготная плата</label>
+                                <label for="privilegePayment">Льготная плата</label>
                                 <input type="number" class="form-control" id="privilegePayment" name="privilegePayment" placeholder="" value="<%= typeof data != 'undefined' ? (data.privilege_payment > 0.00 ? data.privilege_payment : '') : '' %>">
                             </div>
                         </div>

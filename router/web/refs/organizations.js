@@ -70,7 +70,7 @@ module.exports = function () {
             });
           } else {
             res.render('refs/forms/organizations.ejs', {
-              data: rows[0]
+              'data': rows[0]
             });
           }
         });
@@ -134,7 +134,11 @@ module.exports = function () {
       db.get().getConnection(function (err, connection) {
         connection.query(
           ' UPDATE organizations SET name = ?, code = ?' +
-          ' WHERE organization_id = ?', [req.body.name, req.body.code, req.body.id], function (err) {
+          ' WHERE organization_id = ?', [
+              req.body.name, 
+              req.body.code, 
+              req.body.id
+            ], function (err) {
             connection.release();
             if (err) {
               res.status(500).send({ 'code': 500, 'msg': 'Database Error' });

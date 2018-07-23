@@ -3,6 +3,7 @@
 const express = require('express');
 var db = require('../../../lib/db.js');
 const visibleRows = require('../../../lib/config').config.visibleRows;
+var moment = require('moment');
 
 module.exports = function () {
   var router = express.Router();
@@ -12,17 +13,26 @@ module.exports = function () {
     db.get().getConnection(function (err, connection) {
       connection.query(
         ' SELECT COUNT(*) AS count' +
-        ' FROM equipments WHERE equipment_id > 0', [], function (err, rows) {
+        ' FROM registers', [], function (err, rows) {
           connection.release();
           pageCount =
             (rows[0].count / visibleRows) < 1 ? 0 : Math.ceil(rows[0].count / visibleRows);
 
           db.get().getConnection(function (err, connection) {
             connection.query(
-              ' SELECT a.equipment_id AS id, a.name, a.guarantee_period' +
-              ' FROM equipments a' +
-              ' WHERE a.equipment_id > 0' +
-              ' ORDER BY a.name ASC' +
+              ' SELECT a.register_id AS id,' +
+              ' a.create_date,' +
+              ' a.start_date,' +
+              ' a.end_date,' +
+              ' a.last_modify_date,' +
+              ' (SELECT COUNT(*) FROM lists_registers b WHERE' +
+              ' b.register_id = a.register_id) AS docs' +
+              ' FROM registers a' +
+              // ' WHERE' +
+              // ' a.create_date BETWEEN :start_date AND :end_date
+              ' ORDER BY' +
+              ' a.create_date DESC,' +
+              ' a.register_id DESC' +
               ' LIMIT ?', [visibleRows], function (err, rows) {
                 if (err) {
                   throw err;
@@ -37,11 +47,12 @@ module.exports = function () {
                   });
                 } else {
                   var currentPage = 1;
-                  res.render('refs/equipment.ejs', {
+                  res.render('docs/registers.ejs', {
                     'data': rows,
                     'pageCount': pageCount,
                     'currentPage': currentPage,
-                    'visibleRows': visibleRows
+                    'visibleRows': visibleRows,
+                    'moment': moment
                   });
                 }
               });
@@ -54,9 +65,9 @@ module.exports = function () {
     var id = req.params.id;
     db.get().getConnection(function (err, connection) {
       connection.query(
-        ' SELECT a.equipment_id AS id, a.name, a.guarantee_period' +
-        ' FROM equipments a' +
-        ' WHERE a.equipment_id = ?', [id], function (err, rows) {
+        ' SELECT a.register_id AS id, a.create_date, a.start_date, a.end_date, a.last_modify_date' +
+        ' FROM registers a' +
+        ' WHERE a.register_id = ?', [id], function (err, rows) {
           if (err) {
             throw err;
           }
@@ -69,8 +80,9 @@ module.exports = function () {
               'msg': 'Database error'
             });
           } else {
-            res.render('refs/forms/equipment.ejs', {
-              'data': rows[0]
+            res.render('docs/forms/registers.ejs', {
+              'data': rows[0],
+              'moment': moment
             });
           }
         });
@@ -81,15 +93,52 @@ module.exports = function () {
     res.render('refs/forms/equipment.ejs');
   });
 
+  router.get('/table', function (req, res) {
+    var id = req.query.id;
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        ' SELECT' + 
+        ' b.card_id,' +
+        ' b.m_prolongation,' + 
+        ' b.contract_number,' + 
+        ' b.m_contract_number,' + 
+        ` DATE_FORMAT(b.create_date, '%d.%m.%Y') AS create_date,` +
+        ` DATE_FORMAT(b.start_service, '%d.%m.%Y') AS start_service,` + 
+        ` DATE_FORMAT(b.end_service, '%d.%m.%Y') AS end_service` + 
+        ' FROM' +
+        ' lists_registers a' +
+        ' LEFT JOIN cards b ON b.card_id=a.card_id' +
+        ' WHERE' + 
+        ' a.register_id = ?' +
+        ' ORDER BY' +
+        ' a.list_register_id', [id], function (err, rows) {
+          if (err) {
+            throw err;
+          }
+          connection.release();
+
+          if (err) {
+            console.error(err);
+            res.status(500).send({
+              'code': 500,
+              'msg': 'Database error'
+            });
+          } else {
+            res.status(200).send({ 'table': rows });
+          }
+        });
+    });
+  });
+
   router.get('/:offset', function (req, res) {
     var offset = +req.params.offset;
     var pageCount = 0;
     db.get().getConnection(function (err, connection) {
       connection.query(
         ' SELECT COUNT(*) AS count' +
-        ' FROM equipments WHERE equipment_id > 0', [], function (err, rows) {
+        ' FROM registers', [], function (err, rows) {
           connection.release();
-          pageCount = 
+          pageCount =
             (rows[0].count / visibleRows) < 1 ? 0 : Math.ceil(rows[0].count / visibleRows);
           if ((offset > pageCount * visibleRows)) {
             offset = (pageCount - 1) * visibleRows;
@@ -97,10 +146,19 @@ module.exports = function () {
 
           db.get().getConnection(function (err, connection) {
             connection.query(
-              ' SELECT a.equipment_id AS id, a.name, a.guarantee_period' +
-              ' FROM equipments a' +
-              ' WHERE a.equipment_id > 0' +
-              ' ORDER BY a.name ASC' +
+              ' SELECT a.register_id AS id,' +
+              ' a.create_date,' +
+              ' a.start_date,' +
+              ' a.end_date,' +
+              ' a.last_modify_date,' +
+              ' (SELECT COUNT(*) FROM lists_registers b WHERE' +
+              ' b.register_id = a.register_id) AS docs' +
+              ' FROM registers a' +
+              // ' WHERE' +
+              // ' a.create_date BETWEEN :start_date AND :end_date
+              ' ORDER BY' +
+              ' a.create_date DESC,' +
+              ' a.register_id DESC' +
               ' LIMIT ?' +
               ' OFFSET ?', [visibleRows, offset], function (err, rows) {
                 if (err) {
@@ -116,11 +174,12 @@ module.exports = function () {
                   });
                 } else {
                   var currentPage = Math.ceil(offset / visibleRows) + 1;
-                  res.render('refs/equipment.ejs', {
+                  res.render('docs/registry.ejs', {
                     'data': rows,
                     'pageCount': pageCount,
                     'currentPage': currentPage,
-                    'visibleRows': visibleRows
+                    'visibleRows': visibleRows,
+                    'moment': moment
                   });
                 }
               });
