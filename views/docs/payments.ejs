@@ -54,7 +54,7 @@
                 </tr>
             </thead>
             <tbody>
-                <% for(var cnt = 0; cnt < data.length; cnt++) {%>
+                <% for (var cnt = 0, max = data.length; cnt < max; cnt++) {%>
                     <tr>
                         <td rowspan="2" class="text-center align-middle">
                             <%= moment(data[cnt].create_date).format( 'DD.MM.YYYY') %>

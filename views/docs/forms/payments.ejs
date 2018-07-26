@@ -40,6 +40,7 @@
                     <div class="tab-content">
                         <div role="tabpanel" class="tab-pane in active" id="core">
                             <input type="text" hidden id="id" name="id" value="<%= typeof data != 'undefined' ? data.id : ''  %>">
+                            <input type="text" hidden id="apartment_id" name="apartment_id" value="<%= typeof data != 'undefined' ? data.apartment_id : ''  %>">
                             <div class="row">
                                 <div class="col-md-3">
                                     <div class="form-group">
@@ -53,8 +54,9 @@
                                     <div class="form-group">
                                         <label for="paymentType">Способ оплаты</label>
                                         <select class="form-control" id="paymentType" name="paymentType">
-                                            <option>Квитанция</option>
-                                            <option>Вручную</option>
+                                        <% for (var cnt = 0, max = utils.paymentMethod.length; cnt < max; cnt++) { %>
+                                        <option value="<%= (cnt + 1) %>" <%= typeof data != 'undefined' ? (+data.mode === (cnt + 1) ? ' selected' : '') : '' %> ><%= utils.paymentMethod[cnt] %></option>
+                                        <% } %>
                                         </select>
                                     </div>
                                 </div>
@@ -98,7 +100,7 @@
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label for="period">Период действия</label>
-                                        <input type="text" class="form-control" id="period" name="period" placeholder="" value="" readonly>
+                                        <input type="text" class="form-control" id="period" name="period" placeholder="" value="<%= typeof data != 'undefined' ? ('с ' + moment(data.start_service).format( 'DD.MM.YYYY') + ' по ' + moment(data.end_service).format( 'DD.MM.YYYY')) : '' %>" readonly>
                                     </div>
                                 </div>
                             </div>
@@ -142,15 +144,16 @@
                             </div>
                         </div>
                         <div role="tabpanel" class="tab-pane" id="paymentsHistory">
-                            <table class="table table-bordered table-sm" id="registerTable" name="registerTable">
+                            <table class="table table-bordered table-sm" id="paymentsTable" name="paymentsTable">
                                 <thead class="thead-light">
                                     <tr>
-                                        <th scope="col" style="width: 12%;" class="text-center align-middle">Дата<br> создания</th>
-                                        <th scope="col" style="width: 12%;" class="text-center align-middle">Дата<br> оплаты</th>
-                                        <th scope="col" style="width: 12%;" class="text-center align-middle">Месяц<br> оплаты</th>
-                                        <th scope="col" style="width: 12%;" class="text-center align-middle">Год<br> оплаты</th>
+                                        <th scope="col" style="width: 12%;" class="text-center align-middle">Дата<br>создания</th>
+                                        <th scope="col" style="width: 12%;" class="text-center align-middle">Дата<br>оплаты</th>
+                                        <th scope="col" style="width: 12%;" class="text-center align-middle">Договор<br>(пролонг.)</th>
+                                        <th scope="col" style="width: 12%;" class="text-center align-middle">Месяц<br>оплаты</th>
+                                        <th scope="col" style="width: 12%;" class="text-center align-middle">Год<br>оплаты</th>
                                         <th scope="col" style="width: 20%;" class="text-center align-middle">Сумма</th>
-                                        <th scope="col" style="width: 32%;" class="text-center align-middle">Способ<br> оплаты</th>
+                                        <th scope="col" style="width: 20%;" class="text-center align-middle">Способ<br>оплаты</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -172,47 +175,47 @@
     <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
     <script src="/bower_components/bootstrap/assets/js/vendor/popper.min.js"></script>
     <script src="/bower_components/bootstrap/assets/js/vendor/holder.min.js"></script>
+    <script src="/bower_components/m"></script>
     <script>
         var dataTable = [];
 
         $(document).ready(function () {
 
-            // $.ajax({
-            //     type: 'GET',
-            //     url: '/registers/table',
-            //     dataType: 'json',
-            //     async: true,
-            //     data: {
-            //         'id': $('#id').val()
-            //     },
-            //     success: function (data) {
-            //         // alert(data);
-            //         dataTable = [];
-            //         if ((data.table) && (data.table instanceof Array)) {
-            //             dataTable = data.table;
-            //             var registerTable = document.getElementById('registerTable');
-            //             // Очистить строки у таблицы заранее
-            //             var innerString = registerTable.innerHTML;
-            //             var s = '';
-            //             for (var ind = 0; ind < 10; ind++) {
-            //                 s += '<tr' + (ind % 2 ? ' class="table-info">' : '>') + 
-            //                     '<td class="text-center align-middle">' + dataTable[ind].contract_number + '</td>' +
-            //                     '<td class="text-center align-middle">' + dataTable[ind].m_contract_number + '</td>' +
-            //                     '<td class="text-center align-middle">' + dataTable[ind].start_service + '</td>' + 
-            //                 '</tr>' +
-            //                 '<tr' + (ind % 2 ? ' class="table-info">' : '>') + 
-            //                     '<td class="text-center align-middle">' + dataTable[ind].create_date + '</td>' +
-            //                     '<td class="text-center align-middle">' + dataTable[ind].end_service + '</td>' +
-            //                     '<td class="text-center align-middle">' + dataTable[ind].end_service + '</td>' +
-            //                 '</tr>'
-            //             }
-            //             registerTable.innerHTML = innerString + s;
-            //         }
-            //     },
-            //     error: function (data) {
-            //         alert(data);
-            //     }
-            // });
+            $.ajax({
+                type: 'GET',
+                url: '/payments/table',
+                dataType: 'json',
+                async: true,
+                data: {
+                    'id': $('#apartment_id').val()
+                },
+                success: function (data) {
+                    // alert(data);
+                    dataTable = [];
+                    if ((data.table) && (data.table instanceof Array)) {
+                        dataTable = data.table;
+                        var paymentsTable = document.getElementById('paymentsTable');
+                        // Очистить строки у таблицы заранее
+                        var innerString = paymentsTable.innerHTML;
+                        var s = '';
+                        for (var ind = 0, max = dataTable.length; ind < max; ind++) {
+                            s += '<tr' + (ind % 2 ? ' class="table-info">' : '>') + 
+                                '<td class="text-center align-middle">' + dataTable[ind].create_date + '</td>' +
+                                '<td class="text-center align-middle">' + dataTable[ind].pay_date + '</td>' +
+                                '<td class="text-center align-middle">' + dataTable[ind].m_contract_number + '</td>' +
+                                '<td class="text-center align-middle">' + dataTable[ind].pay_month + '</td>' +
+                                '<td class="text-center align-middle">' + dataTable[ind].pay_year + '</td>' +
+                                '<td class="text-center align-middle">' + dataTable[ind].amount.toFixed(2) + '</td>' +
+                                '<td class="text-center align-middle">' + dataTable[ind].org_name + '</td>' +
+                            '</tr>'
+                        }
+                        paymentsTable.innerHTML = innerString + s;
+                    }
+                },
+                error: function (data) {
+                    alert(data);
+                }
+            });
         });
     </script>
 </body>

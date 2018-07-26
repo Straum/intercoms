@@ -88,6 +88,7 @@ module.exports = function () {
       connection.query(
         ' SELECT a.payment_id AS id,' + 
         ' a.create_date,' +
+        ' a.apartment_id,' + 
         ' a.pay_month,' +
         ' a.pay_year,' +
         ' a.amount,' +
@@ -97,6 +98,8 @@ module.exports = function () {
         ' b.letter,' +
         ' c.contract_number,' +
         ' c.m_contract_number,' +
+        ' c.start_service,' +
+        ' c.end_service,' +
         ' d.name AS city_name,' +
         ' e.name AS street_name,' +
         ' f.number AS house_number' +
@@ -138,20 +141,23 @@ module.exports = function () {
     db.get().getConnection(function (err, connection) {
       connection.query(
         ' SELECT' +
-        ' b.card_id,' +
-        ' b.m_prolongation,' +
-        ' b.contract_number,' +
-        ' b.m_contract_number,' +
-        ` DATE_FORMAT(b.create_date, '%d.%m.%Y') AS create_date,` +
-        ` DATE_FORMAT(b.start_service, '%d.%m.%Y') AS start_service,` +
-        ` DATE_FORMAT(b.end_service, '%d.%m.%Y') AS end_service` +
-        ' FROM' +
-        ' lists_registers a' +
-        ' LEFT JOIN cards b ON b.card_id=a.card_id' +
+        ' a.payment_id,' +
+        ` DATE_FORMAT(a.create_date, '%d.%m.%Y') AS create_date,` +
+        ' a.pay_month,' +
+        ' a.pay_year,' +
+        ` DATE_FORMAT(a.pay_date, '%d.%m.%Y') AS pay_date,` +
+        ' a.amount,' +
+        ' a.mode,' +
+        ' c.m_contract_number,' +
+        ' d.name as org_name' +
+        ' FROM payments a' +
+        ' LEFT JOIN apartments b ON b.apartment_id = a.apartment_id' +
+        ' LEFT JOIN cards c ON c.card_id = b.card_id' +
+        ' LEFT JOIN organizations d ON d.organization_id = a.mode' +
         ' WHERE' +
-        ' a.register_id = ?' +
+        ' a.apartment_id = ?' +
         ' ORDER BY' +
-        ' a.list_register_id', [id], function (err, rows) {
+        ' a.pay_date DESC', [id], function (err, rows) {
           if (err) {
             throw err;
           }
