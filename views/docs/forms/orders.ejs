@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <!-- <link rel="icon" href="../../../../favicon.ico"> -->
+    <title>Home page - Договор</title>
+
+    <% include ../../common/bootstrap_css.ejs %>
+    <% include ../../common/font_awesome_css.ejs %>
+    <link href="/navbar-top.css" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-light bg-light mb-4">
+        <a class="navbar-brand" href="#">Домофон-Сервис</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+            aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <% include ../../common/full_menu.ejs %>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                Договор
+            </div>
+            <nav>
+                <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                    <a class="nav-item nav-link active" id="nav-core-tab" data-toggle="tab" href="#core" role="tab" aria-controls="nav-core" aria-selected="true">Основное</a>
+                    <a class="nav-item nav-link" id="nav-history-tab" data-toggle="tab" href="#seniorContract" role="tab" aria-controls="nav-history" aria-selected="false">Старший по договору</a>
+                    <a class="nav-item nav-link" id="nav-history-tab" data-toggle="tab" href="#maintenance" role="tab" aria-controls="nav-history" aria-selected="false">Техобслуживание</a>
+                    <a class="nav-item nav-link" id="nav-history-tab" data-toggle="tab" href="#seniorMaintenance" role="tab" aria-controls="nav-history" aria-selected="false">Старший по техобслуживанию</a>
+                    <a class="nav-item nav-link" id="nav-history-tab" data-toggle="tab" href="#additionally" role="tab" aria-controls="nav-history" aria-selected="false">Дополнительно</a>
+                </div>
+            </nav>
+            <div class="card-body">
+                <form action="/payments/save" method="post">
+                    <div class="tab-content">
+                        <div role="tabpanel" class="tab-pane in active" id="core">
+                            <input type="text" hidden id="id" name="id" value="<%= typeof data != 'undefined' ? data.id : ''  %>">
+                            <input type="text" hidden id="apartment_id" name="apartment_id" value="<%= typeof data != 'undefined' ? data.apartment_id : ''  %>">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="contract_number">Номер</label>
+                                        <input type="text" class="form-control" id="contract_number" name="contract_number" placeholder="" autofocus="autofocus" value="<%= typeof data !== 'undefined' ? data.contract_number : '' %>">
+                                    </div>
+                                </div>
+                                <div class="col-md-3 offset-md-6">
+                                    <div class="form-group">
+                                        <label for="create_date">Дата заполнения</label>
+                                        <input type="text" class="form-control" id="create_date" name="create_date" placeholder="" value="<%= typeof data !== 'undefined' ? moment(data.create_date).format( 'DD.MM.YYYY' ) : '' %>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-9">
+                                    <div class="form-group">
+                                        <label for="equipment_name">Оборудование</label>
+                                        <input type="text" class="form-control" id="equipment_name" name="equipment_name" placeholder="" value="<%= typeof data !== 'undefined' ? data.equipment_name : '' %>">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="end_contract">Окончание договора</label>
+                                        <input type="text" class="form-control" id="end_contract" name="end_contract" placeholder="" value="<%= typeof data !== 'undefined' ? moment(data.end_contract).format( 'DD.MM.YYYY' ) : '' %>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                            <label>&nbsp;</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="repaid" <%= typeof data !== 'undefined' ? (+data.repaid === 1 ? ' checked' : '') : '' %>>
+                                            <label class="form-check-label" for="repaid">
+                                                Погашено
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 offset-md-6">
+                                    <div class="form-group">
+                                        <label for="credit_to">Кредит до</label>
+                                        <input type="text" class="form-control" id="credit_to" name="credit_to" placeholder="" value="<%= typeof data !== 'undefined' ? moment(data.credit_to).format( 'DD.MM.YYYY' ) : '' %>">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- <fieldset class="border p-2">
+                                <legend class="w-auto">Место установки</legend> -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="city">Город</label>
+                                        <input type="text" class="form-control" id="city" name="city" placeholder="" value="<%= typeof data != 'undefined' ? data.city_name : '' %>" >
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="street">Улица</label>
+                                        <input type="text" class="form-control" id="street" name="street" placeholder="" value="<%= typeof data != 'undefined' ? data.street_name : '' %>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="house">Дом</label>
+                                        <input type="text" class="form-control" id="house" name="house" placeholder="" value="<%= typeof data != 'undefined' ? data.house_number : '' %>">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="porch">Подьезд</label>
+                                        <input type="text" class="form-control" id="porch" name="porch" placeholder="" value="<%= typeof data != 'undefined' ? data.porch : '' %>">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="numeration">Нумерация</label>
+                                        <input type="text" class="form-control" id="numeration" name="numeration" placeholder="" value="<%= typeof data != 'undefined' ? data.numeration : '' %>">
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- <p> -->
+                            <!-- </fieldset> -->
+                        </div>
+
+                        <div role="tabpanel" class="tab-pane" id="seniorContract">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Удостоверение личности</h5>
+                                </div>
+                            </div>
+                            <p>
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Адрес прописки</h5>
+                                </div>
+                            </div>
+                            <p>
+                        </div>
+
+                        <div role="tabpanel" class="tab-pane" id="maintenance">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="maintenance_contract">Договор ТО</label>
+                                        <select class="form-control" id="maintenance_contract" name="maintenance_contract">
+                                            <% utils.maintenanceContract.forEach(function(element, index) { %>
+                                            <option value="<%= index %>" <%= typeof data != 'undefined' ? (data.maintenance_contract == index ? ' selected' : '') : '' %> ><%= element %></option>
+                                            <% }); %>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 offset-md-3">
+                                    <div class="form-group">
+                                        <label for="start_service">с</label>
+                                        <input type="text" class="form-control" id="start_service" name="start_service" placeholder="" value="<%= typeof data !== 'undefined' ? moment(data.start_service).format( 'DD.MM.YYYY' ) : '' %>">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="end_service">по</label>
+                                        <input type="text" class="form-control" id="end_service" name="end_service" placeholder="" value="<%= typeof data !== 'undefined' ? moment(data.end_service).format( 'DD.MM.YYYY' ) : '' %>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="m_contract_number">Номер договора</label>
+                                        <input type="text" class="form-control" id="m_contract_number" name="m_contract_number" placeholder="" autofocus="autofocus" value="<%= typeof data !== 'undefined' ? data.m_contract_number : '' %>">
+                                    </div>
+                                </div>
+                                <div class="col-md-3 offset-md-6">
+                                    <div class="form-group">
+                                        <label for="m_prolongation">Пролонгирован до</label>
+                                        <input type="text" class="form-control" id="m_prolongation" name="m_prolongation" placeholder="" value="<%= typeof data !== 'undefined' ? moment(data.m_prolongation).format( 'DD.MM.YYYY' ) : '' %>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="m_repaid" <%= typeof data !== 'undefined' ? (+data.m_repaid === 1 ? ' checked' : '') : '' %>>
+                                            <label class="form-check-label" for="m_repaid">
+                                                Погашено по квитанициям ТО
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="m_payment">Оплата по квитанциям ТО за</label>
+                                        <input type="text" class="form-control" id="m_payment" name="m_payment" placeholder="" value="<%= typeof data !== 'undefined' ? data.m_payment : '' %>">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="payment_type">Вид оплаты</label>
+                                        <select class="form-control" id="payment_type" name="payment_type">
+                                            <% utils.paymentTypes.forEach(function(element, index) { %>
+                                            <option value="<%= index %>" <%= typeof data != 'undefined' ? (data.m_payment_type_id == index ? ' selected' : '') : '' %> ><%= element %></option>
+                                            <% }); %>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="start_apartment">Квартира с</label>
+                                        <input type="text" class="form-control" id="start_apartment" name="start_apartment" placeholder="" value="<%= typeof data !== 'undefined' ? data.m_start_apartment : '' %>">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="end_apartment">Квартира по</label>
+                                        <input type="text" class="form-control" id="end_apartment" name="end_apartment" placeholder="" value="<%= typeof data !== 'undefined' ? data.m_end_apartment : '' %>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="normal_payment">Обычная плата</label>
+                                        <input type="text" class="form-control" id="normal_payment" name="normal_payment" placeholder="" value="<%= typeof data !== 'undefined' ? data.normal_payment.toFixed(2) : '' %>">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="privilege_payment">Льготная плата</label>
+                                        <input type="text" class="form-control" id="privilege_payment" name="privilege_payment" placeholder="" value="<%= typeof data !== 'undefined' ? data.privilege_payment.toFixed(2) : '' %>">
+                                    </div>
+                                </div>
+                                <div class="col-md-3 offset-md-3">
+                                    <div class="form-group">
+                                        <label for="receipt_printing">Печать квитанций</label>
+                                        <input type="text" class="form-control" id="receipt_printing" name="receipt_printing" placeholder="" value="<%= typeof data !== 'undefined' ? moment(data.receipt_printing).format( 'DD.MM.YYYY' ) : '' %>">
+                                    </div>
+                                </div>
+                            </div>
+                            <p>
+                        </div>
+
+                        <div role="tabpanel" class="tab-pane" id="seniorMaintenance">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Адрес прописки3</h5>
+                                </div>
+                            </div>
+                            <p>
+                        </div>
+
+                        <div role="tabpanel" class="tab-pane" id="additionally">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Адрес прописки4</h5>
+                                </div>
+                            </div>
+                            <p>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="attention" <%= typeof data !== 'undefined' ? (+data.attention === 1 ? ' checked' : '') : '' %>>
+                                            <label class="form-check-label" for="attention">
+                                                Внимание
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="contract_info">Информация по договору</label>
+                                <textarea class="form-control" id="contract_info" rows="3"><%= typeof data !== 'undefined' ? data.contract_info : '' %></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="service_info">Информация по обслуживанию</label>
+                                <textarea class="form-control" id="service_info" rows="3"><%= typeof data !== 'undefined' ? data.service_info : '' %></textarea>
+                            </div>
+                            <p>
+                        </div>
+
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <button type="submit" class="btn btn-success" id="save">Записать</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="/bower_components/bootstrap/assets/js/vendor/popper.min.js"></script>
+    <script src="/bower_components/bootstrap/assets/js/vendor/holder.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            
+        });
+    </script>
+</body>
+
+</html>
