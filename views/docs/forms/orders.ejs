@@ -133,15 +133,44 @@
                         </div>
 
                         <div role="tabpanel" class="tab-pane" id="seniorContract">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Удостоверение личности</h5>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="client_name">Клиент по договору</label>
+                                        <input type="text" class="form-control" id="client_name" name="client_name" placeholder="" value="<%= typeof data != 'undefined' ? data.client_name : '' %>">
+                                    </div>
                                 </div>
                             </div>
-                            <p>
-                            <div class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Адрес прописки</h5>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="passport">Удостоверение личности</label>
+                                        <input type="text" class="form-control" id="passport" name="passport" placeholder="" readonly value="<%= contractPassportData %>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="registered_address">Адрес прописки</label>
+                                        <input type="text" class="form-control" id="registered_address" name="registered_address" placeholder="" readonly value="<%= contractRegisteredAddress %>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="actual_address">Адрес фактического места жительства</label>
+                                        <input type="text" class="form-control" id="actual_address" name="actual_address" placeholder="" readonly value="<%= contractActualAddress %>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="phones">Телефоны</label>
+                                        <input type="text" class="form-control" id="phones" name="phones" placeholder="" value="<%= typeof data != 'undefined' ? data.phones : '' %>">
+                                    </div>
                                 </div>
                             </div>
                             <p>
@@ -252,21 +281,62 @@
                         </div>
 
                         <div role="tabpanel" class="tab-pane" id="seniorMaintenance">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Адрес прописки3</h5>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="m_client_name">Клиент по ТО</label>
+                                        <input type="text" class="form-control" id="m_client_name" name="m_client_name" placeholder="" value="<%= typeof data != 'undefined' ? data.m_client_name : '' %>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="m_passport">Удостоверение личности</label>
+                                        <input type="text" class="form-control" id="m_passport" name="m_passport" placeholder="" readonly value="<%= typeof data != 'undefined' ? data.m_phones : '' %>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="m_registered_address">Адрес прописки</label>
+                                        <input type="text" class="form-control" id="m_registered_address" name="m_registered_address" placeholder="" readonly value="<%= typeof data != 'undefined' ? data.m_phones : '' %>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="m_actual_address">Адрес фактического места жительства</label>
+                                        <input type="text" class="form-control" id="m_actual_address" name="m_actual_address" placeholder="" readonly value="<%= typeof data != 'undefined' ? data.m_phones : '' %>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="m_phones">Телефоны</label>
+                                        <input type="text" class="form-control" id="m_phones" name="m_phones" placeholder="" value="<%= typeof data != 'undefined' ? data.m_phones : '' %>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="is_one_person" <%= typeof data !== 'undefined' ? (+data.is_one_person === 1 ? ' checked' : '') : '' %>>
+                                            <label class="form-check-label" for="is_one_person">
+                                                Клиент по договору и клиент по ТО - одно и то же лицо
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <p>
                         </div>
 
                         <div role="tabpanel" class="tab-pane" id="additionally">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Адрес прописки4</h5>
-                                </div>
-                            </div>
-                            <p>
                             <div class="row">
                                 <div class="col-md-3">
                                     <div class="form-group">
