@@ -12,6 +12,7 @@
     <% include ../../common/bootstrap_css.ejs %>
     <% include ../../common/font_awesome_css.ejs %>
     <link href="/navbar-top.css" rel="stylesheet">
+    <link href="/scroll_table.css" rel="stylesheet">
 </head>
 
 <body>
@@ -169,7 +170,7 @@
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label for="phones">Телефоны</label>
-                                        <input type="text" class="form-control" id="phones" name="phones" placeholder="" value="<%= typeof data != 'undefined' ? data.phones : '' %>">
+                                        <input type="text" class="form-control" id="phones" name="phones" placeholder="" readonly value="<%= contractPhones %>">
                                     </div>
                                 </div>
                             </div>
@@ -258,6 +259,72 @@
                                 </div>
                             </div>
                             <div class="row">
+                                <div class="col-md-12">
+                                <table class="table table-bordered table-sm">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th scope="col" style="width: 16%;" class="text-center align-middle">Кв-ра</th>
+                                            <th scope="col" style="width: 16%;" class="text-center align-middle">Опл-но</th>
+                                            <th scope="col" style="width: 16%;" class="text-center align-middle">Льготник</th>
+                                            <th scope="col" style="width: 16%;" class="text-center align-middle">Освоб.</th>
+                                            <th scope="col" style="width: 16%;" class="text-center align-middle">Забл-ван</th>
+                                            <th scope="col" style="width: 20%;" class="text-center align-middle">Дата</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    <% var _class %>
+                                    <% for (var cnt = 0, max = apartments.length; cnt < max; cnt++) {%>
+                                        
+                                        <% _class = '' %>
+                                        <% if ((+apartments[cnt].paid == 1) && (+apartments[cnt].half_paid == 2)) { %>
+                                        <% _class = 'table-primary' %>
+                                        <% } %>
+
+                                        <% if ((+apartments[cnt].paid == 1) && (+apartments[cnt].half_paid == 1)) { %>
+                                        <% _class = 'table-warning' %>
+                                        <% } %>
+
+                                        <% if ((+apartments[cnt].paid == 1) && (+apartments[cnt].half_paid == 0)) { %>
+                                        <% _class = 'table-success' %>
+                                        <% } %>
+
+                                        <% if (+apartments[cnt].exempt == 1) { %>
+                                        <% _class = 'table-danger' %>
+                                        <% } %>
+
+                                        <tr class="<%= _class %>" >
+                                            <td style="width: 15%;" class="text-center align-middle">
+                                                <%= apartments[cnt].number %>
+                                            </td>
+                                            <td style="width: 15%;" class="text-center align-middle">
+                                                <div class="checkbox checkbox-success"><input type="checkbox" class="styled" <%= apartments[cnt].paid == 1 ? ' checked' : '' %>><label></label></div>
+                                            </td>
+                                            <td style="width: 15%;" class="text-center align-middle">
+                                                <div class="checkbox checkbox-success"><input type="checkbox" class="styled" <%= apartments[cnt].privilege == 1 ? ' checked' : '' %>><label></label></div>
+                                            </td>
+                                            <td style="width: 15%;" class="text-center align-middle">
+                                                <div class="checkbox checkbox-success"><input type="checkbox" class="styled" <%= apartments[cnt].exempt == 1 ? ' checked' : '' %>><label></label></div>
+                                            </td>
+                                            <td style="width: 15%;" class="text-center align-middle">
+                                                <div class="checkbox checkbox-success"><input type="checkbox" class="styled" <%= apartments[cnt].locked == 1 ? ' checked' : '' %>><label></label></div>
+                                            </td>
+                                            <td style="width: 20%;" class="text-center align-middle">
+                                                <%= moment(apartments[cnt].paid_dt).format( 'DD.MM.YYYY HH:mm:ss') %>
+                                            </td>
+                                        </tr>
+                                    <%}%>
+                                    </tbody>
+                                </table>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <textarea class="form-control" id="contract_info" rows="3" placeholder="Примечание" readonly></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label for="normal_payment">Обычная плата</label>
@@ -293,7 +360,7 @@
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label for="m_passport">Удостоверение личности</label>
-                                        <input type="text" class="form-control" id="m_passport" name="m_passport" placeholder="" readonly value="<%= typeof data != 'undefined' ? data.m_phones : '' %>">
+                                        <input type="text" class="form-control" id="m_passport" name="m_passport" placeholder="" readonly value="<%= servicePassportData %>">
                                     </div>
                                 </div>
                             </div>
@@ -301,7 +368,7 @@
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label for="m_registered_address">Адрес прописки</label>
-                                        <input type="text" class="form-control" id="m_registered_address" name="m_registered_address" placeholder="" readonly value="<%= typeof data != 'undefined' ? data.m_phones : '' %>">
+                                        <input type="text" class="form-control" id="m_registered_address" name="m_registered_address" placeholder="" readonly value="<%= serviceRegisteredAddress %>">
                                     </div>
                                 </div>
                             </div>
@@ -309,7 +376,7 @@
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label for="m_actual_address">Адрес фактического места жительства</label>
-                                        <input type="text" class="form-control" id="m_actual_address" name="m_actual_address" placeholder="" readonly value="<%= typeof data != 'undefined' ? data.m_phones : '' %>">
+                                        <input type="text" class="form-control" id="m_actual_address" name="m_actual_address" placeholder="" readonly value="<%= serviceActualAddress %>">
                                     </div>
                                 </div>
                             </div>
@@ -317,7 +384,7 @@
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label for="m_phones">Телефоны</label>
-                                        <input type="text" class="form-control" id="m_phones" name="m_phones" placeholder="" value="<%= typeof data != 'undefined' ? data.m_phones : '' %>">
+                                        <input type="text" class="form-control" id="m_phones" name="m_phones" placeholder="" readonly value="<%= servicePhones %>">
                                     </div>
                                 </div>
                             </div>

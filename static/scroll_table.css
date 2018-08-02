@@ -1,0 +1,23 @@
+/* 
+  https://www.bootply.com/AgI8LpDugl# 
+*/
+
+
+tr {
+  width: 100%;
+  display: inline-table;
+  height: 30px;
+  table-layout: fixed;
+}
+    
+table {
+  height: 300px; 
+  display: -moz-groupbox;
+}
+
+tbody {
+  overflow-y: scroll;
+  height: 240px;
+  width: 100%;
+  position: absolute;
+}

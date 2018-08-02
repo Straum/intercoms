@@ -141,7 +141,7 @@ module.exports = function () {
     db.get().getConnection(function (err, connection) {
       connection.query(
         ' SELECT' +
-        ' a.payment_id,' +
+        ' a.payment_id AS id,' +
         ` DATE_FORMAT(a.create_date, '%d.%m.%Y') AS create_date,` +
         ' a.pay_month,' +
         ' a.pay_year,' +
@@ -193,7 +193,7 @@ module.exports = function () {
           db.get().getConnection(function (err, connection) {
             connection.query(
               ' SELECT' +
-              ' a.payment_id,' +
+              ' a.payment_id AS id,' +
               ' a.create_date,' +
               ' a.apartment_id,' +
               ' a.pay_month,' +
