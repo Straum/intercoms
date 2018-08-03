@@ -16,7 +16,7 @@
 
 <body>
     <nav class="navbar navbar-expand-md navbar-light bg-light mb-4">
-        <a class="navbar-brand" href="#">Домофон-Сервис</a>
+        <a class="navbar-brand" href="/home">Домофон-Сервис</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
             aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -31,7 +31,7 @@
             </a>
         </form>
         <p></p>
-        <table class="table table-bordered table-hover table-sm">
+        <table class="table table-bordered table-sm">
             <thead class="thead-light">
                 <tr>
                     <th scope="col" rowspan="2" style="width: 6%;" class="text-center align-middle">Номер</th>
@@ -58,17 +58,19 @@
             <tbody>
                 <% for (var cnt = 0, max = data.length; cnt < max; cnt++) {%>
                     <tr>
-                        <td rowspan="2" class="text-center align-middle">
+                        <td rowspan="2" class="text-center align-middle <%= data[cnt].repaid == 1 ? ' table-success' : ' table-danger' %>">
                             <%= data[cnt].contract_number %>
                         </td>
                         <td rowspan="2" class="text-center align-middle">
                             <%= moment(data[cnt].create_date).format( 'DD.MM.YYYY') %>
                         </td>
                         <td rowspan="2" class="text-center align-middle">
-                            1
+                            <img src="<%= data[cnt].maintenance_contract == 1 ? '/images/green1.png' : (data[cnt].maintenance_contract == 2 ? '/images/red1.png' : '/images/blue_minus.png') %>"    
                         </td>
                         <td rowspan="2" class="text-center align-middle">
-                            <div class="checkbox checkbox-success"><input type="checkbox" class="styled" <%= +data[cnt].privilege == 1 ? ' checked' : '' %>><label></label></div>
+                        <% if (data[cnt].attention == 1) {%>
+                            <img src="/images/attention.png">
+                        <%}%>
                         </td>
                         <td rowspan="2" class="text-center align-middle">
                             <%= moment(data[cnt].credit_to).format( 'DD.MM.YYYY') %>
@@ -88,7 +90,7 @@
                         <td rowspan="2" class="text-center align-middle">
                             <%= data[cnt].equipment_name %>
                         </td>
-                        <td rowspan="2" class="text-center align-middle">
+                        <td rowspan="2" class="text-center align-middle <%= data[cnt].m_repaid == 1 ? ' table-success' : ' table-danger' %>">
                             <%= data[cnt].m_contract_number %>
                         </td>
                         <td class="text-center align-middle">

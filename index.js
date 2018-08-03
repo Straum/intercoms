@@ -22,6 +22,7 @@ app.use(bodyParser.urlencoded({
 }));
 
 app.use('/admin', require('./router/admin/index')());
+app.use('/home', require('./router/web/index')());
 app.use('/', require('./router/web/index')());
 
 http.createServer(app).listen(4444);
