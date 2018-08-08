@@ -17,8 +17,10 @@ var staticPath = path.join(__dirname, 'static');
 app.use(logger('short'));
 app.use(express.static(publicPath));
 app.use(express.static(staticPath));
+
+app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
-  extended: false
+  extended: true
 }));
 
 app.use('/admin', require('./router/admin/index')());

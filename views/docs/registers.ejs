@@ -61,7 +61,7 @@
                             <%= data[cnt].docs %>
                         </td>
                         <td class="text-center">
-                            <a class="btn btn-primary btn-sm" href="/registers/edit/<%= data[cnt].id %>" id="edit">
+                            <a class="btn btn-primary btn-sm" href="/registers/edit/?id=<%= data[cnt].id %>" id="edit">
                                 <i class="far fa-edit fa-fw" aria-hidden="true"></i>
                             </a>
                             <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete(+<%= data[cnt].id %>);">

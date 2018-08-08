@@ -61,8 +61,14 @@ module.exports = function () {
     });
   });
 
-  router.get('/edit/:id', function (req, res) {
-    var id = req.params.id;
+  router.get('/edit', function (req, res) {
+    var pageCount = 0;
+    console.log(req.query);
+    var id = req.query.id;
+    var offset = req.query.offset;
+    if (typeof offset === 'undefined') {
+      offset = 0;
+    }
     db.get().getConnection(function (err, connection) {
       connection.query(
         ' SELECT a.register_id AS id, a.create_date, a.start_date, a.end_date, a.last_modify_date' +
@@ -71,23 +77,71 @@ module.exports = function () {
           if (err) {
             throw err;
           }
-          connection.release();
+          var data = rows[0];
 
-          if (err) {
-            console.error(err);
-            res.status(500).send({
-              'code': 500,
-              'msg': 'Database error'
+          db.get().getConnection(function (err, connection) {
+            connection.query(
+              ' SELECT COUNT(*) AS count' +
+              ' FROM' +
+              ' lists_registers a' +
+              ' WHERE a.register_id = ?', [id], function(err, rows) {
+
+              connection.release();
+              pageCount =
+                (rows[0].count / (visibleRows * 5)) < 1 ? 0 : Math.ceil(rows[0].count / (visibleRows * 5));
+
+              var tableRows = [];
+              db.get().getConnection(function (err, connection) {
+                connection.query(
+                  ' SELECT' + 
+                  ' b.card_id,' +
+                  ' b.m_prolongation,' + 
+                  ' b.contract_number,' + 
+                  ' b.m_contract_number,' + 
+                  ` DATE_FORMAT(b.create_date, '%d.%m.%Y') AS create_date,` +
+                  ` DATE_FORMAT(b.start_service, '%d.%m.%Y') AS start_service,` + 
+                  ` DATE_FORMAT(b.end_service, '%d.%m.%Y') AS end_service` + 
+                  ' FROM' +
+                  ' lists_registers a' +
+                  ' LEFT JOIN cards b ON b.card_id=a.card_id' +
+                  ' WHERE' + 
+                  ' a.register_id = ?' +
+                  ' ORDER BY' +
+                  ' a.list_register_id' +
+                  ' LIMIT ?' +
+                  ' OFFSET ?', [id, 100, +offset], function (err, rows) {
+                    
+                    connection.release();
+                    
+                    if (err) {
+                      res.status(500).send({
+                        'code': 500,
+                        'msg': 'Database error'
+                      });
+                    }
+                    else {
+                      var currentPage = Math.ceil(offset / (visibleRows * 5)) + 1;
+                      tableRows = rows;
+                      res.render('docs/forms/registers.ejs', {
+                        'data': data,
+                        'moment': moment,
+                        'tableRows': tableRows,
+                        'pageCount': pageCount,
+                        'currentPage': currentPage,
+                        'visibleRows': visibleRows * 5
+                      });
+                    }
+                  });
+                });
+              });
             });
-          } else {
-            res.render('docs/forms/registers.ejs', {
-              'data': rows[0],
-              'moment': moment
-            });
-          }
-        });
+          });
     });
   });
+
+  // router.get('/edit/:id&:offset', function (req, res) {
+  //   kk(req, res);
+  // });
 
   router.get('/add', function (req, res) {
     res.render('refs/forms/equipment.ejs');
