@@ -5,6 +5,134 @@ var db = require('../../../lib/db.js');
 const visibleRows = require('../../../lib/config').config.visibleRows;
 var moment = require('moment');
 
+var generateTable = function( id, page, callback) {
+  var offset = (+page - 1) * visibleRows;
+  var pageCount = 0;
+  db.get().getConnection(function (err, connection) {
+
+    connection.query(
+      ' SELECT COUNT(*) AS count' +
+      ' FROM' +
+      ' lists_registers a' +
+      ' WHERE a.register_id = ?', [id], function(err, rows) {
+        connection.release();
+
+        pageCount =
+          (rows[0].count / visibleRows) < 1 ? 0 : Math.ceil(rows[0].count / visibleRows);
+        if ((offset > pageCount * visibleRows)) {
+          offset = (pageCount - 1) * visibleRows;
+        }
+
+        var paginationContent = '';
+        if (pageCount > 0) {
+          if (page === 1) {
+            paginationContent = 
+              '<li class="page-item disabled">' +
+                '<span class="page-link">&laquo;</span>' +
+              '</li>';
+          }
+          else {
+            paginationContent = 
+              '<li class="page-item">' +
+              '<a class="page-link">&laquo;</a>' +
+              '</li>';
+          }
+          var i = (Number(page) > 5 ? Number(page) - 4 : 1);
+          if (i !== 1) {
+            paginationContent += 
+              '<li class="page-item disabled">' +
+                '<a class="page-link">...</a>' +
+              '</li>';
+          }
+          for (; i <= (Number(page) + 4) && i <= pageCount; i++) {
+            if (i === page) {
+              paginationContent += 
+                '<li class="page-item active">' +
+                  '<span class="page-link">' +
+                  i +
+                  '<span class="sr-only">(current)</span>' +
+                  '</span>' +
+                '</li>';
+              }
+              else {
+                paginationContent += 
+                  '<li class="page-item">' +
+                  '<a class="page-link">' +
+                  i +
+                  '</a>' +
+                  '</li>';
+              }
+              if ((i === +page + 4) && (i < pageCount)) {
+                paginationContent += 
+                  '<li class="page-item disabled">' +
+                  '<a class="page-link">...</a>' +
+                  '</li>';
+              }
+          }
+          if (+page === pageCount) {
+            paginationContent += 
+              '<li class="page-item disabled">' +
+              '<a class="page-link">&raquo;</a>' +
+              '</li>';
+          }
+          else {
+            paginationContent += 
+              '<li class="page-item">' +
+              '<a class="page-link">&raquo;</a>' +
+              '</li>';
+          }
+        }
+      
+        db.get().getConnection(function (err, connection) {
+          connection.query(
+            ' SELECT' + 
+            ' b.card_id,' +
+            ' b.m_prolongation,' + 
+            ' b.contract_number,' + 
+            ' b.m_contract_number,' + 
+            ` DATE_FORMAT(b.create_date, '%d.%m.%Y') AS create_date,` +
+            ` DATE_FORMAT(b.start_service, '%d.%m.%Y') AS start_service,` + 
+            ` DATE_FORMAT(b.end_service, '%d.%m.%Y') AS end_service` + 
+            ' FROM' +
+            ' lists_registers a' +
+            ' LEFT JOIN cards b ON b.card_id=a.card_id' +
+            ' WHERE' + 
+            ' a.register_id = ?' +
+            ' ORDER BY' +
+            ' a.list_register_id' +
+            ' LIMIT ?' +
+            ' OFFSET ?', [id, 100, +offset], function (err, rows) {
+
+              if (err) {
+                throw err;
+              }
+              connection.release();
+
+              var result = '';
+              if (! err) {
+                var max = rows.length;
+                for (var ind = 0; ind < max; ind++) {
+                  result += 
+                    '<tr class="table-success" >' +
+                    '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].contract_number + '</td>' +
+                    '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].m_contract_number + '</td>' +
+                    '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].start_service + '</td>' +
+                    '</tr>' + 
+                    '<tr class="table-success" >' +
+                    '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].create_date + '</td>' +
+                    '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].end_service + '</td>' +
+                    '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].end_service + '</td>' +
+                    '</tr>';
+                }
+              }
+              // return result;
+              callback(result, paginationContent, pageCount);
+            });
+        });
+      });
+  });
+};
+
 module.exports = function () {
   var router = express.Router();
 
@@ -301,6 +429,20 @@ module.exports = function () {
     else {
       res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
     }
+  });
+
+  router.post('/edit', function (req, res) {
+    var data = req.body.data;
+    var page = data.page ? (data.page > 1 ? data.page : 1) : 1;
+
+    generateTable(data.id, +page, function(dataTable, pageContent, pagesCount) {
+      res.status(200).send({ 
+        'result': 'OK', 
+        'bodyTable': dataTable,
+        'pageContent': pageContent,
+        'pagesCount': pagesCount
+      });
+    });
   });
 
   return router;

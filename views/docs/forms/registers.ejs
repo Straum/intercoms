@@ -34,6 +34,8 @@
             <div class="card-body">
                 <form action="/registers/save" method="post">
                     <input type="text" hidden id="id" name="id" value="<%= typeof data != 'undefined' ? data.id : ''  %>">
+                    <input type="text" hidden id="settings" value="">
+                    <input type="text" hidden id="pages_count" value="">
                     <div class="form-row align-items-center">
                         <div class="col-auto my-1">
                             <button id="build_register" type="button" class="btn btn-info" data-toggle="tooltip" data-placement="top" title="Сформировать реестр">
@@ -126,8 +128,8 @@
                                 <th scope="col" style="width: 32%;" class="text-center align-middle">Дата ТО по</th>
                             </tr>
                         </thead>
-                        <tbody>
-                        <% for (var cnt = 0, max = tableRows.length; cnt < max; cnt++) {%>
+                        <tbody id="tbody">
+                        <!-- <% for (var cnt = 0, max = tableRows.length; cnt < max; cnt++) {%>
                             <tr class="<%= cnt % 2 ? 'table-success' : '' %>" >
                                 <td style="width: 33%;" class="text-center align-middle"><%= tableRows[cnt].contract_number %></td>
                                 <td style="width: 33%;" class="text-center align-middle"><%= tableRows[cnt].m_contract_number %></td>
@@ -138,13 +140,13 @@
                                 <td style="width: 33%;" class="text-center align-middle"><%= tableRows[cnt].end_service %></td>
                                 <td style="width: 32%;" class="text-center align-middle"><%= tableRows[cnt].end_service %></td>
                             </tr>
-                        <%}%>
+                        <%}%> -->
                         </tbody>
                     </table>
-                    <% if (pageCount > 0) { %>
+                    <!-- <% if (pageCount > 0) { %> -->
                         <nav aria-label="...">
-                        <ul class="pagination text-center table_pagination">
-                            <% if (currentPage == 1) { %>
+                        <ul class="pagination text-center table_pagination" id="pagination">
+                            <!-- <% if (currentPage == 1) { %>
                                 <li class="page-item disabled">
                                     <span class="page-link">&laquo;</span>
                                 </li>
@@ -189,9 +191,9 @@
                                 <li class="page-item">
                                     <a class="page-link" href="/registers/edit/?id=<%= data.id %><%= '&offset=' + ((pageCount - 1) * Number(visibleRows)) %>">&raquo;</a>
                                 </li>
-                            <% } %>
+                            <% } %> -->
                          </ul>
-                         </nav>
+                         <!-- </nav> -->
                       <% } %>
                     <div class="row">
                         <div class="col">
@@ -218,7 +220,56 @@
           };
 
           this.getAllPagination = function() {
+            _this = this;
             console.log('123');
+
+            // $('body').on('click', '.pagination li.active', function(){
+            $('body').on('click', '.pagination .page-link', function() {
+              var page = $(this).text();
+              switch ((typeof page == 'string') && (page.charCodeAt())) {
+                case 171:
+                  page = 1;
+                  break;
+                case 187: 
+                  page = +($('#pages_count').val());
+                  break;
+              }
+              _this.ajaxGetAllItemsPagination(page);
+            });
+
+            _this.ajaxGetAllItemsPagination(1); 
+          }
+          
+          this.ajaxGetAllItemsPagination = function(page) {
+
+            var post_data = {
+              id: $('#id').val(),
+              page: page,
+              search: $('#find_contract_number').val()
+            };
+                
+            $('#settings').val(JSON.stringify(post_data));
+                
+            var data = {
+              action: 'get-register',
+              data: JSON.parse($('#settings').val())
+            };
+
+            $.ajax({
+              url: '/registers/edit',
+              type: 'POST',
+              contentType: 'application/json',
+              data: JSON.stringify(data),
+              success: function(response) {
+                // alert('success!');
+                $('#tbody').html(response.bodyTable);
+                $('#pagination').html(response.pageContent);
+                $("#pages_count").val(response.pagesCount);
+              },
+              error: function( description ) {
+                console.log('error!');
+              }
+            })
           }
         }
       }
