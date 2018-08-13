@@ -34,16 +34,27 @@
             <div class="card-body">
                 <form action="/registers/save" method="post">
                     <input type="text" hidden id="id" name="id" value="<%= typeof data != 'undefined' ? data.id : ''  %>">
+                    <div class="form-row align-items-center">
+                        <div class="col-auto my-1">
+                            <button id="build_register" type="button" class="btn btn-info" data-toggle="tooltip" data-placement="top" title="Сформировать реестр">
+                                <i class="fas fa-play fa-fw" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                        <div class="col-auto my-1">
+                            <button id="download_register" type="button" class="btn btn-info" data-toggle="tooltip" data-placement="top" title="Загрузить реестр">
+                                <i class="fas fa-cloud-download-alt fa-fw" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <p>
                     <div class="row">
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label for="create_date">Дата создания</label>
-                                <div class="form-group">
-                                    <div class="input-group date" id="datetimepicker1" data-target-input="nearest">
-                                        <input type="text" class="form-control datetimepicker-input" data-target="#datetimepicker1" readonly value="<%= typeof data != 'undefined' ? moment(data.create_date).format( 'DD.MM.YYYY' ) : ''  %>"/>
-                                        <div class="input-group-append" data-target="#datetimepicker1" data-toggle="datetimepicker">
-                                            <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                                        </div>
+                                <div class="input-group date" id="datetimepicker_create_date" data-target-input="nearest">
+                                    <input type="text" name="create_date" id="create_date" class="form-control datetimepicker-input" data-target="#datetimepicker_create_date" readonly value="<%= typeof data != 'undefined' ? moment(data.create_date).format( 'DD.MM.YYYY' ) : ''  %>"/>
+                                    <div class="input-group-append" data-target="#datetimepicker_create_date" data-toggle="datetimepicker">
+                                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
                                     </div>
                                 </div>
                             </div>
@@ -51,12 +62,10 @@
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label for="start_date">Период с</label>
-                                <div class="form-group">
-                                    <div class="input-group date" id="datetimepicker4" data-target-input="nearest">
-                                        <input type="text" class="form-control datetimepicker-input" data-target="#datetimepicker4" value="<%= typeof data != 'undefined' ? moment(data.start_date).format( 'DD.MM.YYYY' ) : ''  %>"/>
-                                        <div class="input-group-append" data-target="#datetimepicker4" data-toggle="datetimepicker">
-                                            <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                                        </div>
+                                <div class="input-group date" id="datetimepicker_start_date" data-target-input="nearest">
+                                    <input type="text" name="start_date" id="start_date" class="form-control datetimepicker-input" data-target="#datetimepicker_start_date" value="<%= typeof data != 'undefined' ? moment(data.start_date).format( 'DD.MM.YYYY' ) : ''  %>"/>
+                                    <div class="input-group-append" data-target="#datetimepicker_start_date" data-toggle="datetimepicker">
+                                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
                                     </div>
                                 </div>
                             </div>
@@ -64,24 +73,46 @@
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label for="end_date">Период по</label>
-                                <input type="text" class="form-control" id="end_date" name="end_date" placeholder="" value="<%= typeof data != 'undefined' ? data.end_date : ''  %>">
+                                <div class="input-group date" id="datetimepicker_end_date" data-target-input="nearest">
+                                    <input type="text" name="end_date" id="end_date" class="form-control datetimepicker-input" data-target="#datetimepicker_end_date" value="<%= typeof data != 'undefined' ? moment(data.end_date).format( 'DD.MM.YYYY' ) : ''  %>"/>
+                                    <div class="input-group-append" data-target="#datetimepicker_end_date" data-toggle="datetimepicker">
+                                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label for="last_modify_date">Последнее изменение</label>
-                                <input type="text" class="form-control" id="last_modify_date" name="last_modify_date" placeholder="" readonly value="<%= typeof data != 'undefined' ? data.last_modify_date : '' %>">
+                                <div class="input-group date" id="datetimepicker_last_modify_date" data-target-input="nearest">
+                                    <input type="text" name="last_modify_date" id="last_modify_date" class="form-control datetimepicker-input" data-target="#datetimepicker_last_modify_date" readonly value="<%= typeof data != 'undefined' ? moment(data.last_modify_date).format( 'DD.MM.YYYY HH:mm' ) : ''  %>"/>
+                                    <div class="input-group-append" data-target="#datetimepicker_last_modify_date" data-toggle="datetimepicker">
+                                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                    </div>
+                                    </div>
                             </div>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="last_modify_date">Последнее изменение</label>
-                                <input type="text" class="form-control" id="last_modify_date" name="last_modify_date" placeholder="" readonly value="<%= typeof data != 'undefined' ? data.last_modify_date : '' %>">
+                    <div class="form-row align-items-center">
+                        <div class="col-auto my-1">
+                            <input type="text" id="find_contract_number" name="find_contract_number" class="form-control" placeholder="Номер договора" value="">
+                        </div>
+                        <div class="col-auto my-1">
+                            <div class="custom-control custom-checkbox mr-sm-2">
+                                <input type="checkbox" class="custom-control-input" id="prolonged">
+                                <label class="custom-control-label" for="prolonged">Пролонгированный</label>
                             </div>
                         </div>
+                        <div class="col-auto my-1">
+                            <button id="search" name="search" type="button" class="btn btn-info">
+                                <i class="fas fa-search fa-fw" aria-hidden="true"></i> Искать
+                            </button>
+                        </div>
+                        <div class="col">
+                            <div class="float-right">Договоров <span class="badge badge-info"><%= tableRowsCount %></span></div>
+                        </div>
                     </div>
+                    <p>
                     <table class="table table-bordered table-sm" id="registerTable" name="registerTable">
                         <thead class="thead-light">
                             <tr>
@@ -173,22 +204,50 @@
     </div>
 
     <script src="/bower_components/jquery/dist/jquery.min.js"></script>
-    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
     <script src="/bower_components/bootstrap/assets/js/vendor/popper.min.js"></script>
+    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
     <script src="/bower_components/moment/min/moment-with-locales.min.js"></script>
     <script src="/bower_components/tempusdominus-bootstrap-4/build/js/tempusdominus-bootstrap-4.min.js"></script>
     
     <script>
-        $(function () {
-            $('#datetimepicker1').datetimepicker({
-                format: 'L',
-                locale: 'ru'
-            });
-            $('#datetimepicker4').datetimepicker({
-                format: 'L',
-                locale: 'ru'
-            });
+
+      var app = {
+        Register: function() {
+          this.init = function() {
+            this.getAllPagination();
+          };
+
+          this.getAllPagination = function() {
+            console.log('123');
+          }
+        }
+      }
+
+      $(function () {
+        $('#datetimepicker_create_date').datetimepicker({
+          format: 'L',
+          locale: 'ru'
         });
+
+        $('#datetimepicker_start_date').datetimepicker({
+          format: 'L',
+          locale: 'ru'
+        });
+
+        $('#datetimepicker_end_date').datetimepicker({
+          format: 'L',
+          locale: 'ru'
+        });
+
+        $('#datetimepicker_last_modify_date').datetimepicker({
+          locale: 'ru'
+        });
+
+        $('[data-toggle="tooltip"]').tooltip()
+
+        var register = new app.Register();
+        register.init();
+      });
     </script>
 </body>
 

@@ -69,6 +69,8 @@ module.exports = function () {
     if (typeof offset === 'undefined') {
       offset = 0;
     }
+    var tableRowsCount = 0;
+
     db.get().getConnection(function (err, connection) {
       connection.query(
         ' SELECT a.register_id AS id, a.create_date, a.start_date, a.end_date, a.last_modify_date' +
@@ -87,6 +89,7 @@ module.exports = function () {
               ' WHERE a.register_id = ?', [id], function(err, rows) {
 
               connection.release();
+              tableRowsCount = rows[0].count;
               pageCount =
                 (rows[0].count / (visibleRows * 5)) < 1 ? 0 : Math.ceil(rows[0].count / (visibleRows * 5));
 
@@ -126,6 +129,7 @@ module.exports = function () {
                         'data': data,
                         'moment': moment,
                         'tableRows': tableRows,
+                        'tableRowsCount': tableRowsCount,
                         'pageCount': pageCount,
                         'currentPage': currentPage,
                         'visibleRows': visibleRows * 5
