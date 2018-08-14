@@ -5,16 +5,38 @@ var db = require('../../../lib/db.js');
 const visibleRows = require('../../../lib/config').config.visibleRows;
 var moment = require('moment');
 
-var generateTable = function( id, page, callback) {
+// var generateTable = function( id, page, search, callback) {
+var generateTable = function(data, callback) {  
+
+  var id = data.id;
+  var page = data.page ? (+data.page > 1 ? +data.page : 1) : 1;  
   var offset = (+page - 1) * visibleRows;
   var pageCount = 0;
+  var contract = data.search.trim();
+
   db.get().getConnection(function (err, connection) {
 
-    connection.query(
+    var queryCount = 
       ' SELECT COUNT(*) AS count' +
       ' FROM' +
-      ' lists_registers a' +
-      ' WHERE a.register_id = ?', [id], function(err, rows) {
+      ' lists_registers a';
+
+    if (contract.length > 0) {
+      queryCount += ' LEFT JOIN cards b ON b.card_id = a.card_id';
+    }
+
+    queryCount +=
+      ' WHERE' + 
+      ' a.register_id = ?';
+
+    if (contract.length > 0) {
+      queryCount += 
+        data.prolonged ? ' AND b.m_contract_number = ' : ' AND b.contract_number = ';
+        queryCount += contract;
+    }
+
+    connection.query(
+      queryCount, [id], function(err, rows) {
         connection.release();
 
         pageCount =
@@ -82,26 +104,37 @@ var generateTable = function( id, page, callback) {
               '</li>';
           }
         }
+
+        var queryRegisters = 
+          ' SELECT' + 
+          ' b.card_id,' +
+          ' b.m_prolongation,' + 
+          ' b.contract_number,' + 
+          ' b.m_contract_number,' + 
+          ` DATE_FORMAT(b.create_date, '%d.%m.%Y') AS create_date,` +
+          ` DATE_FORMAT(b.start_service, '%d.%m.%Y') AS start_service,` + 
+          ` DATE_FORMAT(b.end_service, '%d.%m.%Y') AS end_service` + 
+          ' FROM' +
+          ' lists_registers a' +
+          ' LEFT JOIN cards b ON b.card_id = a.card_id' +
+          ' WHERE' + 
+          ' a.register_id = ?';
+
+        if (contract.length > 0) {
+          queryRegisters += 
+            data.prolonged ? ' AND b.m_contract_number = ' : ' AND b.contract_number = ';
+          queryRegisters += contract;
+        }
+
+        queryRegisters +=
+          ' ORDER BY' +
+          ' a.list_register_id' +
+          ' LIMIT ?' +
+          ' OFFSET ?';
       
         db.get().getConnection(function (err, connection) {
           connection.query(
-            ' SELECT' + 
-            ' b.card_id,' +
-            ' b.m_prolongation,' + 
-            ' b.contract_number,' + 
-            ' b.m_contract_number,' + 
-            ` DATE_FORMAT(b.create_date, '%d.%m.%Y') AS create_date,` +
-            ` DATE_FORMAT(b.start_service, '%d.%m.%Y') AS start_service,` + 
-            ` DATE_FORMAT(b.end_service, '%d.%m.%Y') AS end_service` + 
-            ' FROM' +
-            ' lists_registers a' +
-            ' LEFT JOIN cards b ON b.card_id=a.card_id' +
-            ' WHERE' + 
-            ' a.register_id = ?' +
-            ' ORDER BY' +
-            ' a.list_register_id' +
-            ' LIMIT ?' +
-            ' OFFSET ?', [id, 100, +offset], function (err, rows) {
+            queryRegisters, [id, 100, +offset], function (err, rows) {
 
               if (err) {
                 throw err;
@@ -113,15 +146,25 @@ var generateTable = function( id, page, callback) {
                 var max = rows.length;
                 for (var ind = 0; ind < max; ind++) {
                   result += 
-                    '<tr class="table-success" >' +
-                    '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].contract_number + '</td>' +
-                    '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].m_contract_number + '</td>' +
-                    '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].start_service + '</td>' +
+                    // '<tr' + (ind % 2 ? ' class="table-info"' : '') + '>' +
+                    // '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].contract_number + '</td>' +
+                    // '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].m_contract_number + '</td>' +
+                    // '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].start_service + '</td>' +
+                    // '</tr>' + 
+                    // '<tr' + (ind % 2 ? ' class="table-info"' : '') + '>' +
+                    // '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].create_date + '</td>' +
+                    // '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].end_service + '</td>' +
+                    // '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].end_service + '</td>' +
+                    // '</tr>';
+                    '<tr' + (ind % 2 ? ' class="table-info"' : '') + '>' +
+                    '<td class="text-center align-middle">' + rows[ind].contract_number + '</td>' +
+                    '<td class="text-center align-middle">' + rows[ind].m_contract_number + '</td>' +
+                    '<td class="text-center align-middle">' + rows[ind].start_service + '</td>' +
                     '</tr>' + 
-                    '<tr class="table-success" >' +
-                    '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].create_date + '</td>' +
-                    '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].end_service + '</td>' +
-                    '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].end_service + '</td>' +
+                    '<tr' + (ind % 2 ? ' class="table-info"' : '') + '>' +
+                    '<td class="text-center align-middle">' + rows[ind].create_date + '</td>' +
+                    '<td class="text-center align-middle">' + rows[ind].end_service + '</td>' +
+                    '<td class="text-center align-middle">' + rows[ind].end_service + '</td>' +
                     '</tr>';
                 }
               }
@@ -254,6 +297,7 @@ module.exports = function () {
                       var currentPage = Math.ceil(offset / (visibleRows * 5)) + 1;
                       tableRows = rows;
                       res.render('docs/forms/registers.ejs', {
+                        'title': 'Реестр',
                         'data': data,
                         'moment': moment,
                         'tableRows': tableRows,
@@ -433,9 +477,10 @@ module.exports = function () {
 
   router.post('/edit', function (req, res) {
     var data = req.body.data;
-    var page = data.page ? (data.page > 1 ? data.page : 1) : 1;
+    // var page = data.page ? (data.page > 1 ? data.page : 1) : 1;
 
-    generateTable(data.id, +page, function(dataTable, pageContent, pagesCount) {
+    // generateTable(data.id, +page, data.search, function(dataTable, pageContent, pagesCount) {
+    generateTable(data, function(dataTable, pageContent, pagesCount) {
       res.status(200).send({ 
         'result': 'OK', 
         'bodyTable': dataTable,

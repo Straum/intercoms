@@ -7,7 +7,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <!-- <link rel="icon" href="../../../../favicon.ico"> -->
-    <title>Home page - Реестр</title>
+    <title>Home page - <%= title %>></title>
 
     <% include ../../common/bootstrap_css.ejs %>
     <% include ../../common/font_awesome_css.ejs %>
@@ -32,175 +32,120 @@
                 Реестр
             </div>
             <div class="card-body">
-                <form action="/registers/save" method="post">
-                    <input type="text" hidden id="id" name="id" value="<%= typeof data != 'undefined' ? data.id : ''  %>">
-                    <input type="text" hidden id="settings" value="">
-                    <input type="text" hidden id="pages_count" value="">
-                    <div class="form-row align-items-center">
-                        <div class="col-auto my-1">
-                            <button id="build_register" type="button" class="btn btn-info" data-toggle="tooltip" data-placement="top" title="Сформировать реестр">
-                                <i class="fas fa-play fa-fw" aria-hidden="true"></i>
-                            </button>
-                        </div>
-                        <div class="col-auto my-1">
-                            <button id="download_register" type="button" class="btn btn-info" data-toggle="tooltip" data-placement="top" title="Загрузить реестр">
-                                <i class="fas fa-cloud-download-alt fa-fw" aria-hidden="true"></i>
-                            </button>
-                        </div>
+                <input type="text" hidden id="id" name="id" value="<%= typeof data != 'undefined' ? data.id : ''  %>">
+                <input type="text" hidden id="settings" value="">
+                <input type="text" hidden id="pages_count" value="">
+                <div class="form-row align-items-center">
+                    <div class="col-auto my-1">
+                        <button id="build_register" type="button" class="btn btn-info" data-toggle="tooltip" data-placement="top" title="Сформировать реестр">
+                            <i class="fas fa-play fa-fw" aria-hidden="true"></i>
+                        </button>
                     </div>
-                    <p>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label for="create_date">Дата создания</label>
-                                <div class="input-group date" id="datetimepicker_create_date" data-target-input="nearest">
-                                    <input type="text" name="create_date" id="create_date" class="form-control datetimepicker-input" data-target="#datetimepicker_create_date" readonly value="<%= typeof data != 'undefined' ? moment(data.create_date).format( 'DD.MM.YYYY' ) : ''  %>"/>
-                                    <div class="input-group-append" data-target="#datetimepicker_create_date" data-toggle="datetimepicker">
-                                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                                    </div>
+                    <div class="col-auto my-1">
+                        <button id="download_register" type="button" class="btn btn-info" data-toggle="tooltip" data-placement="top" title="Загрузить реестр">
+                            <i class="fas fa-cloud-download-alt fa-fw" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+                <p>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="create_date">Дата создания</label>
+                            <div class="input-group date" id="datetimepicker_create_date" data-target-input="nearest">
+                                <input type="text" name="create_date" id="create_date" class="form-control datetimepicker-input" data-target="#datetimepicker_create_date" readonly value="<%= typeof data != 'undefined' ? moment(data.create_date).format( 'DD.MM.YYYY' ) : ''  %>"/>
+                                <div class="input-group-append" data-target="#datetimepicker_create_date" data-toggle="datetimepicker">
+                                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label for="start_date">Период с</label>
-                                <div class="input-group date" id="datetimepicker_start_date" data-target-input="nearest">
-                                    <input type="text" name="start_date" id="start_date" class="form-control datetimepicker-input" data-target="#datetimepicker_start_date" value="<%= typeof data != 'undefined' ? moment(data.start_date).format( 'DD.MM.YYYY' ) : ''  %>"/>
-                                    <div class="input-group-append" data-target="#datetimepicker_start_date" data-toggle="datetimepicker">
-                                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                                    </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="start_date">Период с</label>
+                            <div class="input-group date" id="datetimepicker_start_date" data-target-input="nearest">
+                                <input type="text" name="start_date" id="start_date" class="form-control datetimepicker-input" data-target="#datetimepicker_start_date" value="<%= typeof data != 'undefined' ? moment(data.start_date).format( 'DD.MM.YYYY' ) : ''  %>"/>
+                                <div class="input-group-append" data-target="#datetimepicker_start_date" data-toggle="datetimepicker">
+                                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label for="end_date">Период по</label>
-                                <div class="input-group date" id="datetimepicker_end_date" data-target-input="nearest">
-                                    <input type="text" name="end_date" id="end_date" class="form-control datetimepicker-input" data-target="#datetimepicker_end_date" value="<%= typeof data != 'undefined' ? moment(data.end_date).format( 'DD.MM.YYYY' ) : ''  %>"/>
-                                    <div class="input-group-append" data-target="#datetimepicker_end_date" data-toggle="datetimepicker">
-                                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                                    </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="end_date">Период по</label>
+                            <div class="input-group date" id="datetimepicker_end_date" data-target-input="nearest">
+                                <input type="text" name="end_date" id="end_date" class="form-control datetimepicker-input" data-target="#datetimepicker_end_date" value="<%= typeof data != 'undefined' ? moment(data.end_date).format( 'DD.MM.YYYY' ) : ''  %>"/>
+                                <div class="input-group-append" data-target="#datetimepicker_end_date" data-toggle="datetimepicker">
+                                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label for="last_modify_date">Последнее изменение</label>
-                                <div class="input-group date" id="datetimepicker_last_modify_date" data-target-input="nearest">
-                                    <input type="text" name="last_modify_date" id="last_modify_date" class="form-control datetimepicker-input" data-target="#datetimepicker_last_modify_date" readonly value="<%= typeof data != 'undefined' ? moment(data.last_modify_date).format( 'DD.MM.YYYY HH:mm' ) : ''  %>"/>
-                                    <div class="input-group-append" data-target="#datetimepicker_last_modify_date" data-toggle="datetimepicker">
-                                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                                    </div>
-                                    </div>
-                            </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="last_modify_date">Последнее изменение</label>
+                            <div class="input-group date" id="datetimepicker_last_modify_date" data-target-input="nearest">
+                                <input type="text" name="last_modify_date" id="last_modify_date" class="form-control datetimepicker-input" data-target="#datetimepicker_last_modify_date" readonly value="<%= typeof data != 'undefined' ? moment(data.last_modify_date).format( 'DD.MM.YYYY HH:mm' ) : ''  %>"/>
+                                <div class="input-group-append" data-target="#datetimepicker_last_modify_date" data-toggle="datetimepicker">
+                                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                </div>
+                                </div>
                         </div>
                     </div>
-                    <div class="form-row align-items-center">
-                        <div class="col-auto my-1">
-                            <input type="text" id="find_contract_number" name="find_contract_number" class="form-control" placeholder="Номер договора" value="">
+                </div>
+                <div class="form-row align-items-center">
+                    <div class="col-auto my-1">
+                        <div class="input-group">
+                        <input type="text" id="find_contract_number" name="find_contract_number" class="form-control" placeholder="Номер договора" value="">
+                        <div class="input-group-append">
+                            <button class="btn btn-info" id="erase_contract">
+                            <i class="fas fa-eraser" aria-hidden="true"></i>
+                          </button>
                         </div>
-                        <div class="col-auto my-1">
-                            <div class="custom-control custom-checkbox mr-sm-2">
-                                <input type="checkbox" class="custom-control-input" id="prolonged">
-                                <label class="custom-control-label" for="prolonged">Пролонгированный</label>
-                            </div>
-                        </div>
-                        <div class="col-auto my-1">
-                            <button id="search" name="search" type="button" class="btn btn-info">
-                                <i class="fas fa-search fa-fw" aria-hidden="true"></i> Искать
-                            </button>
-                        </div>
-                        <div class="col">
-                            <div class="float-right">Договоров <span class="badge badge-info"><%= tableRowsCount %></span></div>
                         </div>
                     </div>
-                    <p>
-                    <table class="table table-bordered table-sm" id="registerTable" name="registerTable">
-                        <thead class="thead-light">
-                            <tr>
-                                <th scope="col" rowsspan="2" style="width: 33%;" class="text-center align-middle">Номер договора</th>
-                                <th scope="col" rowsspan="2" style="width: 33%;" class="text-center align-middle">Пролонгированный договор</th>
-                                <th scope="col" rowsspan="2" style="width: 32%;" class="text-center align-middle">Дата ТО с</th>
-                            </tr>
-                            <tr>
-                                <th scope="col" style="width: 33%;" class="text-center align-middle">Дата договора</th>
-                                <th scope="col" style="width: 33%;" class="text-center align-middle">Дата пролонгации</th>
-                                <th scope="col" style="width: 32%;" class="text-center align-middle">Дата ТО по</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbody">
-                        <!-- <% for (var cnt = 0, max = tableRows.length; cnt < max; cnt++) {%>
-                            <tr class="<%= cnt % 2 ? 'table-success' : '' %>" >
-                                <td style="width: 33%;" class="text-center align-middle"><%= tableRows[cnt].contract_number %></td>
-                                <td style="width: 33%;" class="text-center align-middle"><%= tableRows[cnt].m_contract_number %></td>
-                                <td style="width: 32%;" class="text-center align-middle"><%= tableRows[cnt].start_service %></td>
-                            </tr>
-                            <tr class="<%= cnt % 2 ? 'table-success' : '' %>" >
-                                <td style="width: 33%;" class="text-center align-middle"><%= tableRows[cnt].create_date %></td>
-                                <td style="width: 33%;" class="text-center align-middle"><%= tableRows[cnt].end_service %></td>
-                                <td style="width: 32%;" class="text-center align-middle"><%= tableRows[cnt].end_service %></td>
-                            </tr>
-                        <%}%> -->
-                        </tbody>
-                    </table>
-                    <!-- <% if (pageCount > 0) { %> -->
-                        <nav aria-label="...">
-                        <ul class="pagination text-center table_pagination" id="pagination">
-                            <!-- <% if (currentPage == 1) { %>
-                                <li class="page-item disabled">
-                                    <span class="page-link">&laquo;</span>
-                                </li>
-                                <% } else { %>
-                                    <li class="page-item">
-                                        <a class="page-link" href="/registers/edit/?id=<%= data.id %>">&laquo;
-                                    </a>
-                                </li>
-                            <% } %>
-                            <% var i = (Number(currentPage) > 5 ? Number(currentPage) - 4 : 1) %>
-                            <% if (i !== 1) { %>
-                                <li class="page-item disabled">
-                                    <a class="page-link">...</a>
-                                </li>
-                            <% } %>
-                            <% for (; i <= (Number(currentPage) + 4) && i <= pageCount; i++) { %>
-                                <% if (i == currentPage) { %>
-                                    <li class="page-item active">
-                                        <span class="page-link">
-                                            <%= i %>
-                                            <span class="sr-only">(current)</span>
-                                        </span>
-                                    </li>
-                                <% } else { %>
-                                    <li class="page-item">
-                                        <a class="page-link" href="/registers/edit/?id=<%= data.id %><%= (i == 1) ? '' : '&offset=' + ((i - 1) * Number(visibleRows)) %>">
-                                            <%= i %>
-                                        </a>
-                                    </li>
-                                <% } %>
-                                <% if (i == Number(currentPage) + 4 && i < pageCount) { %>
-                                    <li class="page-item disabled">
-                                        <a class="page-link">...</a>
-                                    </li>
-                                <% } %>
-                            <% } %>
-                            <% if (currentPage == pageCount) { %>
-                                <li class="page-item disabled">
-                                    <a class="page-link">&raquo;</a>
-                                </li>
-                            <% } else { %>
-                                <li class="page-item">
-                                    <a class="page-link" href="/registers/edit/?id=<%= data.id %><%= '&offset=' + ((pageCount - 1) * Number(visibleRows)) %>">&raquo;</a>
-                                </li>
-                            <% } %> -->
-                         </ul>
-                         <!-- </nav> -->
-                      <% } %>
-                    <div class="row">
-                        <div class="col">
-                            <button type="submit" class="btn btn-success" id="save">Записать</button>
+                    <div class="col-auto my-1">
+                        <div class="custom-control custom-checkbox mr-sm-2">
+                            <input type="checkbox" class="custom-control-input" id="prolonged">
+                            <label class="custom-control-label" for="prolonged">Пролонгированный</label>
                         </div>
                     </div>
-                </form>
+                    <div class="col-auto my-1">
+                        <button id="search" name="search" type="button" class="btn btn-info">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i> Искать
+                        </button>
+                    </div>
+                    <div class="col">
+                        <div class="float-right">Договоров <span class="badge badge-info"><%= tableRowsCount %></span></div>
+                    </div>
+                </div>
+                <p>
+                <table class="table table-sm" id="registerTable" name="registerTable">
+                    <thead class="thead-light">
+                        <tr>
+                            <th scope="col" rowsspan="2" style="width: 33%;" class="text-center align-middle">Номер договора</th>
+                            <th scope="col" rowsspan="2" style="width: 33%;" class="text-center align-middle">Пролонгированный договор</th>
+                            <th scope="col" rowsspan="2" style="width: 32%;" class="text-center align-middle">Дата ТО с</th>
+                        </tr>
+                        <tr>
+                            <th scope="col" style="width: 33%;" class="text-center align-middle">Дата договора</th>
+                            <th scope="col" style="width: 33%;" class="text-center align-middle">Дата пролонгации</th>
+                            <th scope="col" style="width: 32%;" class="text-center align-middle">Дата ТО по</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody">
+                    </tbody>
+                </table>
+                    <nav aria-label="...">
+                    <ul class="pagination text-center table_pagination" id="pagination">
+                    </ul>
+                <div class="row">
+                    <div class="col">
+                        <!-- <button type="submit" class="btn btn-success" id="save">Записать</button> -->
+                        <button class="btn btn-success" id="save">Записать</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -213,6 +158,9 @@
     
     <script>
 
+      // Basic foundation
+      // http://carlofontanos.com/nodejs-ajax-pagination-with-mongodb-search-sort-filter/
+
       var app = {
         Register: function() {
           this.init = function() {
@@ -221,9 +169,29 @@
 
           this.getAllPagination = function() {
             _this = this;
-            console.log('123');
 
-            // $('body').on('click', '.pagination li.active', function(){
+            if ($('#settings').val()) {
+              data = JSON.parse($('form.post-list input').val());
+              _this.ajaxGetAllItemsPagination(data.page, data.search);
+            } else {
+              _this.ajaxGetAllItemsPagination(1, $('find_contract_number').val());
+            }
+
+            $("#find_contract_number").keyup(function (e) {
+              if (e.keyCode == 13) {
+                _this.ajaxGetAllItemsPagination(1, $('#find_contract_number').val());
+              }
+            });
+
+            $('body').on('click', '#erase_contract', function() {
+              $('#find_contract_number').val('');
+              $('#find_contract_number').focus();
+            });
+
+            $('body').on('click', '#search', function() {
+              _this.ajaxGetAllItemsPagination(1, $('#find_contract_number').val());
+            });
+
             $('body').on('click', '.pagination .page-link', function() {
               var page = $(this).text();
               switch ((typeof page == 'string') && (page.charCodeAt())) {
@@ -234,18 +202,21 @@
                   page = +($('#pages_count').val());
                   break;
               }
-              _this.ajaxGetAllItemsPagination(page);
+              _this.ajaxGetAllItemsPagination(page, $('#find_contract_number').val());
             });
 
-            _this.ajaxGetAllItemsPagination(1); 
+            _this.ajaxGetAllItemsPagination(1, $('#find_contract_number').val()); 
           }
           
           this.ajaxGetAllItemsPagination = function(page) {
 
+            // $('#pagination').html('<div class="col align-self-center loader"></div>');
+
             var post_data = {
-              id: $('#id').val(),
-              page: page,
-              search: $('#find_contract_number').val()
+              'id': $('#id').val(),
+              'page': page,
+              'search': $('#find_contract_number').val(),
+              'prolonged': $('#prolonged:checkbox:checked').val() === 'on'
             };
                 
             $('#settings').val(JSON.stringify(post_data));
