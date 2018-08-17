@@ -160,7 +160,6 @@ module.exports = function () {
                     'msg': 'Database error'
                   });
                 } else {
-
                   res.render('docs/forms/orders.ejs', {
                     'data': rows[0],
                     'moment': moment,
@@ -299,5 +298,43 @@ module.exports = function () {
     }
   });
 
-  return router;
+  router.post('/search_equipment', function (req, res) {
+    var data = req.body;
+    var suggestion = '';
+    if ((data) && (typeof(data) === 'object') && ('suggestion' in data)) {
+      suggestion = data.suggestion.trim();
+
+      var queryText = 
+      ' SELECT a.equipment_id AS id, a.name AS value' +
+      ' FROM equipments a';
+      if (suggestion.length > 0) {
+        queryText += ' WHERE a.name LIKE ' + `'` + suggestion + '%' + `'`;
+      }
+      queryText += ' ORDER BY a.name ASC';
+      queryText += ' LIMIT ' + ('limit' in data ? data.limit : 15);
+
+      db.get().getConnection(function (err, connection) {
+        connection.query(
+          queryText, [], function (err, rows) {
+            connection.release();
+
+            if (err) {
+              res.status(500).send({
+                'code': 500,
+                'msg': 'Database Error',
+                'err': JSON.stringify(err)
+              });
+            } else {
+              res.status(200).send(rows);
+            }
+          }
+        );
+      });
+    }
+    else {
+      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    }
+});
+
+return router;
 };

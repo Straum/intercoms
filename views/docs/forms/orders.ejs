@@ -11,6 +11,7 @@
 
     <% include ../../common/bootstrap_css.ejs %>
     <% include ../../common/font_awesome_css.ejs %>
+    <link href="/typeaheadjs.css" rel="stylesheet">
     <link href="/navbar-top.css" rel="stylesheet">
     <link href="/scroll_table.css" rel="stylesheet">
 </head>
@@ -63,7 +64,7 @@
                                 <div class="col-md-9">
                                     <div class="form-group">
                                         <label for="equipment_name">Оборудование</label>
-                                        <input type="text" class="form-control" id="equipment_name" name="equipment_name" placeholder="" value="<%= typeof data !== 'undefined' ? data.equipment_name : '' %>">
+                                        <input type="text" class="form-control" id="equipment_name" name="equipment_name" placeholder="Выберите оборудование" value="<%= typeof data !== 'undefined' ? data.equipment_name : '' %>">
                                     </div>
                                 </div>
                                 <div class="col-md-3">
@@ -439,12 +440,53 @@
     </div>
 
     <script src="/bower_components/jquery/dist/jquery.min.js"></script>
-    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
     <script src="/bower_components/bootstrap/assets/js/vendor/popper.min.js"></script>
+    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
     <script src="/bower_components/bootstrap/assets/js/vendor/holder.min.js"></script>
     <script>
         $(document).ready(function () {
-            
+           $('#equipment_name').typeahead({
+            items: 15,
+            source: function (query, process) {
+              var results = [];
+              map = {};
+              $.ajax({
+                'url': '/orders/search_equipment',
+                'type': 'POST',
+                'contentType': 'application/json',
+                'data': JSON.stringify({
+                  'suggestion': query,
+                  'limit': 15
+                }),
+                success: function (datas) {
+                  $.each(datas, function (i, result) {
+                    map[result.value] = result;
+                    results.push(result.value);
+                  });
+                  process(results);
+                }
+              });
+            },
+            updater: function (element) {
+              // selectedElement = map[element].id; /**use the person id and search for it**/
+              // $('#driver_id').val(map[element].id);
+              // //
+              // $('#dlg_nickname').val(map[element].nickname);
+              // $('#car_name').val(map[element].car_name);
+              // $('#car_number').val(map[element].car_number);
+              // $('#color_name').val(map[element].color_name);
+              // var driverInfo = getDriverInfo(map[element].car_name, map[element].car_number, map[element].color_name);
+              // //
+              // $('#dlg_additional_info').val(driverInfo);
+              // //
+              // $('#saveOrder').focus();
+              
+              // $(this).val('123');
+              // $('#equipment_name').val('123');
+              return element;
+            }
+          });    
         });
     </script>
 </body>

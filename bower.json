@@ -19,6 +19,7 @@
     "jquery": "3.3.1",
     "components-font-awesome": "5.0.6",
     "tempusdominus-bootstrap-4": "5.0.1",
-    "moment": "^2.22.2"
+    "moment": "^2.22.2",
+    "bootstrap3-typeahead": "^4.0.2"
   }
 }
