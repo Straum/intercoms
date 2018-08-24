@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <!-- <link rel="icon" href="../../../../favicon.ico"> -->
+    <title>Home page - Заявки</title>
+
+    <% include ../common/bootstrap_css.ejs %>
+    <% include ../common/font_awesome_css.ejs %>
+    <link href="/navbar-top.css" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-light bg-light mb-4">
+        <a class="navbar-brand" href="/home">Домофон-Сервис</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+            aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <% include ../common/full_menu.ejs %>
+    </nav>
+
+    <div class="container-fluid">
+        <ul class="nav nav-pills">
+            <li class="nav-item">
+                <a class="nav-link active" href="#">Текущие</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/applications/completed">Выполненные</a>
+            </li>
+        </ul>
+        <p>
+        <form class="form-inline">
+            <a class="btn btn-primary btn-sm" href="/applications/add" id="add">
+                <i class="fas fa-plus fa-fw" aria-hidden="true"></i>
+            </a>
+        </form>
+        <p>
+        <table class="table table-bordered table-sm">
+            <thead class="thead-light">
+                <tr>
+                    <th scope="col" style="width: 6%;" class="text-center align-middle">Дата</th>
+                    <th scope="col" style="width: 25;" class="align-middle">Город</th>
+                    <th scope="col" style="width: 25%;" class="align-middle">Улица</th>
+                    <th scope="col" style="width: 6%;" class="text-center align-middle">Дом</th>
+                    <th scope="col" style="width: 6%;" class="text-center align-middle">Подъезд</th>
+                    <th scope="col" style="width: 20%;" class="text-center align-middle">Проблема</th>
+                    <th scope="col" style="width: 12%;" class="text-center align-middle">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+
+            </tbody>
+        </table>
+
+    </div>
+
+    <div class="modal" id="modalDeleteRecord" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Подтверждение</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <input type="text" hidden id="deletedUID" name="deletedUID" value="">
+                    </form>
+                    <p>Удалить запись?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-warning" id="deleteRecord">Удалить</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="/bower_components/bootstrap/assets/js/vendor/popper.min.js"></script>
+    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="/bower_components/bootstrap/assets/js/vendor/holder.min.js"></script>
+    <script>
+        function confirmDelete(id) {
+            $('#deletedUID').val(id);
+            $('#modalDeleteRecord').modal({'keyboard': true});
+        }
+
+        $(document).ready(function () {
+            $('#deleteRecord').click(function() {
+                $('#modalDeleteRecord').modal('hide');
+                $.ajax({
+                    type: 'POST',
+                    url: '/payments/delete',
+                    dataType: 'json',
+                    async: true,
+                    data: {
+                        'id': $('#deletedUID').val()
+                    },
+                    success: function (data) {
+                        var path = window.location.origin + '/payments';
+                        window.location.href = path;
+                        return;
+                    },
+                    error: function (data) {
+                        alert(data);
+                    }
+                });
+                
+            });
+        });
+    </script>
+</body>
+
+</html>
