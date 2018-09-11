@@ -7,6 +7,7 @@ module.exports = function () {
 
   // References
   router.use('/equipment', require('./refs/equipment')());
+  router.use('/workers', require('./refs/workers')());
   router.use('/clients', require('./refs/clients')());
   router.use('/organizations', require('./refs/organizations')());
   router.use('/cities', require('./refs/cities')());

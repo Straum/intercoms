@@ -12,6 +12,9 @@
     <% include ../../common/bootstrap_css.ejs %>
     <% include ../../common/font_awesome_css.ejs %>
     <link href="/navbar-top.css" rel="stylesheet">
+    <link href="/typeaheadjs.css" rel="stylesheet">
+    <link href="/bower_components/tempusdominus-bootstrap-4/build/css/tempusdominus-bootstrap-4.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/css/bootstrap-select.css" rel="stylesheet" />
 </head>
 
 <body>
@@ -34,38 +37,55 @@
                 <input type="text" hidden id="apartment_id" name="apartment_id" value="<%= typeof data != 'undefined' ? data.apartment_id : ''  %>">
                 <div class="row">
                     <div class="col-md-3">
-                        <div class="form-group">
-                            <label for="create_date">Дата создания</label>
-                            <input type="text" class="form-control" id="create_date" name="create_date" placeholder="" autofocus="autofocus" value="">
-                        </div>
+                      <div class="form-group">
+                          <label for="create_date">Дата создания</label>
+                          <div class="input-group date" id="datetimepicker_create_date" data-target-input="nearest">
+                              <input type="text" name="create_date" id="create_date" class="form-control datetimepicker-input" data-target="#datetimepicker_create_date" readonly value="<%= typeof data != 'undefined' ? moment(data.create_date).format( 'DD.MM.YYYY HH:mm' ) : moment(new Date()).format( 'DD.MM.YYYY HH:mm' )  %>"/>
+                              <div class="input-group-append" data-target="#datetimepicker_create_date" data-toggle="datetimepicker">
+                                  <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                              </div>
+                          </div>
+                      </div>
                     </div>
+                </div>
+                <div class="row">
                     <div class="col-md-8">
                         <div class="form-group">
-                            <label for="barcode">Адрес</label>
+                            <label for="address">Адрес</label>
                             <input type="text" class="form-control" id="address" name="address" placeholder="" value="">
                         </div>
                     </div>
                     <div class="col-md-1">
                         <div class="form-group">
-                            <label for="barcode">Подъезд</label>
-                            <input type="text" class="form-control" id="address" name="address" placeholder="" value="">
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-9">
-                        <div class="form-group">
-                            <label for="barcode">Неисправность</label>
-                            <input type="text" class="form-control" id="barcode" name="barcode" placeholder="" value="">
+                            <label for="porch">Подъезд</label>
+                            <input type="text" class="form-control" id="porch" name="porch" placeholder="" value="">
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="form-group">
                             <label for="phone">Телефон</label>
-                            <input type="text" class="form-control" id="phone" name="contract" placeholder="" value="">
+                            <input type="text" class="form-control" id="phone" name="phone" placeholder="" value="">
                         </div>
                     </div>
                 </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <select class="selectpicker form-control" multiple title="Выберите неисправности">
+                                <% for (var ind = 0, max = faults.length; ind < max; ind++) { %>
+                                <option value="<%= faults[ind].id %>"><%= faults[ind].name %></option>
+                                <% } %>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                            <label for="performer">Исполнитель</label>
+                            <input type="text" class="form-control" id="performer" name="performer" placeholder="Фамилия исполнителя" value="">
+                    </div>
+                </div>
+                <p>
                 <div class="row">
                     <div class="col">
                         <button type="submit" class="btn btn-success" id="save">Записать</button>
@@ -76,50 +96,54 @@
     </div>
 
     <script src="/bower_components/jquery/dist/jquery.min.js"></script>
-    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
     <script src="/bower_components/bootstrap/assets/js/vendor/popper.min.js"></script>
-    <script src="/bower_components/bootstrap/assets/js/vendor/holder.min.js"></script>
+    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
+    <script src="/bower_components/moment/min/moment-with-locales.min.js"></script>
+    <script src="/bower_components/tempusdominus-bootstrap-4/build/js/tempusdominus-bootstrap-4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
+
     <script>
-        var dataTable = [];
-
-        $(document).ready(function () {
-
-            $.ajax({
-                type: 'GET',
-                url: '/payments/table',
-                dataType: 'json',
-                async: true,
-                data: {
-                    'id': $('#apartment_id').val()
-                },
-                success: function (data) {
-                    // alert(data);
-                    dataTable = [];
-                    if ((data.table) && (data.table instanceof Array)) {
-                        dataTable = data.table;
-                        var paymentsTable = document.getElementById('paymentsTable');
-                        // Очистить строки у таблицы заранее
-                        var innerString = paymentsTable.innerHTML;
-                        var s = '';
-                        for (var ind = 0, max = dataTable.length; ind < max; ind++) {
-                            s += '<tr' + (ind % 2 ? ' class="table-info">' : '>') + 
-                                '<td class="text-center align-middle">' + dataTable[ind].create_date + '</td>' +
-                                '<td class="text-center align-middle">' + dataTable[ind].pay_date + '</td>' +
-                                '<td class="text-center align-middle">' + dataTable[ind].m_contract_number + '</td>' +
-                                '<td class="text-center align-middle">' + dataTable[ind].pay_month + '</td>' +
-                                '<td class="text-center align-middle">' + dataTable[ind].pay_year + '</td>' +
-                                '<td class="text-center align-middle">' + dataTable[ind].amount.toFixed(2) + '</td>' +
-                                '<td class="text-center align-middle">' + dataTable[ind].org_name + '</td>' +
-                            '</tr>'
-                        }
-                        paymentsTable.innerHTML = innerString + s;
-                    }
-                },
-                error: function (data) {
-                    alert(data);
-                }
-            });
+      $(document).ready(function () {
+        $('#datetimepicker_create_date').datetimepicker({
+          // format: 'L',
+          locale: 'ru'
         });
+
+        $('#performer').typeahead({
+          items: 15,
+          source: function (query, process) {
+            var results = [];
+            map = {};
+            $.ajax({
+              'url': '/applications/search_performer',
+              'type': 'POST',
+              'contentType': 'application/json',
+              'data': JSON.stringify({
+                'suggestion': query,
+                'limit': 15
+              }),
+              success: function (datas) {
+                $.each(datas, function (i, result) {
+                  map[result.value] = result;
+                  results.push(result.value);
+                });
+                process(results);
+              }
+            });
+          },
+          updater: function (element) {
+            // alert(map[element].id);
+            // $('#performer_id').val(map[element].id);
+            return element;
+          }
+        });
+
+        // $(document).ready(function() {
+        //   $('#example-getting-started').multiselect();
+        // });
+       
+      });
     </script>
 </body>
 

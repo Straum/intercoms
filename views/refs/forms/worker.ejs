@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <!-- <link rel="icon" href="../../../../favicon.ico"> -->
+    <title>Home page - Персонал</title>
+
+    <% include ../../common/bootstrap_css.ejs %>
+    <% include ../../common/font_awesome_css.ejs %>
+    <link href="/navbar-top.css" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-light bg-light mb-4">
+        <a class="navbar-brand" href="/home">Домофон-Сервис</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+            aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <% include ../../common/full_menu.ejs %>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                Персонал
+            </div>
+            <div class="card-body">
+                <form action="/workers/save" method="post">
+                    <input type="text" hidden id="id" name="id" value="<%= typeof data != 'undefined' ? data.id : ''  %>">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="name">ФИО</label>
+                                <input type="text" class="form-control" id="name" name="name" placeholder="" autofocus="autofocus" value="<%= typeof data != 'undefined' ? data.name : '' %>">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="is_work" name="is_work" <%= typeof data != 'undefined' ? (data.is_work == 1 ? ' checked' : '') : ''  %>>
+                        <label class="form-check-label" for="is_work">Не работает</label>
+                    </div>
+                    <p>
+                    <div class="row">
+                        <div class="col">
+                            <button type="submit" class="btn btn-success" id="save" name="save">Записать</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/bower_components/jquery/dist/jquery.slim.min.js"></script>
+    <script src="/bower_components/bootstrap/assets/js/vendor/popper.min.js"></script>
+    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="/bower_components/bootstrap/assets/js/vendor/holder.min.js"></script>
+</body>
+
+</html>
