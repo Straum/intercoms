@@ -10,46 +10,43 @@
     <title>Home page - Заявки</title>
 
     <% include ../common/bootstrap_css.ejs %>
-    <% include ../common/font_awesome_css.ejs %>
-    <link href="/navbar-top.css" rel="stylesheet">
+    <link href="/theme.css" rel="stylesheet">
+    <!-- <link href="/navbar-top.css" rel="stylesheet"> -->
 </head>
 
-<body>
-    <nav class="navbar navbar-expand-md navbar-light bg-light mb-4">
-        <a class="navbar-brand" href="/home">Домофон-Сервис</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-            aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <% include ../common/full_menu.ejs %>
-    </nav>
+<body role="document">
+           
+    <% include ../common/full_menu.ejs %>
 
     <div class="container-fluid">
-        <ul class="nav nav-pills">
-            <li class="nav-item">
-                <a class="nav-link active" href="#">Текущие</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/applications/completed">Выполненные</a>
-            </li>
-        </ul>
-        <p>
-        <form class="form-inline">
-            <a class="btn btn-primary btn-sm" href="/applications/add" id="add">
-                <i class="fas fa-plus fa-fw" aria-hidden="true"></i>
-            </a>
+        <div class="row">
+            <div class="col-xs-9">
+                <ol class="breadcrumb">
+                    <li><a href="#">Документы</a></li>
+                    <li>Заявки</li>
+                </ol>
+            </div>
+            <div class="col-xs-3">
+                <ul class="nav nav-pills pull-right">
+                    <li role="presentation"  class="active"><a href="#">Текущие</a></li>
+                    <li role="presentation"><a href="/applications/completed">Выполненные</a></li>
+                </ul>
+            </div>
+        </div>
+        <form class="form-inline" role="form">
+            <a href="/applications/add" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Создать новый элемент"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
         </form>
         <p>
-        <table class="table table-bordered table-sm">
-            <thead class="thead-light">
-                <tr>
-                    <th scope="col" style="width: 6%;" class="text-center align-middle">Дата</th>
-                    <th scope="col" style="width: 25;" class="align-middle">Город</th>
-                    <th scope="col" style="width: 25%;" class="align-middle">Улица</th>
-                    <th scope="col" style="width: 6%;" class="text-center align-middle">Дом</th>
-                    <th scope="col" style="width: 6%;" class="text-center align-middle">Подъезд</th>
-                    <th scope="col" style="width: 20%;" class="text-center align-middle">Проблема</th>
-                    <th scope="col" style="width: 12%;" class="text-center align-middle">Действия</th>
+        <table class="table table-bordered table-condensed">
+            <thead>
+                <tr class="active">
+                    <th style="width: 6%;" class="text-center align-middle">Дата</th>
+                    <th style="width: 25;" class="align-middle">Город</th>
+                    <th style="width: 25%;" class="align-middle">Улица</th>
+                    <th style="width: 6%;" class="text-center align-middle">Дом</th>
+                    <th style="width: 6%;" class="text-center align-middle">Подъезд</th>
+                    <th style="width: 20%;" class="text-center align-middle">Проблема</th>
+                    <th style="width: 12%;" class="text-center align-middle">Действия</th>
                 </tr>
             </thead>
             <tbody>
@@ -83,9 +80,7 @@
     </div>
 
     <script src="/bower_components/jquery/dist/jquery.min.js"></script>
-    <script src="/bower_components/bootstrap/assets/js/vendor/popper.min.js"></script>
     <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
-    <script src="/bower_components/bootstrap/assets/js/vendor/holder.min.js"></script>
     <script>
         function confirmDelete(id) {
             $('#deletedUID').val(id);

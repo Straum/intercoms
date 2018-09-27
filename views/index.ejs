@@ -1,7 +1,7 @@
-
 <!doctype html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="">
@@ -10,42 +10,19 @@
 
     <title>Home page</title>
 
-    <!-- Bootstrap core CSS -->
-    <link href="../bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <% include common/bootstrap_css.ejs %>
     <link href="/background.css" rel="stylesheet">
-  </head>
+</head>
 
-  <body>
-
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-      <a class="navbar-brand" href="home">Домофон-Сервис</a>
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
+<body role="document">
     
-      <% include common/full_menu.ejs %>
-    </nav>
-
-    <div class="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
-      <h1 style="color: #000000;" class="display-1">Домофон-Сервис</h1>
+    <% include common/full_menu.ejs %>
+    <div class="container theme-showcase" role="main">
     </div>
 
-    <div class="container">
-    </div>
-
-    <!-- Bootstrap core JavaScript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="../bower_components/jquery/dist/jquery.slim.min.js"></script>    
-    <script src="../bower_components/bootstrap/assets/js/vendor/popper.min.js"></script>
+    <script src="../bower_components/jquery/dist/jquery.min.js"></script>
     <script src="../bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
-    <script src="../bower_components/bootstrap/assets/js/vendor/holder.min.js"></script>
-    <script>
-      Holder.addTheme('thumb', {
-        bg: '#55595c',
-        fg: '#eceeef',
-        text: 'Thumbnail'
-      });
-    </script>
-  </body>
+
+</body>
+
 </html>

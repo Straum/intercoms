@@ -1,42 +1,49 @@
-<div class="collapse navbar-collapse" id="navbarSupportedContent">
-  <ul class="navbar-nav mr-auto">
-    <li class="nav-item dropdown">
-      <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownRefs" role="button" data-toggle="dropdown" aria-haspopup="true"
-        aria-expanded="false">
-        Справочники
-      </a>
-      <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-        <a class="dropdown-item" href="/equipment">Оборудование</a>
-        <a class="dropdown-item" href="/workers">Персонал</a>
-        <a class="dropdown-item" href="/clients">Клиенты</a>
-        <a class="dropdown-item" href="/organizations">Организации</a>
-        <a class="dropdown-item" href="/cities">Города</a>
-        <a class="dropdown-item" href="/streets">Улицы</a>
-        <a class="dropdown-item" href="/templates">Шаблоны</a>
-      </div>
-    </li>
-    <li class="nav-item dropdown">
-      <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownDocs" role="button" data-toggle="dropdown" aria-haspopup="true"
-        aria-expanded="false">
-        Документы
-      </a>
-      <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-        <a class="dropdown-item" href="/orders">Договора</a>
-        <a class="dropdown-item" href="/registers">Реестр</a>
-        <a class="dropdown-item" href="/payments">Платежи</a>
-        <div class="dropdown-divider"></div>
-        <a class="dropdown-item" href="/applications">Заявки</a>
-        <!-- <a class="dropdown-item" href="/requests">Заявки на оборудование</a> -->
-      </div>
-    </li>
-    <li class="nav-item dropdown">
-      <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownDocs" role="button" data-toggle="dropdown" aria-haspopup="true"
-        aria-expanded="false">
-        Справка
-      </a>
-      <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-        <a class="dropdown-item" href="#">О программе</a>
-      </div>
-    </li>
-  </ul>
-</div>
+<nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
+                aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/#home">Домофон-сервис</a>
+        </div>
+        <div class="collapse navbar-collapse">
+            <ul class="nav navbar-nav">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">Справочники<span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a class="dropdown-item" href="/equipment">Оборудование</a></li>
+                        <li><a class="dropdown-item" href="/workers">Персонал</a></li>
+                        <li><a class="dropdown-item" href="/clients">Клиенты</a></li>
+                        <li><a class="dropdown-item" href="/organizations">Организации</a></li>
+                        <li><a class="dropdown-item" href="/cities">Города</a></li>
+                        <li><a class="dropdown-item" href="/streets">Улицы</a></li>
+                        <li><a class="dropdown-item" href="/templates">Шаблоны</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">Документы<span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a class="dropdown-item" href="/orders">Договора</a></li>
+                        <li><a class="dropdown-item" href="/registers">Реестр</a></li>
+                        <li><a class="dropdown-item" href="/payments">Платежи</a></li>
+                        <li>
+                            <div class="dropdown-divider"></div>
+                        </li>
+                        <li><a class="dropdown-item" href="/applications">Заявки</a></li>
+                        <!-- <a class="dropdown-item" href="/requests">Заявки на оборудование</a> -->
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">Справка<span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a class="dropdown-item" href="#">О программе</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

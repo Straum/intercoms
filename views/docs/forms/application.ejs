@@ -10,42 +10,29 @@
     <title>Home page - Заявка</title>
 
     <% include ../../common/bootstrap_css.ejs %>
-    <% include ../../common/font_awesome_css.ejs %>
-    <link href="/navbar-top.css" rel="stylesheet">
-    <link href="/typeaheadjs.css" rel="stylesheet">
-    <link href="/bower_components/tempusdominus-bootstrap-4/build/css/tempusdominus-bootstrap-4.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/css/bootstrap-select.css" rel="stylesheet" />
+    <link href="/theme.css" rel="stylesheet">
+    <link href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-md navbar-light bg-light mb-4">
-        <a class="navbar-brand" href="/home">Домофон-Сервис</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-            aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <% include ../../common/full_menu.ejs %>
-    </nav>
+    <% include ../../common/full_menu.ejs %>
 
     <div class="container">
-        <div class="card">
-            <div class="card-header">
-                Новая заявка
-            </div>
+        <div class="well">
             <div class="card-body">
                 <input type="text" hidden id="id" name="id" value="<%= typeof data != 'undefined' ? data.id : ''  %>">
                 <input type="text" hidden id="apartment_id" name="apartment_id" value="<%= typeof data != 'undefined' ? data.apartment_id : ''  %>">
-                <div class="row">
-                    <div class="col-md-3">
-                      <div class="form-group">
-                          <label for="create_date">Дата создания</label>
-                          <div class="input-group date" id="datetimepicker_create_date" data-target-input="nearest">
-                              <input type="text" name="create_date" id="create_date" class="form-control datetimepicker-input" data-target="#datetimepicker_create_date" readonly value="<%= typeof data != 'undefined' ? moment(data.create_date).format( 'DD.MM.YYYY HH:mm' ) : moment(new Date()).format( 'DD.MM.YYYY HH:mm' )  %>"/>
-                              <div class="input-group-append" data-target="#datetimepicker_create_date" data-toggle="datetimepicker">
-                                  <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                              </div>
-                          </div>
-                      </div>
+                <div class="form-group">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="create_date" class="control-label">Создано</label>
+                            <div class="input-group date" id='datetimepicker_create_date'>
+                                <input type="text" class="form-control" name="create_date" id="create_date" value="<%= typeof data != 'undefined' ? moment(data.create_date).format( 'DD.MM.YYYY HH:mm' ) : moment(new Date()).format( 'DD.MM.YYYY HH:mm' )  %>">
+                                <span class="input-group-addon">
+                                    <span class="glyphicon glyphicon-calendar"></span>
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="row">
@@ -70,24 +57,36 @@
                 </div>
                 <div class="row">
                     <div class="col-md-12">
-                        <div class="form-group">
-                            <select class="selectpicker form-control" multiple title="Выберите неисправности">
-                                <% for (var ind = 0, max = faults.length; ind < max; ind++) { %>
-                                <option value="<%= faults[ind].id %>"><%= faults[ind].name %></option>
-                                <% } %>
-                            </select>
+                        <table class="table table-bordered table-condensed" id="tableFaults">
+                            <thead>
+                                <tr class="active">
+                                    <th style="width: 90%; cursor: pointer;" class="text-left align-middle sort">Неисправность</th>
+                                    <th style="width: 10%;" class="text-center align-middle">Действия</th>
+                                </tr>
+                                <tr>
+                                    <td colspan="2"><input type="text" class="form-control" id="fault" name="fault"
+                                            placeholder="Введите неисправность" value=""></td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="warning text-center align-middle" colspan="2">Нет данных</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label for="performer">Исполнитель</label>
+                            <input type="text" class="form-control" id="performer" name="performer" placeholder="Фамилия исполнителя"
+                                value="">
                         </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-12">
-                            <label for="performer">Исполнитель</label>
-                            <input type="text" class="form-control" id="performer" name="performer" placeholder="Фамилия исполнителя" value="">
-                    </div>
-                </div>
-                <p>
-                <div class="row">
-                    <div class="col">
                         <button type="submit" class="btn btn-success" id="save">Записать</button>
                     </div>
                 </div>
@@ -96,54 +95,242 @@
     </div>
 
     <script src="/bower_components/jquery/dist/jquery.min.js"></script>
-    <script src="/bower_components/bootstrap/assets/js/vendor/popper.min.js"></script>
     <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
-    <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
     <script src="/bower_components/moment/min/moment-with-locales.min.js"></script>
-    <script src="/bower_components/tempusdominus-bootstrap-4/build/js/tempusdominus-bootstrap-4.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
+    <script src="/bower_components/bootstrap/js/transition.js"></script>
+    <script src="/bower_components/bootstrap/js/collapse.js"></script>
+    <script src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
 
     <script>
-      $(document).ready(function () {
-        $('#datetimepicker_create_date').datetimepicker({
-          // format: 'L',
-          locale: 'ru'
-        });
+        var dataTable = [];
+        var applicationData = {
+            address: {
+                cityId: 0,
+                cityName: '',
+                streetId: 0,
+                streetName: '',
+                houseId: 0,
+                houseNumber: ''
+            }
+        }
 
-        $('#performer').typeahead({
-          items: 15,
-          source: function (query, process) {
-            var results = [];
-            map = {};
-            $.ajax({
-              'url': '/applications/search_performer',
-              'type': 'POST',
-              'contentType': 'application/json',
-              'data': JSON.stringify({
-                'suggestion': query,
-                'limit': 15
-              }),
-              success: function (datas) {
-                $.each(datas, function (i, result) {
-                  map[result.value] = result;
-                  results.push(result.value);
-                });
-                process(results);
-              }
+        $(document).ready(function () {
+
+            $('[data-toggle="tooltip"]').tooltip();
+
+            $('#datetimepicker_create_date').datetimepicker({
+                // format: 'L',
+                locale: 'ru'
             });
-          },
-          updater: function (element) {
-            // alert(map[element].id);
-            // $('#performer_id').val(map[element].id);
-            return element;
-          }
-        });
 
-        // $(document).ready(function() {
-        //   $('#example-getting-started').multiselect();
-        // });
-       
-      });
+            // autocomplete city + street + house
+            $('#address').typeahead({
+                items: 15,
+                source: function (query, process) {
+                    var results = [];
+                    map = {};
+                    $.ajax({
+                        'url': '/applications/address_autocomplete',
+                        'type': 'POST',
+                        'contentType': 'application/json',
+                        'data': JSON.stringify({
+                            'suggestion': query,
+                            'limit': 15
+                        }),
+                        success: function (datas) {
+                            if ((typeof datas == 'object') && ('items' in datas) && ('level' in datas)) {
+                                var level = datas.level;
+                                var data = datas.items;
+                                var text;
+                                if (Array.isArray(data)) {
+                                    data.forEach(function (item, index) {
+                                        item.level = level;
+                                        switch (level) {
+                                            case 0:
+                                                text = item.cityName;
+                                                map[text] = item;
+                                                results.push(text);
+                                                break;
+                                            case 1:
+                                                text = item.cityName + ', ' + item.streetName;
+                                                if (item.streetName.trim() !== '') {
+                                                    map[text] = item;
+                                                    results.push(text);
+                                                }
+                                                break;
+                                            case 2:
+                                                text = item.cityName + ', ' + item.streetName + ', ' + item.houseNumber;
+                                                if (item.houseNumber.trim() !== '') {
+                                                    map[text] = item;
+                                                    results.push(text);
+                                                }
+                                                break;
+                                            default:
+                                        }
+                                    });
+                                }
+                            }
+                            process(results);
+                        }
+                    });
+                },
+                updater: function (element) {
+                    var selectedElement = map[element];
+                    switch (selectedElement.level) {
+                        case 0:
+                            applicationData.address.cityId = selectedElement.cityId;
+                            applicationData.address.cityName = selectedElement.cityName;
+                            return selectedElement.cityName + ', ';
+                        case 1:
+                            applicationData.address.cityId = selectedElement.cityId;
+                            applicationData.address.cityName = selectedElement.cityName;
+                            applicationData.address.streetId = selectedElement.streetId;
+                            applicationData.address.streetName = selectedElement.streetName;
+                            return selectedElement.cityName + ', ' + selectedElement.streetName + ', ';
+                        case 2:
+                            applicationData.address.cityId = selectedElement.cityId;
+                            applicationData.address.cityName = selectedElement.cityName;
+                            applicationData.address.streetId = selectedElement.streetId;
+                            applicationData.address.streetName = selectedElement.streetName;
+                            applicationData.address.houseId = selectedElement.houseId;
+                            applicationData.address.houseNumber = selectedElement.houseNumber;
+                            return selectedElement.cityName + ', ' + selectedElement.streetName + ', ' + selectedElement.houseNumber;
+                        default:
+                            return selectedElement.cityName;
+                    }
+                }
+            });
+
+            $('#performer').typeahead({
+                items: 15,
+                source: function (query, process) {
+                    var results = [];
+                    map = {};
+                    $.ajax({
+                        'url': '/applications/search_performer',
+                        'type': 'POST',
+                        'contentType': 'application/json',
+                        'data': JSON.stringify({
+                            'suggestion': query,
+                            'limit': 15
+                        }),
+                        success: function (datas) {
+                            $.each(datas, function (i, result) {
+                                map[result.value] = result;
+                                results.push(result.value);
+                            });
+                            process(results);
+                        }
+                    });
+                },
+                updater: function (element) {
+                    // alert(map[element].id);
+                    // $('#performer_id').val(map[element].id);
+                    return element;
+                }
+            });
+
+            $('#fault').typeahead({
+                items: 15,
+                minLength: 1,
+                source: function (query, process) {
+                    var results = [];
+                    map = {};
+                    $.ajax({
+                        'url': '/applications/find_fault',
+                        'type': 'POST',
+                        'contentType': 'application/json',
+                        'data': JSON.stringify({
+                            'suggestion': query,
+                            'limit': 15
+                        }),
+                        success: function (datas) {
+                            $.each(datas, function (i, result) {
+                                map[result.value] = result;
+                                results.push(result.value);
+                            });
+                            process(results);
+                        }
+                    });
+                },
+                updater: function (element) {
+                    dataTable.push(map[element]);
+
+                    // https://stackoverflow.com/questions/15604122/jquery-delete-table-row
+                    var firstRow = $('#tableFaults > tbody > tr:first');
+                    try {
+                        if ((typeof (firstRow) == 'object') && ('length' in firstRow) && (firstRow.length == 1)) {
+                            // if (firstRow[0].cells[0].innerText.trim().tolowerCase() == 'нет данных')
+                            if (firstRow[0].cells[0].colSpan == 2) {
+                                firstRow.parent().remove();
+                            }
+                        }
+                    }
+                    catch (e) {
+                        //
+                    }
+
+                    $('#tableFaults').last().append(
+                        '<tr class="warning">' +
+                        '<td>' + map[element].value + '</td>' +
+                        '<td class="warning text-center deleteRow">' + '<a href="#" class="btn btn-danger btn-xs"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span></a>' + '</td>' +
+                        '</tr>'
+                    );
+                    //
+                    $('#fault').focus().val('');
+                    // return element;
+                }
+            });
+
+            $('body').on('click', '.deleteRow', function () {
+                var tr = $(this).closest('tr');
+                var rowIndex = tr.index();
+                tr.remove();
+                dataTable.splice(rowIndex, 1);
+            });
+
+            var grid = document.getElementById('tableFaults');
+            grid.onclick = function (e) {
+                if (e.target.tagName != 'TH') return;
+                var classList = e.target.className.split(' ');
+
+                bySort = false;
+                for (var i = 0; i < classList.length; i++) {
+                    if (classList[i] === 'sort') {
+                        bySort = true;
+                        break;
+                    }
+                }
+
+                if (bySort) {
+                    sortGrid(e.target.cellIndex);
+                }
+            };
+
+            function sortGrid(colNum, type) {
+                var tbody = grid.getElementsByTagName('tbody')[0];
+                var rowsArray = [].slice.call(tbody.rows);
+
+                var compare = function (rowA, rowB) {
+                    return rowA.cells[colNum].innerHTML > rowB.cells[colNum].innerHTML;
+                };
+
+                // сортировать
+                rowsArray.sort(compare);
+
+                // Убрать tbody из большого DOM документа для лучшей производительности
+                grid.removeChild(tbody);
+
+                // добавить результат в нужном порядке в TBODY
+                // они автоматически будут убраны со старых мест и вставлены в правильном порядке
+                for (var i = 0; i < rowsArray.length; i++) {
+                    tbody.appendChild(rowsArray[i]);
+                }
+                grid.appendChild(tbody);
+            }
+
+        });
     </script>
 </body>
 
