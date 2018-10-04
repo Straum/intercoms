@@ -95,7 +95,11 @@ module.exports = function () {
     res.render(
       'docs/forms/application.ejs',
       {
-        'moment': moment
+        'moment': moment,
+        'data': {
+          'faults': JSON.stringify([])
+        },
+        'errors': {}
       }
     );
   });
@@ -103,6 +107,78 @@ module.exports = function () {
   router.get('/completed', function (req, res) {
     res.render('docs/done_applications.ejs');
   });
+
+  router.post('/save', function (req, res) {
+    var errors = {};
+    var address = {
+      'msg': 'Заполните адрес'  
+    };
+    var porch = {
+      'msg': 'Укажите номер подъезда'
+    };
+    var faults = {
+      'msg': 'Не указана(ы) неисправность(и)'
+    };
+    var performer = {
+      'msg': 'Введите исполнителя'
+    };
+
+    // Validation
+
+    // Verify address
+    var checkAddress = 
+      (+req.body.cityId > 0) && 
+      (+req.body.streetId > 0) && 
+      (+req.body.houseId > 0);
+
+    if ((typeof checkAddress !== 'boolean') || ((typeof checkAddress === 'boolean') && (! checkAddress))) {
+      errors.address = address;
+    }
+
+    // Verify porch
+    var checkPorch = ((req.body.porch.trim() !== '') && (Number.isFinite(+req.body.porch) ? (+req.body.porch > 0 ? true : false) : false));
+    if ((typeof checkPorch !== 'boolean') || ((typeof checkPorch === 'boolean') && (! checkPorch))) {
+      errors.porch = porch;
+    }
+
+    // Verify faults
+    var checkFaults = false;
+    var tableFaults;
+    try {
+      tableFaults = JSON.parse(req.body.faults);
+      if ((typeof tableFaults === 'object') && (Array.isArray(tableFaults))) {
+        checkFaults = tableFaults.length > 0;
+      }
+    } catch (error) {
+      //
+    }
+
+    if (! checkFaults) {
+      errors.faults = faults;
+    }
+
+    // Verify performer
+    var checkPerformer = ((req.body.performerId.trim() !== '') && (Number.isFinite(+req.body.performerId) ? (+req.body.performerId > 0 ? true : false) : false));
+    if ((typeof checkPerformer !== 'boolean') || ((typeof checkPerformer === 'boolean') && (! checkPerformer))) {
+      errors.performer = performer;
+    }
+
+    if (Object.keys(errors).length > 0) {
+      res.render(
+        'docs/forms/application.ejs', 
+        {
+          'moment': moment,
+          'data': req.body,
+          'errors': errors
+        }
+      );
+    }
+    else {
+      // Запись в БД
+      //
+      res.status(200).send();
+    }  
+  }); 
 
   router.post('/search_performer', function (req, res) {
     var data = req.body;
