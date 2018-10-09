@@ -32,22 +32,26 @@
         <form method="post" action="/applications/save" novalidate>
             <div class="well">
                 <div class="card-body">
-                    <input type="text" hidden id="documentId" name="documentId" value="<%= typeof data != 'undefined' ? data.id : '0' %>">
+                    <input type="text" hidden id="documentId" name="documentId" value="<%= typeof data != 'undefined' ? data.documentId : '0' %>">
                     <input type="text" hidden id="cityId" name="cityId" value="<%= typeof data != 'undefined' ? data.cityId : '0' %>">
                     <input type="text" hidden id="streetId" name="streetId" value="<%= typeof data != 'undefined' ? data.streetId : '0' %>">
                     <input type="text" hidden id="houseId" name="houseId" value="<%= typeof data != 'undefined' ? data.houseId : '0' %>">
                     <input type="text" hidden id="performerId" name="performerId" value="<%= typeof data != 'undefined' ? data.performerId : '0' %>">
                     <input type="text" hidden id="faults" name="faults" value="<%= typeof data != 'undefined' ? data.faults : '0' %>">
+                    <input type="text" hidden id="isDone" name="isDone" value="<%= typeof data != 'undefined' ? data.isDone : '0' %>">
                     <div class="form-group">
                         <div class="row">
-                            <div class="col-md-3">
+                            <div class="col-md-3 <%= errors.createDate ? 'has-error' : '' %>">
                                 <label for="create_date" class="control-label">Создано</label>
                                 <div class="input-group date" id='datetimepicker_create_date'>
-                                    <input type="text" class="form-control" name="create_date" id="create_date" value="<%= typeof data !== 'undefined' ? moment(data.create_date).format( 'DD.MM.YYYY HH:mm' ) : moment(new Date()).format( 'DD.MM.YYYY HH:mm' )  %>">
+                                    <input type="text" class="form-control" name="createDate" id="createDate" value="<%= typeof data !== 'undefined' ? moment(data.createDate).format( 'DD.MM.YYYY HH:mm' ) : moment(new Date()).format( 'DD.MM.YYYY HH:mm' )  %>">
                                     <span class="input-group-addon">
                                         <span class="glyphicon glyphicon-calendar"></span>
                                     </span>
                                 </div>
+                                <% if (errors.createDate) { %>
+                                    <span class="help-block"><%= errors.createDate.msg  %></span>
+                                <% } %>
                             </div>
                         </div>
                     </div>
@@ -55,7 +59,14 @@
                         <div class="col-md-8 <%= errors.address ? 'has-error' : '' %>">
                             <div class="form-group">
                                 <label class="control-label" for="address">Адрес</label>
-                                <input type="text" class="form-control" id="address" name="address" placeholder="" value="<%= typeof data !== 'undefined' ? data.address : '' %>">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="address" name="address" placeholder="" value="<%= typeof data !== 'undefined' ? data.address : '' %>">
+                                    <span class="input-group-btn">
+                                        <button class="btn btn-default" type="button" id="clearAddress">
+                                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                                        </button>
+                                    </span>
+                                </div>
                                 <% if (errors.address) { %>
                                     <span class="help-block"><%= errors.address.msg  %></span>
                                 <% } %>
@@ -125,9 +136,28 @@
                             </div>
                         </div>
                     </div>
+                    <% if (data.isDone) { %>
+                    <div class="form-group">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label for="create_date" class="control-label">Выполнено</label>
+                                <div class="input-group date" id='datetimepicker_close_date'>
+                                    <input type="text" class="form-control" name="closeDate" id="closeDate" value="<%= typeof data !== 'undefined' ? moment(data.closeDate).format( 'DD.MM.YYYY HH:mm' ) : moment(new Date()).format( 'DD.MM.YYYY HH:mm' )  %>">
+                                    <span class="input-group-addon">
+                                        <span class="glyphicon glyphicon-calendar"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <% } %>
                     <div class="row">
                         <div class="col-md-12">
                             <button type="submit" class="btn btn-success" id="save">Записать</button>
+                            <% if (data.isDone) { %>
+                                &nbsp;
+                                <button type="submit" class="btn btn-info" id="move" name="move">Перенести в Текущие заявки</button>    
+                            <% } %>
                         </div>
                     </div>
                 </div>
@@ -196,7 +226,10 @@
             $('[data-toggle="tooltip"]').tooltip();
 
             $('#datetimepicker_create_date').datetimepicker({
-                // format: 'L',
+                locale: 'ru'
+            });
+
+            $('#datetimepicker_close_date').datetimepicker({
                 locale: 'ru'
             });
 

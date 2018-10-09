@@ -4,7 +4,7 @@ const express = require('express');
 var db = require('../../../lib/db.js');
 const visibleRows = require('../../../lib/config').config.visibleRows;
 var moment = require('moment');
-var utils = require('../../../lib/uitils');
+var utils = require('../../../lib/utils.js');
 
 module.exports = function () {
   var router = express.Router();
