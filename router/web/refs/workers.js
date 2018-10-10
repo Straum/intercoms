@@ -80,7 +80,9 @@ module.exports = function () {
   });
 
   router.get('/add', function (req, res) {
-    res.render('refs/forms/worker.ejs');
+    res.render('refs/forms/worker.ejs', {
+      'title': 'Персонал'
+    });
   });
 
   router.get('/:offset', function (req, res) {

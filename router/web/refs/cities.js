@@ -39,6 +39,7 @@ module.exports = function () {
                 } else {
                   var currentPage = 1;
                   res.render('refs/cities.ejs', {
+                    'title': 'Города',
                     'data': rows,
                     'pageCount': pageCount,
                     'currentPage': currentPage,
@@ -71,7 +72,8 @@ module.exports = function () {
               'msg': 'Database error'
             });
           } else {
-            res.render('refs/forms/cities.ejs', {
+            res.render('refs/forms/city.ejs', {
+              'title': 'Город',
               'data': rows[0]
             });
           }
@@ -80,7 +82,9 @@ module.exports = function () {
   });
 
   router.get('/add', function (req, res) {
-    res.render('refs/forms/cities.ejs');
+    res.render('refs/forms/city.ejs', {
+      'title': 'Город'
+    });
   });
 
   router.get('/:offset', function (req, res) {
@@ -91,7 +95,7 @@ module.exports = function () {
         ' SELECT COUNT(*) AS count' +
         ' FROM cities WHERE city_id > 0', [], function (err, rows) {
           connection.release();
-          pageCount = 
+          pageCount =
             (rows[0].count / visibleRows) < 1 ? 0 : Math.ceil(rows[0].count / visibleRows);
           if ((offset > pageCount * visibleRows)) {
             offset = (pageCount - 1) * visibleRows;
@@ -120,6 +124,7 @@ module.exports = function () {
                 } else {
                   var currentPage = Math.ceil(offset / visibleRows) + 1;
                   res.render('refs/cities.ejs', {
+                    'title': 'Города',
                     'data': rows,
                     'pageCount': pageCount,
                     'currentPage': currentPage,
@@ -139,11 +144,11 @@ module.exports = function () {
           ' UPDATE cities SET name = ?, print_type = ?,' +
           ' normal_payment = ?, privilege_payment = ?, phone = ?' +
           ' WHERE city_id = ?', [
-              req.body.name, 
-              req.body.printType, 
+              req.body.name,
+              req.body.printType,
               req.body.normalPayment,
               req.body.privilegePayment,
-              req.body.phone, 
+              req.body.phone,
               req.body.id
             ], function (err) {
             connection.release();
@@ -161,10 +166,10 @@ module.exports = function () {
         connection.query(
           ' INSERT INTO cities (name, print_type, normal_payment, privilege_payment, phone)' +
           ' VALUE(?, ?, ?, ?, ?)', [
-              req.body.name, 
-              req.body.printType, 
-              req.body.normalPayment, 
-              req.body.privilegePayment, 
+              req.body.name,
+              req.body.printType,
+              req.body.normalPayment,
+              req.body.privilegePayment,
               req.body.phone
             ], function (err) {
             connection.release();

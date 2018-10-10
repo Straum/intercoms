@@ -14,10 +14,11 @@
 </head>
 
 <body>
+
     <% include ../common/full_menu.ejs %>
-    <p>
+
     <div class="container-fluid">
-    <div class="row">
+        <div class="row">
             <div class="col-xs-12">
                 <ol class="breadcrumb">
                     <li><a href="#">Справочники</a></li>
@@ -26,7 +27,7 @@
             </div>
         </div>
         <form class="form-inline" role="form">
-            <a href="/workers/add" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Создать нового работника"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
+            <a href="/workers/add" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Новый работник"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
         </form>
         <p>
         <table class="table table-bordered table-condensed">
@@ -134,9 +135,7 @@
     </div>
 
     <script src="/bower_components/jquery/dist/jquery.min.js"></script>
-    <script src="/bower_components/bootstrap/assets/js/vendor/popper.min.js"></script>
     <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
-    <script src="/bower_components/bootstrap/assets/js/vendor/holder.min.js"></script>
     <script>
         function confirmDelete(id) {
             $('#deletedUID').val(id);

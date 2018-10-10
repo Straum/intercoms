@@ -14,7 +14,7 @@ module.exports = function () {
         ' SELECT COUNT(*) AS count' +
         ' FROM organizations a WHERE a.visible = ?', [1], function (err, rows) {
           connection.release();
-          pageCount = 
+          pageCount =
             (rows[0].count / visibleRows) < 1 ? 0 : Math.ceil(rows[0].count / visibleRows);
 
           db.get().getConnection(function (err, connection) {
@@ -38,6 +38,7 @@ module.exports = function () {
                 } else {
                   var currentPage = 1;
                   res.render('refs/organizations.ejs', {
+                    'title': 'Организации',
                     'data': rows,
                     'pageCount': pageCount,
                     'currentPage': currentPage,
@@ -69,7 +70,8 @@ module.exports = function () {
               'msg': 'Database error'
             });
           } else {
-            res.render('refs/forms/organizations.ejs', {
+            res.render('refs/forms/organization.ejs', {
+              'title': 'Организация',
               'data': rows[0]
             });
           }
@@ -78,7 +80,9 @@ module.exports = function () {
   });
 
   router.get('/add', function (req, res) {
-    res.render('refs/forms/organizations.ejs');
+    res.render('refs/forms/organization.ejs', {
+      'title': 'Организация'
+    });
   });
 
   router.get('/:offset', function (req, res) {
@@ -89,7 +93,7 @@ module.exports = function () {
         ' SELECT COUNT(*) AS count' +
         ' FROM equipments WHERE equipment_id > 0', [], function (err, rows) {
           connection.release();
-          pageCount = 
+          pageCount =
             (rows[0].count / visibleRows) < 1 ? 0 : Math.ceil(rows[0].count / visibleRows);
           if ((offset > pageCount * visibleRows)) {
             offset = (pageCount - 1) * visibleRows;
@@ -117,6 +121,7 @@ module.exports = function () {
                 } else {
                   var currentPage = Math.ceil(offset / visibleRows) + 1;
                   res.render('refs/equipment.ejs', {
+                    'title': 'Организации',
                     'data': rows,
                     'pageCount': pageCount,
                     'currentPage': currentPage,
@@ -135,8 +140,8 @@ module.exports = function () {
         connection.query(
           ' UPDATE organizations SET name = ?, code = ?' +
           ' WHERE organization_id = ?', [
-              req.body.name, 
-              req.body.code, 
+              req.body.name,
+              req.body.code,
               req.body.id
             ], function (err) {
             connection.release();
@@ -173,9 +178,9 @@ module.exports = function () {
           ' DELETE FROM organizations WHERE organization_id = ?', [+req.body.id], function (err) {
             connection.release();
             if (err) {
-              res.status(500).send({ 
-                'code': 500, 
-                'msg': 'Database Error', 
+              res.status(500).send({
+                'code': 500,
+                'msg': 'Database Error',
                 'err': JSON.stringify(err)
               });
             } else {

@@ -80,7 +80,9 @@ module.exports = function () {
   });
 
   router.get('/add', function (req, res) {
-    res.render('refs/forms/equipment.ejs');
+    res.render('refs/forms/equipment.ejs', {
+      'title': 'Оборудование'
+    });
   });
 
   router.get('/:offset', function (req, res) {

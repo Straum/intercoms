@@ -14,31 +14,26 @@
 </head>
 
 <body>
-
+    
     <% include ../../common/full_menu.ejs %>
 
     <div class="container">
         <div class="form-header">
             <h3><%= title %></h3>
         </div>
-        <form method="post" action="/workers/save" novalidate>
+        <form method="post" action="/clients/save" novalidate>
             <div class="well">
                 <div class="card-body">
                     <input type="text" hidden id="id" name="id" value="<%= typeof data != 'undefined' ? data.id : ''  %>">
                     <div class="row">
                         <div class="col-md-12">
                             <div class="form-group">
-                                <label for="name">ФИО</label>
-                                <input type="text" class="form-control" id="name" name="name" placeholder="" autofocus="autofocus" value="<%= typeof data != 'undefined' ? data.name : '' %>">
+                                <label for="name">ФИО клиента</label>
+                                <input type="text" class="form-control" id="name" name="name" placeholder="" autofocus="autofocus" value="<%= typeof data != 'undefined' ? data.name : ''  %>">
                             </div>
                         </div>
                     </div>
-                    <div class="checkbox">
-                        <label>
-                            <input type="checkbox" id="is_work" name="is_work" <%= typeof data != 'undefined' ? (+data.is_work === 1 ? ' checked' : '') : ''  %> > Не работает
-                        </label>
-                    </div>
-                    <button type="submit" class="btn btn-success" id="save" name="save">Записать</button>
+                    <button type="submit" class="btn btn-success" id="save">Записать</button>
                 </div>
             </div>
         </form>

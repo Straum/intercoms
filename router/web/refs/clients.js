@@ -38,6 +38,7 @@ module.exports = function () {
                 } else {
                   var currentPage = 1;
                   res.render('refs/clients.ejs', {
+                    'title': 'Клиенты',
                     'data': rows,
                     'pageCount': pageCount,
                     'currentPage': currentPage,
@@ -69,7 +70,8 @@ module.exports = function () {
               'msg': 'Database error'
             });
           } else {
-            res.render('refs/forms/clients.ejs', {
+            res.render('refs/forms/client.ejs', {
+              'title': 'Клиент',
               'data': rows[0]
             });
           }
@@ -78,7 +80,9 @@ module.exports = function () {
   });
 
   router.get('/add', function (req, res) {
-    res.render('refs/forms/clients.ejs');
+    res.render('refs/forms/client.ejs', {
+      'title': 'Клиент'
+    });
   });
 
   router.get('/:offset', function (req, res) {
@@ -117,6 +121,7 @@ module.exports = function () {
                 } else {
                   var currentPage = Math.ceil(offset / visibleRows) + 1;
                   res.render('refs/clients.ejs', {
+                    'title': 'Клиенты',
                     'data': rows,
                     'pageCount': pageCount,
                     'currentPage': currentPage,
