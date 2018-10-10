@@ -38,6 +38,7 @@ module.exports = function () {
                 } else {
                   var currentPage = 1;
                   res.render('refs/equipment.ejs', {
+                    'title': 'Оборудование',
                     'data': rows,
                     'pageCount': pageCount,
                     'currentPage': currentPage,
@@ -70,6 +71,7 @@ module.exports = function () {
             });
           } else {
             res.render('refs/forms/equipment.ejs', {
+              'title': 'Оборудование',
               'data': rows[0]
             });
           }
@@ -117,6 +119,7 @@ module.exports = function () {
                 } else {
                   var currentPage = Math.ceil(offset / visibleRows) + 1;
                   res.render('refs/equipment.ejs', {
+                    'title': 'Оборудование',
                     'data': rows,
                     'pageCount': pageCount,
                     'currentPage': currentPage,
