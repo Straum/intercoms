@@ -38,6 +38,7 @@ module.exports = function () {
                 } else {
                   var currentPage = 1;
                   res.render('refs/templates.ejs', {
+                    'title': 'Шаблоны',
                     'data': rows,
                     'pageCount': pageCount,
                     'currentPage': currentPage,
@@ -70,6 +71,7 @@ module.exports = function () {
             });
           } else {
             res.render('refs/forms/template.ejs', {
+              'title': 'Шаблон',
               'data': rows[0]
             });
           }
@@ -78,7 +80,9 @@ module.exports = function () {
   });
 
   router.get('/add', function (req, res) {
-    res.render('refs/forms/template.ejs');
+    res.render('refs/forms/template.ejs', {
+      'title': 'Шаблон',
+    });
   });
 
   router.get('/:offset', function (req, res) {
@@ -117,6 +121,7 @@ module.exports = function () {
                 } else {
                   var currentPage = Math.ceil(offset / visibleRows) + 1;
                   res.render('refs/templates.ejs', {
+                    'title': 'Шаблоны',
                     'data': rows,
                     'pageCount': pageCount,
                     'currentPage': currentPage,
