@@ -7,109 +7,110 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <!-- <link rel="icon" href="../../../../favicon.ico"> -->
-    <title>Home page - Платежи</title>
+    <title>Home page - <%= title %></title>
 
     <% include ../common/bootstrap_css.ejs %>
-    <% include ../common/font_awesome_css.ejs %>
-    <link href="/navbar-top.css" rel="stylesheet">
+    <link href="/theme.css" rel="stylesheet">
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-md navbar-light bg-light mb-4">
-        <a class="navbar-brand" href="/home">Домофон-Сервис</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-            aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <% include ../common/full_menu.ejs %>
-    </nav>
 
+    <% include ../common/full_menu.ejs %>
+    
     <div class="container-fluid">
-        <form class="form-inline">
-            <a class="btn btn-primary btn-sm" href="/payments/add" id="add">
-                <i class="fas fa-plus fa-fw" aria-hidden="true"></i>
-            </a>
+        <div class="row">   
+            <div class="col-xs-12">
+                <ol class="breadcrumb">
+                    <li><a href="#">Документы</a></li>
+                    <li><%= title %></li>
+                </ol>
+            </div>
+        </div>
+        <form class="form-inline" role="form">
+            <a href="/payments/add" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Новый платеж"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
         </form>
-        <p></p>
-        <table class="table table-bordered table-sm">
-            <thead class="thead-light">
-                <tr>
-                    <th scope="col" rowspan="2" style="width: 6%;" class="text-center align-middle">Дата</th>
-                    <th scope="col" rowspan="2" style="width: 6%;" class="text-center align-middle">Номер<br> договора</th>
-                    <th scope="col" rowspan="2" style="width: 10%;" class="text-center align-middle">Пролонгированный<br>договор</th>
-                    <th scope="col" style="width: 6%;" class="text-center align-middle">Месяц</th>
-                    <th scope="col" rowspan="2" style="width: 6%;" class="text-center align-middle">Льготник</th>
-                    <th scope="col" style="width: 12%;" class="text-center align-middle">Улица</th>
-                    <th scope="col" style="width: 12%;" class="text-center align-middle">Город</th>
-                    <th scope="col" rowspan="2" style="width: 6%;" class="text-center align-middle">Квартира</th>
-                    <th scope="col" rowspan="2" style="width: 6%;" class="text-center align-middle">Оплачено</th>
-                    <th scope="col" rowspan="2" style="width: 9%;" class="text-center align-middle">Сумма</th>
-                    <th scope="col" rowspan="2" style="width: 9%;" class="text-center align-middle">Способ<br> оплаты</th>
-                    <th scope="col" rowspan="2" style="width: 12%;" class="text-center align-middle">Действия</th>
+        <p>
+        <table class="table table-bordered table-condensed">
+            <thead>
+                <tr class="active">
+                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Дата</th>
+                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Номер<br> договора</th>
+                    <th rowspan="2" style="width: 10%; vertical-align: middle" class="text-center">Пролонгированный<br>договор</th>
+                    <th style="width: 6%;" class="text-center">Месяц</th>
+                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Льготник</th>
+                    <th style="width: 12%;" class="text-center">Улица</th>
+                    <th style="width: 12%;" class="text-center">Город</th>
+                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Квартира</th>
+                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Оплачено</th>
+                    <th rowspan="2" style="width: 9%; vertical-align: middle" class="text-center">Сумма</th>
+                    <th rowspan="2" style="width: 9%; vertical-align: middle" class="text-center">Способ<br> оплаты</th>
+                    <th rowspan="2" style="width: 12%; vertical-align: middle" class="text-center">Действия</th>
                 </tr>
-                <tr>
-                    <th scope="col" class="text-center align-middle">Год</th>
-                    <th scope="col" class="text-center align-middle">Дом</th>
-                    <th scope="col" class="text-center align-middle">Подъезд</th>
+                <tr class="active">
+                    <th class="text-center">Год</th>
+                    <th class="text-center">Дом</th>
+                    <th class="text-center">Подъезд</th>
                 </tr>
             </thead>
             <tbody>
-                <% for (var cnt = 0, max = data.length; cnt < max; cnt++) {%>
-                    <tr>
-                        <td rowspan="2" class="text-center align-middle">
-                            <%= moment(data[cnt].create_date).format( 'DD.MM.YYYY') %>
-                        </td>
-                        <td rowspan="2" class="text-center align-middle">
-                            <%= data[cnt].contract_number %>
-                        </td>
-                        <td rowspan="2" class="text-center align-middle">
-                            <%= data[cnt].m_contract_number %>
-                        </td>
-                        <td class="text-center align-middle">
-                            <%= data[cnt].pay_month %>
-                        </td>
-                        <td rowspan="2" class="text-center align-middle">
-                            <div class="checkbox checkbox-success"><input type="checkbox" class="styled" <%= +data[cnt].privilege == 1 ? ' checked' : '' %>><label></label></div>
-                        </td>
-                        <td class="text-left">
-                            <%= data[cnt].street_name %>
-                        </td>
-                        <td class="text-left">
-                            <%= data[cnt].city_name %>
-                        </td>
-                        <td rowspan="2" class="text-center align-middle">
-                            <%= data[cnt].number + '' + utils.decodeApartmentLetter( data[cnt].letter ) %>
-                        </td>
-                        <td rowspan="2" class="text-center align-middle">
-                            <%= moment(data[cnt].pay_date).format( 'DD.MM.YYYY') %>
-                        </td>
-                        <td rowspan="2" class="text-center align-middle">
-                            <%= data[cnt].amount.toFixed(2) %>
-                        </td>
-                        <td rowspan="2" class="text-center align-middle">
-                            <%= data[cnt].org_name %>
-                        </td>
-                        <td rowspan="2" class="text-center align-middle">
-                            <a class="btn btn-primary btn-sm" href="/payments/edit/<%= data[cnt].id %>" id="edit">
-                                <i class="far fa-edit fa-fw" aria-hidden="true"></i>
-                            </a>
-                            <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete(+<%= data[cnt].id %>);">
-                                <i class="far fa-trash-alt fa-fw" aria-hidden="true"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">
-                            <%= data[cnt].pay_year %>
-                        </td>
-                        <td class="text-right">
-                            <%= data[cnt].house_number %>
-                        </td>
-                        <td class="text-right">
-                            <%= data[cnt].porch %>
-                        </td>
-                    </tr>
-                <%}%>
+                <% for (var ind = 0, max = data.length; ind < max; ind++) {%>
+                <tr>
+                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                        <%= moment(data[ind].create_date).format( 'DD.MM.YYYY') %>
+                    </td>
+                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                        <%= data[ind].contract_number %>
+                    </td>
+                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                        <%= data[ind].m_contract_number %>
+                    </td>
+                    <td class="text-center align-middle">
+                        <%= data[ind].pay_month %>
+                    </td>
+                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                        <input type="checkbox" <%= +data[ind].privilege == 1 ? ' checked' : '' %>><label></label>
+                    </td>
+                    <td class="text-left">
+                        <%= data[ind].street_name %>
+                    </td>
+                    <td class="text-left">
+                        <%= data[ind].city_name %>
+                    </td>
+                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                        <%= data[ind].number + '' + utils.decodeApartmentLetter( data[ind].letter ) %>
+                    </td>
+                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                        <%= moment(data[ind].pay_date).format( 'DD.MM.YYYY') %>
+                    </td>
+                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                        <%= data[ind].amount.toFixed(2) %>
+                    </td>
+                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                        <%= data[ind].org_name %>
+                    </td>
+                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                        <a href="/payments/edit/<%= data[ind].id %>" class="btn btn-info btn-xs" id="edit">
+                            <span class="glyphicon glyphicon-pencil" aria-hidden="true">
+                            </span>
+                        </a>
+                        <a href="#" onclick="confirmDelete(+<%= data[ind].id %>);" class="btn btn-danger btn-xs" id="orders_info">
+                            <span class="glyphicon glyphicon-minus" aria-hidden="true">
+                            </span>
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="text-center">
+                        <%= data[ind].pay_year %>
+                    </td>
+                    <td class="text-right">
+                        <%= data[ind].house_number %>
+                    </td>
+                    <td class="text-right">
+                        <%= data[ind].porch %>
+                    </td>
+                </tr>
+                <% } %>
             </tbody>
         </table>
         <% if (pageCount > 0) { %>
@@ -190,9 +191,7 @@
     </div>
 
     <script src="/bower_components/jquery/dist/jquery.min.js"></script>
-    <script src="/bower_components/bootstrap/assets/js/vendor/popper.min.js"></script>
     <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
-    <script src="/bower_components/bootstrap/assets/js/vendor/holder.min.js"></script>
     <script>
         function confirmDelete(id) {
             $('#deletedUID').val(id);
@@ -200,6 +199,9 @@
         }
 
         $(document).ready(function () {
+
+            $('[data-toggle="tooltip"]').tooltip();
+
             $('#deleteRecord').click(function() {
                 $('#modalDeleteRecord').modal('hide');
                 $.ajax({

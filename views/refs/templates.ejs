@@ -27,7 +27,7 @@
             </div>
         </div>
         <form class="form-inline" role="form">
-            <a href="/templates/add" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Новая организация"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
+            <a href="/templates/add" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Новый шаблон"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
         </form>
         <p>
         <table class="table table-bordered table-condensed">
@@ -143,6 +143,9 @@
         }
 
         $(document).ready(function () {
+
+            $('[data-toggle="tooltip"]').tooltip();
+
             $('#deleteRecord').click(function() {
                 $('#modalDeleteRecord').modal('hide');
                 $.ajax({

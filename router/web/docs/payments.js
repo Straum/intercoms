@@ -68,6 +68,7 @@ module.exports = function () {
                 } else {
                   var currentPage = 1;
                   res.render('docs/payments.ejs', {
+                    'title': 'Платежи',
                     'data': rows,
                     'pageCount': pageCount,
                     'currentPage': currentPage,
@@ -123,6 +124,7 @@ module.exports = function () {
             });
           } else {
             res.render('docs/forms/payments.ejs', {
+              'title': 'Платеж',
               'data': rows[0],
               'moment': moment,
               'utils': utils
@@ -133,7 +135,9 @@ module.exports = function () {
   });
 
   router.get('/add', function (req, res) {
-    res.render('refs/forms/equipment.ejs');
+    res.render('refs/forms/equipment.ejs', {
+      'title': 'Платеж'
+    });
   });
 
   router.get('/table', function (req, res) {
@@ -240,6 +244,7 @@ module.exports = function () {
                 } else {
                   var currentPage = Math.ceil(offset / visibleRows) + 1;
                   res.render('docs/payments.ejs', {
+                    'title': 'Платежи',
                     'data': rows,
                     'pageCount': pageCount,
                     'currentPage': currentPage,

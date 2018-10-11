@@ -7,119 +7,120 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <!-- <link rel="icon" href="../../../../favicon.ico"> -->
-    <title>Home page - Договора</title>
+    <title>Home page - <%= title %></title>
 
     <% include ../common/bootstrap_css.ejs %>
-    <% include ../common/font_awesome_css.ejs %>
-    <link href="/navbar-top.css" rel="stylesheet">
+    <link href="/theme.css" rel="stylesheet">
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-md navbar-light bg-light mb-4">
-        <a class="navbar-brand" href="/home">Домофон-Сервис</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-            aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <% include ../common/full_menu.ejs %>
-    </nav>
 
+    <% include ../common/full_menu.ejs %>
+    
     <div class="container-fluid">
-        <form class="form-inline">
-            <a class="btn btn-primary btn-sm" href="/orders/add" id="add">
-                <i class="fas fa-plus fa-fw" aria-hidden="true"></i>
-            </a>
+        <div class="row">   
+            <div class="col-xs-12">
+                <ol class="breadcrumb">
+                    <li><a href="#">Документы</a></li>
+                    <li><%= title %></li>
+                </ol>
+            </div>
+        </div>
+        <form class="form-inline" role="form">
+            <a href="/orders/add" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Новый договор"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
         </form>
-        <p></p>
-        <table class="table table-bordered table-sm">
-            <thead class="thead-light">
-                <tr>
-                    <th scope="col" rowspan="2" style="width: 6%;" class="text-center align-middle">Номер</th>
-                    <th scope="col" rowspan="2" style="width: 6%;" class="text-center align-middle">Дата</th>
-                    <th scope="col" rowspan="2" style="width: 10%;" class="text-center align-middle">TO</th>
-                    <th scope="col" rowspan="2" style="width: 6%;" class="text-center align-middle">!!!</th>
-                    <th scope="col" rowspan="2" style="width: 6%;" class="text-center align-middle">Кредит до</th>
-                    <th scope="col" rowspan="2" style="width: 12%;" class="text-center align-middle">Конец<br>гарантии</th>
-                    <th scope="col" style="width: 12%;" class="text-center align-middle">Улица</th>
-                    <th scope="col" style="width: 12%;" class="text-center align-middle">Город</th>
-                    <th scope="col" rowspan="2" style="width: 6%;" class="text-center align-middle">Нумерация</th>
-                    <th scope="col" rowspan="2" style="width: 6%;" class="text-center align-middle">Оборудование</th>
-                    <th scope="col" rowspan="2" style="width: 9%;" class="text-center align-middle">Договор ТО</th>
-                    <th scope="col" style="width: 9%;" class="text-center align-middle">Конец договора ТО</th>
-                    <th scope="col" rowspan="2" style="width: 9%;" class="text-center align-middle">Дата<br>печати</th>
-                    <th scope="col" rowspan="2" style="width: 12%;" class="text-center align-middle">Действия</th>
+        <p>
+        <table class="table table-bordered table-condensed">
+            <thead>
+                <tr class="active">
+                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Номер</th>
+                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Дата</th>
+                    <th rowspan="2" style="width: 10%; vertical-align: middle" class="text-center">TO</th>
+                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">!!!</th>
+                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Кредит до</th>
+                    <th rowspan="2" style="width: 12%; vertical-align: middle" class="text-center">Конец<br>гарантии</th>
+                    <th style="width: 12%;" class="text-center">Улица</th>
+                    <th style="width: 12%;" class="text-center">Город</th>
+                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Нумерация</th>
+                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Оборудование</th>
+                    <th rowspan="2" style="width: 9%; vertical-align: middle" class="text-center">Договор ТО</th>
+                    <th style="width: 9%;" class="text-center">Конец договора ТО</th>
+                    <th rowspan="2" style="width: 9%; vertical-align: middle" class="text-center">Дата<br>печати</th>
+                    <th rowspan="2" style="width: 12%; vertical-align: middle" class="text-center">Действия</th>
                 </tr>
-                <tr>
-                    <th scope="col" class="text-center align-middle">Дом</th>
-                    <th scope="col" class="text-center align-middle">Подьезд</th>
-                    <th scope="col" class="text-center align-middle">ТО прологирован до</th>
+                <tr class="active">
+                    <th class="text-center">Дом</th>
+                    <th class="text-center">Подьезд</th>
+                    <th class="text-center">ТО прологирован до</th>
                 </tr>
             </thead>
             <tbody>
-                <% for (var cnt = 0, max = data.length; cnt < max; cnt++) {%>
-                    <tr>
-                        <td rowspan="2" class="text-center align-middle <%= data[cnt].repaid == 1 ? ' table-success' : ' table-danger' %>">
-                            <%= data[cnt].contract_number %>
-                        </td>
-                        <td rowspan="2" class="text-center align-middle">
-                            <%= moment(data[cnt].create_date).format( 'DD.MM.YYYY') %>
-                        </td>
-                        <td rowspan="2" class="text-center align-middle">
-                            <img src="<%= data[cnt].maintenance_contract == 1 ? '/images/green1.png' : (data[cnt].maintenance_contract == 2 ? '/images/red1.png' : '/images/blue_minus.png') %>"    
-                        </td>
-                        <td rowspan="2" class="text-center align-middle">
-                        <% if (data[cnt].attention == 1) {%>
-                            <img src="/images/attention.png">
-                        <%}%>
-                        </td>
-                        <td rowspan="2" class="text-center align-middle">
-                            <%= moment(data[cnt].credit_to).format( 'DD.MM.YYYY') %>
-                        </td>
-                        <td rowspan="2" class="text-center align-middle">
-                            <%= moment(data[cnt].end_contract).format( 'DD.MM.YYYY') %>
-                        </td>
-                        <td class="text-left">
-                            <%= data[cnt].street_name %>
-                        </td>
-                        <td class="text-left align-middle">
-                            <%= data[cnt].city_name %>
-                        </td>
-                        <td rowspan="2" class="text-center align-middle">
-                            <%= data[cnt].numeration %>
-                        </td>
-                        <td rowspan="2" class="text-center align-middle">
-                            <%= data[cnt].equipment_name %>
-                        </td>
-                        <td rowspan="2" class="text-center align-middle <%= data[cnt].m_repaid == 1 ? ' table-success' : ' table-danger' %>">
-                            <%= data[cnt].m_contract_number %>
-                        </td>
-                        <td class="text-center align-middle">
-                            <%= data[cnt].end_service !== null ? moment(data[cnt].end_service).format( 'DD.MM.YYYY' ) : '' %>
-                        </td>
-                        <td rowspan="2" class="text-center align-middle">
-                            <%= data[cnt].receipt_printing !== null ? moment(data[cnt].receipt_printing).format( 'DD.MM.YYYY' ) : '' %>
-                        </td>
-                        <td rowspan="2" class="text-center align-middle">
-                            <a class="btn btn-primary btn-sm" href="/orders/edit/<%= data[cnt].id %>" id="edit">
-                                <i class="far fa-edit fa-fw" aria-hidden="true"></i>
-                            </a>
-                            <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete(+<%= data[cnt].id %>);">
-                                <i class="far fa-trash-alt fa-fw" aria-hidden="true"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="text-right align-middle">
-                            <%= data[cnt].house_number %>
-                        </td>
-                        <td class="text-right align-middle">
-                            <%= data[cnt].porch %>
-                        </td>
-                        <td class="text-center align-middle">
-                            <%= data[cnt].m_prolongation !== null ? moment(data[cnt].m_prolongation).format( 'DD.MM.YYYY' ) : '' %>
-                        </td>
-                    </tr>
-                <%}%>
+                <% for (var ind = 0, max = data.length; ind < max; ind++) {%>
+                <tr>
+                    <td rowspan="2" class="text-center <%= data[ind].repaid == 1 ? ' table-success' : ' table-danger' %>" style="vertical-align: middle">
+                        <%= data[ind].contract_number %>
+                    </td>
+                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                        <%= moment(data[ind].create_date).format( 'DD.MM.YYYY') %>
+                    </td>
+                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                        <img src="<%= data[ind].maintenance_contract == 1 ? '/images/green1.png' : (data[ind].maintenance_contract == 2 ? '/images/red1.png' : '/images/blue_minus.png') %>"    
+                    </td>
+                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                    <% if (data[ind].attention == 1) {%>
+                        <img src="/images/attention.png">
+                    <% } %>
+                    </td>
+                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                        <%= moment(data[ind].credit_to).format( 'DD.MM.YYYY') %>
+                    </td>
+                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                        <%= moment(data[ind].end_contract).format( 'DD.MM.YYYY') %>
+                    </td>
+                    <td class="text-left">
+                        <%= data[ind].street_name %>
+                    </td>
+                    <td class="text-left">
+                        <%= data[ind].city_name %>
+                    </td>
+                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                        <%= data[ind].numeration %>
+                    </td>
+                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                        <%= data[ind].equipment_name %>
+                    </td>
+                    <td rowspan="2" class="text-center <%= data[ind].m_repaid == 1 ? ' table-success' : ' table-danger' %>" style="vertical-align: middle">
+                        <%= data[ind].m_contract_number %>
+                    </td>
+                    <td class="text-center" style="vertical-align: middle">
+                        <%= data[ind].end_service !== null ? moment(data[ind].end_service).format( 'DD.MM.YYYY' ) : '' %>
+                    </td>
+                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                        <%= data[ind].receipt_printing !== null ? moment(data[ind].receipt_printing).format( 'DD.MM.YYYY' ) : '' %>
+                    </td>
+                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                        <a href="/orders/edit/<%= data[ind].id %>" class="btn btn-info btn-xs" id="edit">
+                            <span class="glyphicon glyphicon-pencil" aria-hidden="true">
+                            </span>
+                        </a>
+                        <a href="#" onclick="confirmDelete(+<%= data[ind].id %>);" class="btn btn-danger btn-xs" id="orders_info">
+                            <span class="glyphicon glyphicon-minus" aria-hidden="true">
+                            </span>
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="text-right">
+                        <%= data[ind].house_number %>
+                    </td>
+                    <td class="text-right">
+                        <%= data[ind].porch %>
+                    </td>
+                    <td class="text-center">
+                        <%= data[ind].m_prolongation !== null ? moment(data[ind].m_prolongation).format( 'DD.MM.YYYY' ) : '' %>
+                    </td>
+                </tr>
+                <% } %>
             </tbody>
         </table>
         <% if (pageCount > 0) { %>
@@ -200,9 +201,7 @@
     </div>
 
     <script src="/bower_components/jquery/dist/jquery.min.js"></script>
-    <script src="/bower_components/bootstrap/assets/js/vendor/popper.min.js"></script>
     <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
-    <script src="/bower_components/bootstrap/assets/js/vendor/holder.min.js"></script>
     <script>
         function confirmDelete(id) {
             $('#deletedUID').val(id);
@@ -210,6 +209,9 @@
         }
 
         $(document).ready(function () {
+
+            $('[data-toggle="tooltip"]').tooltip();
+
             $('#deleteRecord').click(function() {
                 $('#modalDeleteRecord').modal('hide');
                 $.ajax({

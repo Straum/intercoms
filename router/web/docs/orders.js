@@ -66,6 +66,7 @@ module.exports = function () {
                 } else {
                   var currentPage = 1;
                   res.render('docs/orders.ejs', {
+                    'title': 'Договора',
                     'data': rows,
                     'pageCount': pageCount,
                     'currentPage': currentPage,
@@ -161,6 +162,7 @@ module.exports = function () {
                   });
                 } else {
                   res.render('docs/forms/orders.ejs', {
+                    'title': 'Договор',
                     'data': rows[0],
                     'moment': moment,
                     'utils': utils,
@@ -187,7 +189,9 @@ module.exports = function () {
 
 
   router.get('/add', function (req, res) {
-    res.render('refs/forms/orders.ejs');
+    res.render('refs/forms/orders.ejs', {
+      'title': 'Договор',
+    });
   });
 
   router.get('/table', function (req, res) {
@@ -256,6 +260,7 @@ module.exports = function () {
                 } else {
                   var currentPage = Math.ceil(offset / visibleRows) + 1;
                   res.render('docs/orders.ejs', {
+                    'title': 'Договора',
                     'data': rows,
                     'pageCount': pageCount,
                     'currentPage': currentPage,
