@@ -297,7 +297,7 @@ module.exports = function () {
                     else {
                       var currentPage = Math.ceil(offset / (visibleRows * 5)) + 1;
                       tableRows = rows;
-                      res.render('docs/forms/registers.ejs', {
+                      res.render('docs/forms/register.ejs', {
                         'title': 'Реестр',
                         'data': data,
                         'moment': moment,
@@ -321,7 +321,7 @@ module.exports = function () {
   // });
 
   router.get('/add', function (req, res) {
-    res.render('refs/forms/equipment.ejs', {
+    res.render('docs/forms/equipment.ejs', {
       'title': 'Реестр'
     });
   });

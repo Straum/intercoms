@@ -7,174 +7,164 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <!-- <link rel="icon" href="../../../../favicon.ico"> -->
-    <title>Home page - Оплата</title>
+    <title>Home page - <%= title %></title>
 
     <% include ../../common/bootstrap_css.ejs %>
-    <% include ../../common/font_awesome_css.ejs %>
-    <link href="/navbar-top.css" rel="stylesheet">
+    <link href="/theme.css" rel="stylesheet">
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-md navbar-light bg-light mb-4">
-        <a class="navbar-brand" href="/home">Домофон-Сервис</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-            aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <% include ../../common/full_menu.ejs %>
-    </nav>
+
+    <% include ../../common/full_menu.ejs %>
 
     <div class="container">
+        <div class="form-header">
+            <h3><%= title %></h3>
+        </div>
         <div class="card">
-            <div class="card-header">
-                Платеж
-            </div>
-            <nav>
-                <div class="nav nav-tabs" id="nav-tab" role="tablist">
-                    <a class="nav-item nav-link active" id="nav-core-tab" data-toggle="tab" href="#core" role="tab" aria-controls="nav-core" aria-selected="true">Основное</a>
-                    <a class="nav-item nav-link" id="nav-history-tab" data-toggle="tab" href="#paymentsHistory" role="tab" aria-controls="nav-history" aria-selected="false">История оплат</a>
+            <div class="row">
+                <div class="col-xs-3">
+                    <ul class="nav nav-pills">
+                        <li class="active"><a data-toggle="tab" href="#core">Текущие</a></li>
+                        <li><a data-toggle="tab" href="#paymentsHistory">Выполненные</a></li>
+                    </ul>
                 </div>
-            </nav>
-            <div class="card-body">
-                <form action="/payments/save" method="post">
-                    <div class="tab-content">
-                        <div role="tabpanel" class="tab-pane in active" id="core">
-                            <input type="text" hidden id="id" name="id" value="<%= typeof data != 'undefined' ? data.id : ''  %>">
-                            <input type="text" hidden id="apartment_id" name="apartment_id" value="<%= typeof data != 'undefined' ? data.apartment_id : ''  %>">
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label for="create_date">Дата создания</label>
-                                        <input type="text" class="form-control" id="create_date" name="create_date" placeholder="" autofocus="autofocus" readonly value="<%= typeof data != 'undefined' ? moment(data.create_date).format( 'DD.MM.YYYY') : ''  %>">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label for="paymentType">Способ оплаты</label>
-                                        <select class="form-control" id="paymentType" name="paymentType">
-                                        <% for (var cnt = 0, max = utils.paymentMethod.length; cnt < max; cnt++) { %>
-                                        <option value="<%= (cnt + 1) %>" <%= typeof data != 'undefined' ? (+data.mode === (cnt + 1) ? ' selected' : '') : '' %> ><%= utils.paymentMethod[cnt] %></option>
-                                        <% } %>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="barcode">Штрихкод</label>
-                                        <input type="text" class="form-control" id="barcode" name="barcode" placeholder="" value="">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label for="contract">Договор</label>
-                                        <input type="text" class="form-control" id="contract" name="contract" placeholder="" value="<%= typeof data != 'undefined' ? data.contract_number : '' %>" readonly>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label for="extendedContract">Пролонгированный договор</label>
-                                        <input type="text" class="form-control" id="extendedContract" name="extendedContract" placeholder="" value="<%= typeof data != 'undefined' ? data.m_contract_number : '' %>">
-                                    </div>
-                                </div>
-                                <div class="col-md-1">
-                                    <div class="form-group">
-                                        <label for="apartment">Квартира</label>
-                                        <input type="text" class="form-control" id="apartment" name="apartment" placeholder="" value="<%= typeof data != 'undefined' ? data.number : '' %>">
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label for="letter">&nbsp;</label>
-                                        <select class="form-control" id="letter" name="letter">
-                                            <option>нет</option>
-                                            <option>a</option>
-                                            <option>б</option>
-                                            <option>в</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label for="period">Период действия</label>
-                                        <input type="text" class="form-control" id="period" name="period" placeholder="" value="<%= typeof data != 'undefined' ? ('с ' + moment(data.start_service).format( 'DD.MM.YYYY') + ' по ' + moment(data.end_service).format( 'DD.MM.YYYY')) : '' %>" readonly>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <div class="form-group">
-                                        <label for="fullAddress">Полный адрес</label>
-                                        <input type="text" class="form-control" id="fullAddress" name="fullAddress" placeholder="" value="<%= typeof data != 'undefined' ? (data.city_name + ', ' + data.street_name + ', ' + data.house_number) : '' %>" readonly>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label for="month">Месяц</label>
-                                        <select class="form-control" id="month" name="month">
-                                            <% utils.russianNamesOfMonth.forEach(function(element, index) { %>
-                                            <option value="<%= index + 1 %>" <%= typeof data != 'undefined' ? (data.pay_month == index + 1 ? ' selected' : '') : '' %> ><%= element %></option>
-                                            <% }); %>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label for="year">Год</label>
-                                        <input type="text" class="form-control" id="year" name="year" placeholder="" value="<%= typeof data != 'undefined' ? data.pay_year : '' %>">
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label for="payment">Сумма к оплате</label>
-                                        <input type="text" class="form-control" id="payment" name="payment" placeholder="" value="<%= typeof data != 'undefined' ? data.amount.toFixed(2) : '' %>">
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label for="dateOfPayment">Дата оплаты</label>
-                                        <input type="text" class="form-control" id="dateOfPayment" name="dateOfPayment" placeholder="" value="<%= typeof data != 'undefined' ? moment(data.pay_date).format( 'DD.MM.YYYY') : '' %>">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div role="tabpanel" class="tab-pane" id="paymentsHistory">
-                            <table class="table table-bordered table-sm" id="paymentsTable" name="paymentsTable">
-                                <thead class="thead-light">
-                                    <tr>
-                                        <th scope="col" style="width: 12%;" class="text-center align-middle">Дата<br>создания</th>
-                                        <th scope="col" style="width: 12%;" class="text-center align-middle">Дата<br>оплаты</th>
-                                        <th scope="col" style="width: 12%;" class="text-center align-middle">Договор<br>(пролонг.)</th>
-                                        <th scope="col" style="width: 12%;" class="text-center align-middle">Месяц<br>оплаты</th>
-                                        <th scope="col" style="width: 12%;" class="text-center align-middle">Год<br>оплаты</th>
-                                        <th scope="col" style="width: 20%;" class="text-center align-middle">Сумма</th>
-                                        <th scope="col" style="width: 20%;" class="text-center align-middle">Способ<br>оплаты</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col">
-                            <button type="submit" class="btn btn-success" id="save">Записать</button>
-                        </div>
-                    </div>
-                </form>
             </div>
+            <form method="post" action="/payments/save" novalidate>
+                <div class="well">
+                    <div class="card-body">
+                        <div class="tab-content">
+                            <div role="tabpanel" class="tab-pane in active" id="core">
+                                <input type="text" hidden id="id" name="id" value="<%= typeof data != 'undefined' ? data.id : ''  %>">
+                                <input type="text" hidden id="apartment_id" name="apartment_id" value="<%= typeof data != 'undefined' ? data.apartment_id : ''  %>">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="create_date">Дата создания</label>
+                                            <input type="text" class="form-control" id="create_date" name="create_date" placeholder="" autofocus="autofocus" readonly value="<%= typeof data != 'undefined' ? moment(data.create_date).format( 'DD.MM.YYYY') : ''  %>">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="paymentType">Способ оплаты</label>
+                                            <select class="form-control" id="paymentType" name="paymentType">
+                                            <% for (var cnt = 0, max = utils.paymentMethod.length; cnt < max; cnt++) { %>
+                                            <option value="<%= (cnt + 1) %>" <%= typeof data != 'undefined' ? (+data.mode === (cnt + 1) ? ' selected' : '') : '' %> ><%= utils.paymentMethod[cnt] %></option>
+                                            <% } %>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="barcode">Штрихкод</label>
+                                            <input type="text" class="form-control" id="barcode" name="barcode" placeholder="" value="">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="contract">Договор</label>
+                                            <input type="text" class="form-control" id="contract" name="contract" placeholder="" value="<%= typeof data != 'undefined' ? data.contract_number : '' %>" readonly>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="extendedContract">Пролонгированный договор</label>
+                                            <input type="text" class="form-control" id="extendedContract" name="extendedContract" placeholder="" value="<%= typeof data != 'undefined' ? data.m_contract_number : '' %>">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <div class="form-group">
+                                            <label for="apartment">Квартира</label>
+                                            <input type="text" class="form-control" id="apartment" name="apartment" placeholder="" value="<%= typeof data != 'undefined' ? data.number : '' %>">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group">
+                                            <label for="letter">&nbsp;</label>
+                                            <select class="form-control" id="letter" name="letter">
+                                                <option>нет</option>
+                                                <option>a</option>
+                                                <option>б</option>
+                                                <option>в</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="period">Период действия</label>
+                                            <input type="text" class="form-control" id="period" name="period" placeholder="" value="<%= typeof data != 'undefined' ? ('с ' + moment(data.start_service).format( 'DD.MM.YYYY') + ' по ' + moment(data.end_service).format( 'DD.MM.YYYY')) : '' %>" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label for="fullAddress">Полный адрес</label>
+                                            <input type="text" class="form-control" id="fullAddress" name="fullAddress" placeholder="" value="<%= typeof data != 'undefined' ? (data.city_name + ', ' + data.street_name + ', ' + data.house_number) : '' %>" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="month">Месяц</label>
+                                            <select class="form-control" id="month" name="month">
+                                                <% utils.russianNamesOfMonth.forEach(function(element, index) { %>
+                                                <option value="<%= index + 1 %>" <%= typeof data != 'undefined' ? (data.pay_month == index + 1 ? ' selected' : '') : '' %> ><%= element %></option>
+                                                <% }); %>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="year">Год</label>
+                                            <input type="text" class="form-control" id="year" name="year" placeholder="" value="<%= typeof data != 'undefined' ? data.pay_year : '' %>">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="payment">Сумма к оплате</label>
+                                            <input type="text" class="form-control" id="payment" name="payment" placeholder="" value="<%= typeof data != 'undefined' ? data.amount.toFixed(2) : '' %>">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="dateOfPayment">Дата оплаты</label>
+                                            <input type="text" class="form-control" id="dateOfPayment" name="dateOfPayment" placeholder="" value="<%= typeof data != 'undefined' ? moment(data.pay_date).format( 'DD.MM.YYYY') : '' %>">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div role="tabpanel" class="tab-pane" id="paymentsHistory">
+                                <table class="table table-bordered table-condensed" id="paymentsTable" name="paymentsTable" style="background-color: white;">
+                                    <thead>
+                                        <tr class="active">
+                                            <th style="width: 12%;" class="text-center">Дата<br>создания</th>
+                                            <th style="width: 12%;" class="text-center">Дата<br>оплаты</th>
+                                            <th style="width: 12%;" class="text-center">Договор<br>(пролонг.)</th>
+                                            <th style="width: 12%;" class="text-center">Месяц<br>оплаты</th>
+                                            <th style="width: 12%;" class="text-center">Год<br>оплаты</th>
+                                            <th style="width: 20%; vertical-align: middle" class="text-center">Сумма</th>
+                                            <th style="width: 20%;" class="text-center">Способ<br>оплаты</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                    </div>
+                    <button type="submit" class="btn btn-success" id="save">Записать</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <script src="/bower_components/jquery/dist/jquery.min.js"></script>
     <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
-    <script src="/bower_components/bootstrap/assets/js/vendor/popper.min.js"></script>
-    <script src="/bower_components/bootstrap/assets/js/vendor/holder.min.js"></script>
     <script>
         var dataTable = [];
 
@@ -198,14 +188,14 @@
                         var innerString = paymentsTable.innerHTML;
                         var s = '';
                         for (var ind = 0, max = dataTable.length; ind < max; ind++) {
-                            s += '<tr' + (ind % 2 ? ' class="table-info">' : '>') + 
-                                '<td class="text-center align-middle">' + dataTable[ind].create_date + '</td>' +
-                                '<td class="text-center align-middle">' + dataTable[ind].pay_date + '</td>' +
-                                '<td class="text-center align-middle">' + dataTable[ind].m_contract_number + '</td>' +
-                                '<td class="text-center align-middle">' + dataTable[ind].pay_month + '</td>' +
-                                '<td class="text-center align-middle">' + dataTable[ind].pay_year + '</td>' +
-                                '<td class="text-center align-middle">' + dataTable[ind].amount.toFixed(2) + '</td>' +
-                                '<td class="text-center align-middle">' + dataTable[ind].org_name + '</td>' +
+                            s += '<tr' + (ind % 2 ? ' class="warning">' : '>') + 
+                                '<td class="text-center">' + dataTable[ind].create_date + '</td>' +
+                                '<td class="text-center">' + dataTable[ind].pay_date + '</td>' +
+                                '<td class="text-center">' + dataTable[ind].m_contract_number + '</td>' +
+                                '<td class="text-center">' + dataTable[ind].pay_month + '</td>' +
+                                '<td class="text-center">' + dataTable[ind].pay_year + '</td>' +
+                                '<td class="text-center">' + dataTable[ind].amount.toFixed(2) + '</td>' +
+                                '<td class="text-center">' + dataTable[ind].org_name + '</td>' +
                             '</tr>'
                         }
                         paymentsTable.innerHTML = innerString + s;
