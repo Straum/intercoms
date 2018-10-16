@@ -156,12 +156,12 @@ var generateTable = function(data, callback) {
                     // '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].end_service + '</td>' +
                     // '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].end_service + '</td>' +
                     // '</tr>';
-                    '<tr' + (ind % 2 ? ' class="table-info"' : '') + '>' +
+                    '<tr' + (ind % 2 ? ' class="warning"' : '') + '>' +
                     '<td class="text-center align-middle">' + rows[ind].contract_number + '</td>' +
                     '<td class="text-center align-middle">' + rows[ind].m_contract_number + '</td>' +
                     '<td class="text-center align-middle">' + rows[ind].start_service + '</td>' +
                     '</tr>' + 
-                    '<tr' + (ind % 2 ? ' class="table-info"' : '') + '>' +
+                    '<tr' + (ind % 2 ? ' class="warning"' : '') + '>' +
                     '<td class="text-center align-middle">' + rows[ind].create_date + '</td>' +
                     '<td class="text-center align-middle">' + rows[ind].end_service + '</td>' +
                     '<td class="text-center align-middle">' + rows[ind].end_service + '</td>' +

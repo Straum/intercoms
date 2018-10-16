@@ -114,20 +114,21 @@
                         <span class="badge badge-info"><%= tableRowsCount %></span>
                     </div>
                 </div>
-                <table class="table table-sm" id="registerTable" name="registerTable">
-                    <thead class="thead-light">
-                        <tr>
-                            <th scope="col" rowsspan="2" style="width: 33%;" class="text-center align-middle">Номер договора</th>
-                            <th scope="col" rowsspan="2" style="width: 33%;" class="text-center align-middle">Пролонгированный договор</th>
-                            <th scope="col" rowsspan="2" style="width: 32%;" class="text-center align-middle">Дата ТО с</th>
+                <p>
+                <table class="table table-condensed" id="registerTable" name="registerTable">
+                    <thead>
+                        <tr class="active">
+                            <th rowsspan="2" style="width: 33%;" class="text-center align-middle">Номер договора</th>
+                            <th rowsspan="2" style="width: 33%;" class="text-center align-middle">Пролонгированный договор</th>
+                            <th rowsspan="2" style="width: 32%;" class="text-center align-middle">Дата ТО с</th>
                         </tr>
-                        <tr>
-                            <th scope="col" style="width: 33%;" class="text-center align-middle">Дата договора</th>
-                            <th scope="col" style="width: 33%;" class="text-center align-middle">Дата пролонгации</th>
-                            <th scope="col" style="width: 32%;" class="text-center align-middle">Дата ТО по</th>
+                        <tr class="active">
+                            <th class="text-center align-middle">Дата договора</th>
+                            <th class="text-center align-middle">Дата пролонгации</th>
+                            <th class="text-center align-middle">Дата ТО по</th>
                         </tr>
                     </thead>
-                    <tbody id="tbody">
+                    <tbody id="tbody" style="background-color: white;">
                     </tbody>
                 </table>
                     <nav aria-label="...">
