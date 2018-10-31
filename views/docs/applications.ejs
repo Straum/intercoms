@@ -44,7 +44,8 @@
                     <th style="width: 20%;" class="text-center align-middle">Улица</th>
                     <th style="width: 6%;" class="text-center align-middle">Дом</th>
                     <th style="width: 6%;" class="text-center align-middle">Подъезд</th>
-                    <th style="width: 30%;" class="text-center align-middle">Проблема</th>
+                    <th style="width: 5%;" class="text-center align-middle">Проблем</th>
+                    <th style="width: 25%;" class="text-center align-middle">Описание проблем</th>
                     <th style="width: 8%;" class="text-center align-middle">Действия</th>
                 </tr>
             </thead>
@@ -67,7 +68,10 @@
                         <%= data[ind].porch %>
                     </td>
                     <td class="text-center align-middle">
-                        
+                        <%= data[ind].rowsInDoc === 0 ? '' : data[ind].rowsInDoc %>
+                    </td>
+                    <td class="text-left align-middle">
+                        <%= 'problemDescription' in data[ind] ? data[ind].problemDescription : '' %>
                     </td>
                     <td class="text-center align-middle">
                         <a href="/applications/edit/<%= data[ind].documentId %>" class="btn btn-info btn-xs" id="edit">
@@ -85,56 +89,61 @@
         </table>
         <% if (pageCount > 0) { %>
             <nav aria-label="...">
-            <ul class="pagination text-center table_pagination">
-                <% if (currentPage == 1) { %>
-                    <li class="page-item disabled">
-                        <span class="page-link">&laquo;</span>
-                    </li>
-                    <% } else { %>
-                        <li class="page-item">
-                            <a class="page-link" href="/applications">&laquo;
-                        </a>
-                    </li>
-                <% } %>
-                <% var i = (Number(currentPage) > 5 ? Number(currentPage) - 4 : 1) %>
-                <% if (i !== 1) { %>
-                    <li class="page-item disabled">
-                        <a class="page-link">...</a>
-                    </li>
-                <% } %>
-                <% for (; i <= (Number(currentPage) + 4) && i <= pageCount; i++) { %>
-                    <% if (i == currentPage) { %>
-                        <li class="page-item active">
-                            <span class="page-link">
-                                <%= i %>
-                                <span class="sr-only">(current)</span>
-                            </span>
+                <ul class="pagination text-center table_pagination">
+                    <% if (currentPage == 1) { %>
+                        <li class="page-item disabled">
+                            <span class="page-link">&laquo;</span>
                         </li>
-                    <% } else { %>
-                        <li class="page-item">
-                            <a class="page-link" href="/applications/<%= (i == 1) ? '' : (i - 1) * Number(visibleRows) %>">
-                                <%= i %>
+                        <% } else { %>
+                            <li class="page-item">
+                                <a class="page-link" href="/applications">&laquo;
                             </a>
                         </li>
                     <% } %>
-                    <% if (i == Number(currentPage) + 4 && i < pageCount) { %>
+                    <% var i = (Number(currentPage) > 5 ? Number(currentPage) - 4 : 1) %>
+                    <% if (i !== 1) { %>
                         <li class="page-item disabled">
                             <a class="page-link">...</a>
                         </li>
                     <% } %>
-                <% } %>
-                <% if (currentPage == pageCount) { %>
-                    <li class="page-item disabled">
-                        <a class="page-link">&raquo;</a>
-                    </li>
-                <% } else { %>
-                    <li class="page-item">
-                        <a class="page-link" href="/applications/<%= (pageCount - 1) * Number(visibleRows) %>">&raquo;</a>
-                    </li>
-                <% } %>
-             </ul>
-             </nav>
-          <% } %>
+                    <% for (; i <= (Number(currentPage) + 4) && i <= pageCount; i++) { %>
+                        <% if (i == currentPage) { %>
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    <%= i %>
+                                    <span class="sr-only">(current)</span>
+                                </span>
+                            </li>
+                        <% } else { %>
+                            <li class="page-item">
+                                <a class="page-link" href="/applications/<%= (i == 1) ? '' : (i - 1) * Number(visibleRows) %>">
+                                    <%= i %>
+                                </a>
+                            </li>
+                        <% } %>
+                        <% if (i == Number(currentPage) + 4 && i < pageCount) { %>
+                            <li class="page-item disabled">
+                                <a class="page-link">...</a>
+                            </li>
+                        <% } %>
+                    <% } %>
+                    <% if (currentPage == pageCount) { %>
+                        <li class="page-item disabled">
+                            <a class="page-link">&raquo;</a>
+                        </li>
+                    <% } else { %>
+                        <li class="page-item">
+                            <a class="page-link" href="/applications/<%= (pageCount - 1) * Number(visibleRows) %>">&raquo;</a>
+                        </li>
+                    <% } %>
+                </ul>
+            </nav>
+        <% } %>
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="alert alert-info">Записей: <strong><%= countRecords %></strong></div>
+                </div>
+            </div>
     </div>
 
     <div class="modal" id="modalDeleteRecord" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">

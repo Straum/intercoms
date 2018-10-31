@@ -21,6 +21,9 @@ module.exports = function () {
   router.use('/applications', require('./docs/applications')());
   router.use('/requests', require('./docs/requests')());
 
+  // API
+  router.use('/api', require('./api/index')());
+
   // Other
   router.get('/', function (req, res) {
     res.render('index.ejs');

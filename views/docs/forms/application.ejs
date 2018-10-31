@@ -371,6 +371,7 @@
                     });
                 },
                 updater: function (element) {
+                    dataTable = JSON.parse($('#faults').val());
                     dataTable.push(map[element]);
 
                     // https://stackoverflow.com/questions/15604122/jquery-delete-table-row
