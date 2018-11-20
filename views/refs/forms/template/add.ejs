@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <!-- <link rel="icon" href="../../../../favicon.ico"> -->
+    <title>Home page - <%= title %></title>
+
+    <% include ../../../common/bootstrap_css.ejs %>
+    <link href="/theme.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <% include ../../../common/full_menu.ejs %>
+
+    <div class="container">
+        <% if ((messages.errors) && (Object.keys(messages.errors).length > 0)) { %>
+            <h3><span class="text-danger">Выявлены ошибки:</span></h3>
+            <ul>
+                <% for (var key in messages.errors) { %>
+                    <li><span class="text-danger"><%= messages.errors[key].msg %></span></li>
+                <% }; %>
+            </ul>
+        <% } %>
+
+        <div class="form-header">
+            <h3><%= title %></h3>
+        </div>
+        <form method="post" action="/templates/" novalidate>
+            <div class="well">
+                <div class="card-body">
+                    <input type="text" hidden id="id" name="id" value="<%= typeof data != 'undefined' ? data.id : ''  %>">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="name">Наименование</label>
+                                <input type="text" class="form-control" id="name" name="name" placeholder="" autofocus="autofocus" value="<%= data.name %>">
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success" id="save">Записать</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script src="../../bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="../../bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+</body>
+
+</html>

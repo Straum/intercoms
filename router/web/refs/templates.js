@@ -51,6 +51,15 @@ module.exports = function () {
     });
   });
 
+  router.get('/add', function (req, res) {
+    res.render('refs/forms/template/add.ejs', {
+      'title': 'Добавить шаблон',
+      'data': {
+        name: ''
+      }
+    });
+  });
+
   router.get('/edit/:id', function (req, res) {
     var id = req.params.id;
     db.get().getConnection(function (err, connection) {
@@ -70,18 +79,12 @@ module.exports = function () {
               'msg': 'Database error'
             });
           } else {
-            res.render('refs/forms/template.ejs', {
-              'title': 'Шаблон',
+            res.render('refs/forms/template/edit.ejs', {
+              'title': 'Редактировать шаблон',
               'data': rows[0]
             });
           }
         });
-    });
-  });
-
-  router.get('/add', function (req, res) {
-    res.render('refs/forms/template.ejs', {
-      'title': 'Шаблон',
     });
   });
 
@@ -134,14 +137,20 @@ module.exports = function () {
     });
   });
 
-  router.post('/save', function (req, res) {
-    if ((req.body.id) && (isFinite(+req.body.id))) {
+  router.post('/', function (req, res) {
+    req.assert('name', 'Заполните наименование').notEmpty();
+    var errors = req.validationErrors();
+    
+    if ( !errors ) {
+      var data = {
+        name: req.sanitize('name').escape().trim()
+      };
+
       db.get().getConnection(function (err, connection) {
         connection.query(
-          ' UPDATE templates SET name = ?' +
-          ' WHERE template_id = ?', [
-              req.body.name, 
-              req.body.id
+          ' INSERT INTO templates (name)' +
+          ' VALUE(?)', [
+              data.name
             ], function (err) {
             connection.release();
             if (err) {
@@ -154,11 +163,33 @@ module.exports = function () {
       });
     }
     else {
+      req.flash('errors', errors);
+
+      res.render('refs/forms/template/add.ejs', {
+        'title': 'Добавить шаблон',
+        'data': {
+          name: req.body.name
+        }
+      });  
+    }
+  });
+
+  router.put('/edit/(:id)', function (req, res) {
+    var id = req.params.id;
+    req.assert('name', 'Заполните наименование').notEmpty();
+    var errors = req.validationErrors();
+    
+    if ( !errors ) {
+      var data = {
+        name: req.sanitize('name').escape().trim()
+      };
+
       db.get().getConnection(function (err, connection) {
         connection.query(
-          ' INSERT INTO templates (name)' +
-          ' VALUE(?)', [
-              req.body.name
+          ' UPDATE templates SET name = ?' +
+          ' WHERE template_id = ?', [
+              data.name, 
+              id
             ], function (err) {
             connection.release();
             if (err) {
@@ -170,9 +201,20 @@ module.exports = function () {
         );
       });
     }
+    else {
+      req.flash('errors', errors);
+
+      res.render('refs/forms/template/add.ejs', {
+        'title': 'Редактировать шаблон',
+        'data': {
+          'id': req.params.id,
+          'name': req.body.name
+        }
+      });  
+    }
   });
 
-  router.post('/delete', function (req, res) {
+  router.delete('/', function (req, res) {
     if ((req.body.id) && (isFinite(+req.body.id))) {
       db.get().getConnection(function (err, connection) {
         connection.query(

@@ -149,8 +149,8 @@
             $('#deleteRecord').click(function() {
                 $('#modalDeleteRecord').modal('hide');
                 $.ajax({
-                    type: 'POST',
-                    url: '/templates/delete',
+                    type: 'DELETE',
+                    url: '/templates/',
                     dataType: 'json',
                     async: true,
                     data: {
