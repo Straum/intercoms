@@ -45,7 +45,7 @@
                         <%= data[ind].name %>
                     </td>
                     <td class="text-center">
-                        <%= data[ind].guarantee_period > 0 ? data[ind].guarantee_period : '' %>
+                        <%= data[ind].guaranteePeriod > 0 ? data[ind].guaranteePeriod : '' %>
                     </td>
                     <td class="text-center">
                         <a href="/equipment/edit/<%= data[ind].id %>" class="btn btn-info btn-xs" id="edit">
@@ -153,8 +153,8 @@
             $('#deleteRecord').click(function() {
                 $('#modalDeleteRecord').modal('hide');
                 $.ajax({
-                    type: 'POST',
-                    url: '/equipment/delete',
+                    type: 'DELETE',
+                    url: '/equipment',
                     dataType: 'json',
                     async: true,
                     data: {

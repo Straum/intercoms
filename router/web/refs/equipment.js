@@ -19,7 +19,7 @@ module.exports = function () {
 
           db.get().getConnection(function (err, connection) {
             connection.query(
-              ' SELECT a.equipment_id AS id, a.name, a.guarantee_period' +
+              ' SELECT a.equipment_id AS id, a.name, a.guarantee_period AS guaranteePeriod' +
               ' FROM equipments a' +
               ' WHERE a.equipment_id > 0' +
               ' ORDER BY a.name ASC' +
@@ -32,17 +32,17 @@ module.exports = function () {
                 if (err) {
                   console.error(err);
                   res.status(500).send({
-                    'code': 500,
-                    'msg': 'Database error'
+                    code: 500,
+                    msg: 'Database error'
                   });
                 } else {
                   var currentPage = 1;
                   res.render('refs/equipment.ejs', {
-                    'title': 'Оборудование',
-                    'data': rows,
-                    'pageCount': pageCount,
-                    'currentPage': currentPage,
-                    'visibleRows': visibleRows
+                    title: 'Оборудование',
+                    data: rows,
+                    pageCount: pageCount,
+                    currentPage: currentPage,
+                    visibleRows: visibleRows
                   });
                 }
               });
@@ -51,11 +51,11 @@ module.exports = function () {
     });
   });
 
-  router.get('/edit/:id', function (req, res) {
+  router.get('/edit/(:id)', function (req, res) {
     var id = req.params.id;
     db.get().getConnection(function (err, connection) {
       connection.query(
-        ' SELECT a.equipment_id AS id, a.name, a.guarantee_period' +
+        ' SELECT a.equipment_id AS id, a.name, a.guarantee_period AS guaranteePeriod' +
         ' FROM equipments a' +
         ' WHERE a.equipment_id = ?', [id], function (err, rows) {
           if (err) {
@@ -66,13 +66,13 @@ module.exports = function () {
           if (err) {
             console.error(err);
             res.status(500).send({
-              'code': 500,
-              'msg': 'Database error'
+              code: 500,
+              msg: 'Database error'
             });
           } else {
-            res.render('refs/forms/equipment.ejs', {
-              'title': 'Оборудование',
-              'data': rows[0]
+            res.render('refs/forms/equipment/edit.ejs', {
+              title: 'Редактировать оборудование',
+              data: rows[0]
             });
           }
         });
@@ -80,8 +80,12 @@ module.exports = function () {
   });
 
   router.get('/add', function (req, res) {
-    res.render('refs/forms/equipment.ejs', {
-      'title': 'Оборудование'
+    res.render('refs/forms/equipment/add.ejs', {
+      title: 'Добавьте оборудование',
+      data: {
+        name: '', 
+        guaranteePeriod: 0
+      }
     });
   });
 
@@ -101,7 +105,7 @@ module.exports = function () {
 
           db.get().getConnection(function (err, connection) {
             connection.query(
-              ' SELECT a.equipment_id AS id, a.name, a.guarantee_period' +
+              ' SELECT a.equipment_id AS id, a.name, a.guarantee_period AS guaranteePeriod' +
               ' FROM equipments a' +
               ' WHERE a.equipment_id > 0' +
               ' ORDER BY a.name ASC' +
@@ -115,17 +119,17 @@ module.exports = function () {
                 if (err) {
                   console.error(err);
                   res.status(500).send({
-                    'code': 500,
-                    'msg': 'Database error'
+                    code: 500,
+                    msg: 'Database error'
                   });
                 } else {
                   var currentPage = Math.ceil(offset / visibleRows) + 1;
                   res.render('refs/equipment.ejs', {
-                    'title': 'Оборудование',
-                    'data': rows,
-                    'pageCount': pageCount,
-                    'currentPage': currentPage,
-                    'visibleRows': visibleRows
+                    title: 'Оборудование',
+                    data: rows,
+                    pageCount: pageCount,
+                    currentPage: currentPage,
+                    visibleRows: visibleRows
                   });
                 }
               });
@@ -134,15 +138,27 @@ module.exports = function () {
     });
   });
 
-  router.post('/save', function (req, res) {
-    if ((req.body.id) && (isFinite(+req.body.id))) {
+  router.post('/', function (req, res) {
+    req.assert('name', 'Заполните наименование').notEmpty();
+    req.assert('years', 'Гарантийный срок должен быть числом или пустым').optional( {checkFalsy: true } ).isDecimal();
+    var errors = req.validationErrors();
+
+    if ( !errors ) {
+      var data = {
+        name: req.sanitize('name').escape().trim(),
+        years: req.sanitize('years').escape().trim()
+      };
+
       db.get().getConnection(function (err, connection) {
         connection.query(
-          ' UPDATE equipments SET name = ?, guarantee_period = ?' +
-          ' WHERE equipment_id = ?', [req.body.name, req.body.years, req.body.id], function (err) {
+          ' INSERT INTO equipments (name, guarantee_period)' +
+          ' VALUE(?, ?)', [data.name, data.years], function (err) {
             connection.release();
             if (err) {
-              res.status(500).send({ 'code': 500, 'msg': 'Database Error' });
+              res.status(500).send({ 
+                code: 500, 
+                msg: 'Database Error' 
+              });
             } else {
               res.redirect('/equipment');
             }
@@ -151,13 +167,40 @@ module.exports = function () {
       });
     }
     else {
+      req.flash('errors', errors);
+
+      res.render('refs/forms/equipment/add.ejs', {
+        title: 'Добавить оборудование',
+        data: {
+          name: req.body.name,
+          guaranteePeriod: req.body.years
+        }
+      });
+    }
+  });
+
+  router.put('/edit/(:id)', function (req, res) {
+    var id = req.params.id;
+
+    req.assert('name', 'Заполните наименование').notEmpty();
+    req.assert('years', 'Гарантийный срок должен быть числом или пустым').optional( {checkFalsy: true } ).isDecimal();
+    var errors = req.validationErrors();
+
+    if ( !errors ) {
+      var data = {
+        name: req.sanitize('name').escape().trim(),
+        years: req.sanitize('years').escape().trim()
+      };
       db.get().getConnection(function (err, connection) {
         connection.query(
-          ' INSERT INTO equipments (name, guarantee_period)' +
-          ' VALUE(?, ?)', [req.body.name, req.body.years], function (err) {
+          ' UPDATE equipments SET name = ?, guarantee_period = ?' +
+          ' WHERE equipment_id = ?', [data.name, data.years, id], function (err) {
             connection.release();
             if (err) {
-              res.status(500).send({ 'code': 500, 'msg': 'Database Error' });
+              res.status(500).send({ 
+                code: 500, 
+                msg: 'Database Error' 
+              });
             } else {
               res.redirect('/equipment');
             }
@@ -165,9 +208,21 @@ module.exports = function () {
         );
       });
     }
+    else {
+      req.flash('errors', errors);
+
+      res.render('refs/forms/template/edit.ejs', {
+        'title': 'Редактировать оборудование',
+        'data': {
+          id: id,
+          name: req.body.name,
+          guaranteePeriod: req.body.years
+        }
+      });
+    }
   });
 
-  router.post('/delete', function (req, res) {
+  router.delete('/', function (req, res) {
     if ((req.body.id) && (isFinite(+req.body.id))) {
       db.get().getConnection(function (err, connection) {
         connection.query(
@@ -175,19 +230,24 @@ module.exports = function () {
             connection.release();
             if (err) {
               res.status(500).send({
-                'code': 500,
-                'msg': 'Database Error',
-                'err': JSON.stringify(err)
+                code: 500,
+                msg: 'Database Error',
+                err: JSON.stringify(err)
               });
             } else {
-              res.status(200).send({ 'result': 'OK' });
+              res.status(200).send({
+                result: 'OK' 
+              });
             }
           }
         );
       });
     }
     else {
-      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+      res.status(500).send({ 
+        code: 500, 
+        msg: 'Incorrect parameter' 
+      });
     }
   });
 
