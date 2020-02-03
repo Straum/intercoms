@@ -1,7 +1,6 @@
 var express = require('express');
 var path = require('path');
 var logger = require('morgan');
-var bodyParser = require('body-parser');
 var http = require('http');
 var db = require('./lib/db');
 db.connect();
@@ -18,9 +17,13 @@ app.use(logger('short'));
 app.use(express.static(publicPath));
 app.use(express.static(staticPath));
 
-app.use(bodyParser.json());
+// https://stackoverflow.com/questions/19917401/error-request-entity-too-large
+var bodyParser = require('body-parser');
+app.use(bodyParser.json({limit: '50mb'}));
 app.use(bodyParser.urlencoded({
-  extended: true
+  extended: true,
+  limit: '50mb',
+  parameterLimit: 50000
 }));
 
 var expressValidator = require('express-validator');
@@ -53,4 +56,4 @@ app.use('/admin', require('./router/admin/index')());
 app.use('/home', require('./router/web/index')());
 app.use('/', require('./router/web/index')());
 
-http.createServer(app).listen(4444);
+http.createServer(app).listen(5005);
