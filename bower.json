@@ -19,6 +19,7 @@
     "jquery": "1.11.2",
     "moment": "^2.22.2",
     "bootstrap3-typeahead": "^4.0.2",
-    "eonasdan-bootstrap-datetimepicker": "^4.17.47"
+    "eonasdan-bootstrap-datetimepicker": "^4.17.47",
+    "axios": "^0.19.2"
   }
 }

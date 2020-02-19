@@ -33,7 +33,8 @@
         <table class="table table-bordered table-condensed">
             <thead>
                 <tr class="active">
-                    <th style="width: 88%;" class="text-left align-middle">ФИО</th>
+                    <th style="width: 68%;" class="text-left align-middle">ФИО</th>
+                    <th style="width: 20%;" class="text-left align-middle">Телефон</th>
                     <th style="width: 12%;" class="text-center align-middle">Действия</th>
                 </tr>
             </thead>
@@ -42,6 +43,9 @@
                 <tr>
                     <td>
                         <%= data[ind].name %>
+                    </td>
+                    <td>
+                        <%= data[ind].phone %>
                     </td>
                     <td class="text-center">
                         <a href="/workers/edit/<%= data[ind].id %>" class="btn btn-info btn-xs" id="edit">

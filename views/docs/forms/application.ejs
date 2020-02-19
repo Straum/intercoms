@@ -2,456 +2,776 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
-    <!-- <link rel="icon" href="../../../../favicon.ico"> -->
-    <title>Home page - Заявка</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <!-- <link rel="icon" href="../../../../favicon.ico"> -->
+  <title>Home page - Заявка</title>
 
-    <% include ../../common/bootstrap_css.ejs %>
-    <link href="/theme.css" rel="stylesheet">
-    <link href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+  <% include ../../common/bootstrap_css.ejs %>
+  <link href="/theme.css" rel="stylesheet">
+  <link href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css"
+    rel="stylesheet">
 </head>
 
 <body>
-    <% include ../../common/full_menu.ejs %>
+  <% include ../../common/full_menu.ejs %>
 
-    <div class="container">
-        <div class="form-header">
-            <h3>Заявка</h3>
-            <% if (Object.keys(errors).length > 0) { %>
-                <h3><span class="text-danger">Выявлены ошибки:</span></h3>
-                <ul>
-                    <% for (var key in errors) { %>
-                        <li><span class="text-danger"><%= errors[key].msg %></span></li>
-                    <% }; %>
-                </ul>
-            <% } %>
-        </div>
-        <form method="post" action="/applications/save" novalidate>
-            <div class="well">
-                <div class="card-body">
-                    <input type="text" hidden id="documentId" name="documentId" value="<%= typeof data != 'undefined' ? data.documentId : '0' %>">
-                    <input type="text" hidden id="cityId" name="cityId" value="<%= typeof data != 'undefined' ? data.cityId : '0' %>">
-                    <input type="text" hidden id="streetId" name="streetId" value="<%= typeof data != 'undefined' ? data.streetId : '0' %>">
-                    <input type="text" hidden id="houseId" name="houseId" value="<%= typeof data != 'undefined' ? data.houseId : '0' %>">
-                    <input type="text" hidden id="performerId" name="performerId" value="<%= typeof data != 'undefined' ? data.performerId : '0' %>">
-                    <input type="text" hidden id="faults" name="faults" value="<%= typeof data != 'undefined' ? data.faults : '0' %>">
-                    <input type="text" hidden id="isDone" name="isDone" value="<%= typeof data != 'undefined' ? data.isDone : '0' %>">
-                    <div class="form-group">
-                        <div class="row">
-                            <div class="col-md-3 <%= errors.createDate ? 'has-error' : '' %>">
-                                <label for="create_date" class="control-label">Создано</label>
-                                <div class="input-group date" id='datetimepicker_create_date'>
-                                    <input type="text" class="form-control" name="createDate" id="createDate" value="<%= typeof data !== 'undefined' ? moment(data.createDate).format( 'DD.MM.YYYY HH:mm' ) : moment(new Date()).format( 'DD.MM.YYYY HH:mm' )  %>">
-                                    <span class="input-group-addon">
-                                        <span class="glyphicon glyphicon-calendar"></span>
-                                    </span>
-                                </div>
-                                <% if (errors.createDate) { %>
-                                    <span class="help-block"><%= errors.createDate.msg  %></span>
-                                <% } %>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-8 <%= errors.address ? 'has-error' : '' %>">
-                            <div class="form-group">
-                                <label class="control-label" for="address">Адрес</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="address" name="address" placeholder="" value="<%= typeof data !== 'undefined' ? data.address : '' %>">
-                                    <span class="input-group-btn">
-                                        <button class="btn btn-default" type="button" id="clearAddress">
-                                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                        </button>
-                                    </span>
-                                </div>
-                                <% if (errors.address) { %>
-                                    <span class="help-block"><%= errors.address.msg  %></span>
-                                <% } %>
-                            </div>
-                        </div>
-                        <div class="col-md-1 <%= errors.porch ? 'has-error' : '' %>">
-                            <div class="form-group">
-                                <label class="control-label" for="porch">Подъезд</label>
-                                <input type="text" class="form-control" id="porch" name="porch" placeholder="" value="<%= typeof data !== 'undefined' ? data.porch : '' %>">
-                                <% if (errors.porch) { %>
-                                    <span class="help-block"><%= errors.porch.msg  %></span>
-                                <% } %>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label class="control-label" for="phone">Телефон</label>
-                                <input type="text" class="form-control" id="phone" name="phone" placeholder="" value="<%= typeof data !== 'undefined' ? data.phone : '' %>">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12 <%= errors.faults ? 'has-error' : '' %>">
-                            <table class="table table-bordered table-condensed" name="tableFaults" id="tableFaults">
-                                <thead>
-                                    <tr class="active">
-                                        <th style="width: 90%; cursor: pointer;" class="text-left align-middle sort control-label">Неисправность</th>
-                                        <th style="width: 10%;" class="text-center align-middle">Действия</th>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="2"><input type="text" class="form-control" id="fault" name="fault"
-                                            placeholder="Введите неисправность" value=""></td>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <% var table = []; %>
-
-                                    <% if (typeof data !== 'undefined') { %>
-                                    <%  table = JSON.parse(data.faults); %>
-                                    <% } %>
-
-                                    <% if (table.length > 0) { %>
-                                        <% for (var ind = 0, max = table.length; ind < max; ind++) { %>
-                                        <tr class="warning">
-                                            <td><%= table[ind].value %></td>
-                                            <td class="warning text-center deleteRow"><a href="#" class="btn btn-danger btn-xs"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span></a></td>
-                                        </tr>
-                                        <% } %>
-                                    <% } else { %>
-                                    <tr>
-                                        <td class="warning text-center align-middle" colspan="2">Нет данных</td>
-                                    </tr>
-                                    <% } %>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="row">
-                            <div class="col-md-12 <%= errors.performer ? 'has-error' : '' %>">
-                                <label class="control-label" for="performer">Исполнитель</label>
-                                <input type="text" class="form-control" id="performer" name="performer" placeholder="Фамилия исполнителя"
-                                    value="<%= typeof data !== 'undefined' ? data.performer : '' %>">
-                                <% if (errors.performer) { %>
-                                    <span class="help-block"><%= errors.performer.msg %></span>
-                                <% } %>
-                            </div>
-                        </div>
-                    </div>
-                    <% if (data.isDone) { %>
-                    <div class="form-group">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <label for="create_date" class="control-label">Выполнено</label>
-                                <div class="input-group date" id='datetimepicker_close_date'>
-                                    <input type="text" class="form-control" name="closeDate" id="closeDate" value="<%= typeof data !== 'undefined' ? moment(data.closeDate).format( 'DD.MM.YYYY HH:mm' ) : moment(new Date()).format( 'DD.MM.YYYY HH:mm' )  %>">
-                                    <span class="input-group-addon">
-                                        <span class="glyphicon glyphicon-calendar"></span>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <% } %>
-                    <div class="row">
-                        <div class="col-md-12">
-                            <button type="submit" class="btn btn-success" id="save">Записать</button>
-                            <% if (data.isDone) { %>
-                                &nbsp;
-                                <button type="submit" class="btn btn-info" id="move" name="move">Перенести в Текущие заявки</button>    
-                            <% } %>
-                        </div>
-                    </div>
-                </div>
-            </form>
-        </div>
+  <div class="container">
+    <div class="form-header">
+      <h3>Заявка</h3>
+      <% if (Object.keys(errors).length > 0) { %>
+      <h3><span class="text-danger">Выявлены ошибки:</span></h3>
+      <ul>
+        <% for (var key in errors) { %>
+        <li><span class="text-danger"><%= errors[key].msg %></span></li>
+        <% }; %>
+      </ul>
+      <% } %>
     </div>
+    <form method="post" action="/applications/save" novalidate>
+    <div class="well">
+      <div class="card-body">
+        <input type="text" hidden id="documentId" name="documentId"
+          value="<%= typeof data != 'undefined' ? data.documentId : '0' %>">
+        <input type="text" hidden id="cityId" name="cityId"
+          value="<%= typeof data != 'undefined' ? data.cityId : '0' %>">
+        <input type="text" hidden id="streetId" name="streetId"
+          value="<%= typeof data != 'undefined' ? data.streetId : '0' %>">
+        <input type="text" hidden id="houseId" name="houseId"
+          value="<%= typeof data != 'undefined' ? data.houseId : '0' %>">
+        <input type="text" hidden id="performerId" name="performerId"
+          value="<%= typeof data != 'undefined' ? data.performerId : '0' %>">
+        <input type="text" hidden id="faults" name="faults"
+          value="<%= typeof data != 'undefined' ? data.faultsToString : '' %>">
+        <input type="text" hidden id="isDone" name="isDone"
+          value="<%= typeof data != 'undefined' ? data.isDone : '0' %>">
 
-    <script src="/bower_components/jquery/dist/jquery.min.js"></script>
-    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
-    <script src="/bower_components/moment/min/moment-with-locales.min.js"></script>
-    <script src="/bower_components/bootstrap/js/transition.js"></script>
-    <script src="/bower_components/bootstrap/js/collapse.js"></script>
-    <script src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
-    <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
+        <div class="form-group">
+          <div class="row">
+            <div class="col-md-12">
+              <button type="submit" class="btn btn-default my-tooltip" name="generateReport" value="generateReport" data-toggle="tooltip" data-placement="top" title="Сформировать отчет"><span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span></button>
+            </div>
+          </div>
+        </div>
 
-    <script>
-        var dataTable = [];
-        function applicationData() {
-            this.address =  {
-                cityId: 0,
-                cityName: '',
-                streetId: 0,
-                streetName: '',
-                houseId: 0,
-                houseNumber: ''
+        <div class="form-group">
+          <div class="row">
+            <div class="col-md-3 <%= errors.createDate ? 'has-error' : '' %>">
+              <label for="create_date" class="control-label">Создано</label>
+              <div class="input-group date" id='datetimepicker_create_date'>
+                <input type="text" class="form-control" name="createDate" id="createDate"
+                  value="<%= typeof data !== 'undefined' ? moment(data.createDate).format( 'DD.MM.YYYY HH:mm' ) : moment(new Date()).format( 'DD.MM.YYYY HH:mm' )  %>">
+                <span class="input-group-addon">
+                  <span class="glyphicon glyphicon-calendar"></span>
+                </span>
+              </div>
+              <% if (errors.createDate) { %>
+              <span class="help-block"><%= errors.createDate.msg  %></span>
+              <% } %>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 <%= errors.address ? 'has-error' : '' %>">
+            <div class="form-group">
+              <label class="control-label" for="address">Адрес</label>
+              <div class="input-group">
+                <input type="text" class="form-control" id="address" name="address" placeholder=""
+                  value="<%= typeof data !== 'undefined' ? data.address : '' %>">
+                <span class="input-group-btn">
+                  <button class="btn btn-default" type="button" id="clearAddress">
+                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                  </button>
+                </span>
+              </div>
+              <% if (errors.address) { %>
+              <span class="help-block"><%= errors.address.msg  %></span>
+              <% } %>
+            </div>
+          </div>
+          <div class="col-md-1 <%= errors.porch ? 'has-error' : '' %>">
+            <div class="form-group">
+              <label class="control-label" for="porch">Номер</label>
+              <input type="text" class="form-control" id="porch" name="porch" placeholder=""
+                value="<%= typeof data !== 'undefined' ? data.porch : '' %>">
+              <% if (errors.porch) { %>
+              <span class="help-block"><%= errors.porch.msg  %></span>
+              <% } %>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="form-group">
+              <label for="kind">Тип</label>
+              <% var kinds = ['Подъезд', 'Квартира'] %>
+              <select class="form-control" id="kind" name="kind">
+                <% kinds.forEach(function (item, index) { %>
+                <option value="<%= index %>" <%= data.kind == index ? ' selected' : '' %> ><%= item %></option>
+                <% }); %>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="control-label" for="phone">Телефон</label>
+              <input type="text" class="form-control" id="phone" name="phone" placeholder=""
+                value="<%= typeof data !== 'undefined' ? data.phone : '' %>">
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-12 <%= errors.faults ? 'has-error' : '' %>">
+            <table class="table table-bordered table-condensed" name="tableFaults" id="tableFaults">
+              <thead>
+                <tr class="active">
+                  <th style="width: 25%; cursor: pointer;" class="text-left align-middle sort control-label">Неисправность</th>
+                  <th style="width: 25%; cursor: pointer;" class="text-left align-middle sort control-label">Решение</th>
+                  <th style="width: 20%;" class="text-left align-middle">Исполнил</th>
+                  <th style="width: 10%;" class="text-center align-middle">Дата</th>
+                  <th style="width: 10%;" class="text-center align-middle">Готово</th>
+                  <th style="width: 10%;" class="text-center align-middle">Действия</th>
+                </tr>
+                <tr>
+                  <td colspan="6"><input type="text" class="form-control" id="fault" name="fault" placeholder="Добавьте неисправность" value=""></td>
+                </tr>
+              </thead>
+              <tbody>
+                <% var table = []; %>
+
+                <% if (typeof data !== 'undefined') { %>
+                <%  table = data.faults; %>
+                <% } %>
+
+                <% if (table.length > 0) { %>
+                <% for (var ind = 0, max = table.length; ind < max; ind++) { %>
+                <tr class="warning">
+                  <td><%= table[ind].faultName %></td>
+                  <td><%= table[ind].decision %></td>
+                  <td><%= table[ind].workerId > 0 ? table[ind].workerName : '' %></td>
+                  <td class="text-center"><%= typeof data !== 'undefined' ? moment(table[ind].completionDT).format( 'DD.MM.YYYY' ) : '' %></td>
+                  <td class="text-center">
+                    <% if (table[ind].isDone == 1) { %>
+                      <button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-ok"></span></button>
+                    <% } %>
+                  </td>
+                  <td class="text-center">
+                    <button type="button" class="btn btn-info btn-xs editRow">
+                      <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
+                    </button>
+                    <button type="button" class="btn btn-danger btn-xs deleteRow">
+                      <span class="glyphicon glyphicon-minus" aria-hidden="true"></span>
+                    </button>
+                  </td>
+                </tr>
+                <% } %>
+                <% } else { %>
+                <tr>
+                  <td class="warning text-center align-middle" colspan="6">Нет данных</td>
+                </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="row">
+            <div class="col-md-12 <%= errors.performer ? 'has-error' : '' %>">
+              <label class="control-label" for="performer">Исполнитель</label>
+              <input type="text" class="form-control select-all" id="performer" name="performer" placeholder="Фамилия исполнителя"
+                value="<%= typeof data !== 'undefined' ? data.performer : '' %>">
+              <% if (errors.performer) { %>
+              <span class="help-block"><%= errors.performer.msg %></span>
+              <% } %>
+            </div>
+          </div>
+        </div>
+        <% if (data.isDone) { %>
+        <div class="form-group">
+          <div class="row">
+            <div class="col-md-3">
+              <label for="create_date" class="control-label">Выполнено</label>
+              <div class="input-group date" id='datetimepicker_close_date'>
+                <input type="text" class="form-control" name="closeDate" id="closeDate"
+                  value="<%= typeof data !== 'undefined' ? moment(data.closeDate).format( 'DD.MM.YYYY HH:mm' ) : moment(new Date()).format( 'DD.MM.YYYY HH:mm' )  %>">
+                <span class="input-group-addon">
+                  <span class="glyphicon glyphicon-calendar"></span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <% } %>
+        <div class="row">
+          <div class="col-md-12">
+            <button type="submit" class="btn btn-success" id="save">Записать</button>
+            <% if (data.isDone) { %>
+            &nbsp;
+            <button type="submit" class="btn btn-info" id="move" name="move">Перенести в Текущие заявки</button>
+            <% } %>
+          </div>
+        </div>
+      </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal bs-example-modal-normal" id="application_dialog" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-normal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+              aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="applicationCapton">Неисправность</h4>
+        </div>
+        <div class="modal-body">
+          <form>
+            <input type="text" class="hidden" id="idTable" value="">
+            <input type="text" class="hidden" id="dlgWorkerId" value="">
+            <div class="form-group">
+              <div class="row">
+                <div class="col-md-12">
+                  <label for="percent">Описание</label>
+                  <input type="text" class="form-control select-all" id="dlgFaultName">
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="row">
+                <div class="col-md-12">
+                  <label for="percent">Решение</label>
+                  <input type="text" class="form-control select-all" id="dlgDecision">
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="row">
+                <div class="col-md-12">
+                  <label for="car">Исполнитель</label>
+                  <input type="text" class="form-control select-all" id="dlgWorker">
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="row">
+                <div class="col-md-5">
+                  <label for="create_date" class="control-label">Дата исполнения</label>
+                  <div class="input-group date" id='datetimepicker_completion'>
+                    <input type="text" class="form-control" name="executionDate" id="dlgCompletionDT" >
+                    <span class="input-group-addon">
+                      <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <label for="create_date" class="control-label">&nbsp;</label>
+                  <div class="input-group">
+                    <div class="checkbox">
+                      <label>
+                        <input type="checkbox" id="dlgIsDone"> Исполнено
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success" id="saveButton" onclick="saveApplication">&nbsp;Записать&nbsp;</button>
+          <button type="submit" class="btn btn-warning" data-dismiss="modal">&nbsp;Отмена&nbsp;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="/bower_components/moment/min/moment-with-locales.min.js"></script>
+  <script src="/bower_components/bootstrap/js/transition.js"></script>
+  <script src="/bower_components/bootstrap/js/collapse.js"></script>
+  <script src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
+  <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
+  <script src="/bower_components/axios/dist/axios.min.js"></script>
+
+  <script>
+    // var dataTable = [];
+    function applicationData() {
+
+      this.currentFocus = $(":focus");
+      this.generateUID = 0;
+
+      this.address = {
+        cityId: 0,
+        cityName: '',
+        streetId: 0,
+        streetName: '',
+        houseId: 0,
+        houseNumber: ''
+      }
+
+      this.clearHouse = function () {
+        this.address.houseId = 0;
+        this.address.houseNumber = '';
+        $('#houseId').val(0);
+      }
+
+      this.clearStreet = function () {
+        this.address.streetId = 0;
+        this.address.streetName = '';
+        this.clearHouse();
+        $('#streetId').val(0);
+        $('#houseId').val(0);
+      }
+
+      this.clearCity = function () {
+        this.cityId = 0;
+        this.cityName = '';
+        this.clearStreet();
+        $('#cityId').val(0);
+      }
+
+      this.setCityId = function (cityId) {
+        $('#cityId').val(cityId);
+      }
+
+      this.setStreetId = function (streetId) {
+        $('#streetId').val(streetId);
+      }
+
+      this.setHouseId = function (houseId) {
+        $('#houseId').val(houseId);
+      }
+    };
+
+    var appData = new applicationData();
+
+    // function editRecord(uid) {
+    //   var result = {
+    //     isFound: false,
+    //     index: 0
+    //   };
+
+    //   var dataTable = JSON.parse($('#faults').val());
+    //   for (var i = 0; i < dataTable.length; i++) {
+    //     if (+dataTable[i].id == +uid) {
+    //       result.isFound  = true;
+    //       result.index = i;
+    //       break;
+    //     }
+    //   }
+
+    //   if (result.isFound) {
+    //     $('#dlgFaultName').val(dataTable[result.index].faultName);
+    //     $('#dlgDecision').val(dataTable[result.index].decision);
+    //     $('#dlgWorkerId').val(dataTable[result.index].workerId);
+    //     $('#dlgWorker').val(dataTable[result.index].workerId > 0 ? dataTable[result.index].workerName : '');
+    //     $('#dlgCompletionDT').val(moment(new Date(dataTable[result.index].completionDT)).format( 'DD.MM.YYYY' ));
+    //     $('#dlgIsDone').prop('checked', dataTable[result.index].isDone > 0);
+
+    //     $('#idTable').val(uid);
+
+    //     appData.currentFocus = document.activeElement;
+    //     $('#application_dialog').modal();
+    //     $('#dlgFaultName').focus();
+    //   }
+
+      // var tr = $(this).closest('tr');
+      // var rowIndex = tr.index() + 1;
+
+      // if ((rowIndex >= 0) && (rowIndex <= dataTable.length - 1))  {
+      //   $('#dlgFaultName').val(dataTable[rowIndex].faultName);
+      // }
+
+      // // tr.remove();
+      // // dataTable.splice(rowIndex, 1);
+      // // $('#faults').val(JSON.stringify(dataTable));
+
+      // $('#application_dialog').modal();
+    // }
+
+    $(document).ready(function () {
+
+      $('[data-toggle="tooltip"]').tooltip();
+
+      $('#datetimepicker_create_date').datetimepicker({
+        locale: 'ru'
+      });
+      
+      $('#datetimepicker_close_date').datetimepicker({
+        locale: 'ru'
+      });
+
+      $('#datetimepicker_completion').datetimepicker({
+        locale: 'ru',
+        format: 'L'
+      });
+
+      // autocomplete city + street + house
+      $('#address').typeahead({
+        items: 15,
+        source: function (query, process) {
+          var results = [];
+          map = {};
+          $.ajax({
+            'url': '/applications/address_autocomplete',
+            'type': 'POST',
+            'contentType': 'application/json',
+            'data': JSON.stringify({
+              'suggestion': query,
+              'limit': 15
+            }),
+            success: function (datas) {
+              if ((typeof datas == 'object') && ('items' in datas) && ('level' in datas)) {
+                var level = datas.level;
+                var data = datas.items;
+                var text;
+                if (Array.isArray(data)) {
+                  data.forEach(function (item, index) {
+                    item.level = level;
+                    switch (level) {
+                      case 0:
+                        text = item.cityName;
+                        map[text] = item;
+                        results.push(text);
+                        break;
+                      case 1:
+                        text = item.cityName + ', ' + item.streetName;
+                        if (item.streetName.trim() !== '') {
+                          map[text] = item;
+                          results.push(text);
+                        }
+                        break;
+                      case 2:
+                        text = item.cityName + ', ' + item.streetName + ', ' + item.houseNumber;
+                        if (item.houseNumber.trim() !== '') {
+                          map[text] = item;
+                          results.push(text);
+                        }
+                        break;
+                      default:
+                    }
+                  });
+                }
+              }
+              process(results);
             }
+          });
+        },
+        updater: function (element) {
+          var selectedElement = map[element];
+          switch (selectedElement.level) {
+            case 0:
+              appData.address.cityId = selectedElement.cityId;
+              appData.address.cityName = selectedElement.cityName;
+              appData.setCityId(selectedElement.cityId);
+              appData.clearStreet();
+              return selectedElement.cityName + ', ';
+            case 1:
+              appData.address.cityId = selectedElement.cityId;
+              appData.address.cityName = selectedElement.cityName;
+              appData.address.streetId = selectedElement.streetId;
+              appData.address.streetName = selectedElement.streetName;
+              appData.setCityId(selectedElement.cityId);
+              appData.setStreetId(selectedElement.streetId);
+              appData.clearHouse();
+              return selectedElement.cityName + ', ' + selectedElement.streetName + ', ';
+            case 2:
+              appData.address.cityId = selectedElement.cityId;
+              appData.address.cityName = selectedElement.cityName;
+              appData.address.streetId = selectedElement.streetId;
+              appData.address.streetName = selectedElement.streetName;
+              appData.address.houseId = selectedElement.houseId;
+              appData.address.houseNumber = selectedElement.houseNumber;
+              appData.setCityId(selectedElement.cityId);
+              appData.setStreetId(selectedElement.streetId);
+              appData.setHouseId(selectedElement.houseId);
+              return selectedElement.cityName + ', ' + selectedElement.streetName + ', ' + selectedElement.houseNumber;
+            default:
+              return selectedElement.cityName;
+          }
+        }
+      });
 
-            this.clearHouse = function() {
-                this.address.houseId = 0;
-                this.address.houseNumber = '';
-                $('#houseId').val(0);
+      $('#performer').typeahead({
+        items: 15,
+        source: function (query, process) {
+          var results = [];
+          map = {};
+          $.ajax({
+            'url': '/applications/search_performer',
+            'type': 'POST',
+            'contentType': 'application/json',
+            'data': JSON.stringify({
+              'suggestion': query,
+              'limit': 15
+            }),
+            success: function (datas) {
+              $.each(datas, function (i, result) {
+                map[result.value] = result;
+                results.push(result.value);
+              });
+              process(results);
             }
+          });
+        },
+        updater: function (element) {
+          $('#performerId').val(map[element].id);
+          return element;
+        }
+      });
 
-            this.clearStreet = function() {
-                this.address.streetId = 0;
-                this.address.streetName = '';
-                this.clearHouse();
-                $('#streetId').val(0);
-                $('#houseId').val(0);
+      $('#dlgWorker').typeahead({
+        items: 15,
+        source: function (query, process) {
+          var results = [];
+          map = {};
+          $.ajax({
+            'url': '/applications/search_performer',
+            'type': 'POST',
+            'contentType': 'application/json',
+            'data': JSON.stringify({
+              'suggestion': query,
+              'limit': 15
+            }),
+            success: function (datas) {
+              $.each(datas, function (i, result) {
+                map[result.value] = result;
+                results.push(result.value);
+              });
+              process(results);
             }
+          });
+        },
+        updater: function (element) {
+          $('#dlgWorkerId').val(map[element].id);
+          return element;
+        }
+      });
 
-            this.clearCity = function()  {
-                this.cityId = 0;
-                this.cityName = '';
-                this.clearStreet();
-                $('#cityId').val(0);
-            }
+      $('#fault').on('keyup keypress', function(e) {
+        var keyCode = e.keyCode || e.which;
+        if (keyCode === 13) {
+          addFault($('#fault').val());
+          e.preventDefault();
+          return false;
+        }
+      });
 
-            this.setCityId = function (cityId) {
-                $('#cityId').val(cityId);
-            }
+      $('#clearAddress').on('click', function() {
+        $('#cityId').val('0');
+        $('#streetId').val('0');
+        $('#houseId').val('0');
+        $('#address').val('');
+        $('#address').focus();
+      });
 
-            this.setStreetId = function (streetId) {
-                $('#streetId').val(streetId);
-            }
 
-            this.setHouseId = function (houseId) {
-                $('#houseId').val(houseId);
-            }
+      $('body').on('click', '.deleteRow', function () {
+          var dataTable = JSON.parse($('#faults').val());
+          var tr = $(this).closest('tr');
+          var rowIndex = tr.index();
+          tr.remove();
+          dataTable.splice(rowIndex, 1);
+          $('#faults').val(JSON.stringify(dataTable));
+      });
+
+      $('body').on('click', '.editRow', function () {
+          var dataTable = JSON.parse($('#faults').val());
+          var tr = $(this).closest('tr');
+          var rowIndex = tr.index();
+
+          $('#dlgFaultName').val(dataTable[rowIndex].faultName);
+          $('#dlgDecision').val(dataTable[rowIndex].decision);
+          $('#dlgWorkerId').val(dataTable[rowIndex].workerId);
+          $('#dlgWorker').val(dataTable[rowIndex].workerId > 0 ? dataTable[rowIndex].workerName : '');
+          $('#dlgCompletionDT').val(moment(new Date(dataTable[rowIndex].completionDT)).format( 'DD.MM.YYYY' ));
+          $('#dlgIsDone').prop('checked', dataTable[rowIndex].isDone > 0);
+
+          $('#idTable').val(rowIndex);
+
+          appData.currentFocus = document.activeElement;
+          $('#application_dialog').modal();
+          $('#dlgFaultName').focus();
+
+      });
+
+      var grid = document.getElementById('tableFaults');
+      grid.onclick = function (e) {
+          if (e.target.tagName != 'TH') return;
+          // var classList = e.target.className.split(' ');
+
+          // bySort = false;
+          // for (var i = 0; i < classList.length; i++) {
+          //     if (classList[i] === 'sort') {
+          //         bySort = true;
+          //         break;
+          //     }
+          // }
+
+          // if (bySort) {
+          //     // DOM sort
+          //     sortGrid(e.target.cellIndex);
+          //     // Array sort
+          //     var arr = JSON.parse($('#faults').val());
+          //     if ((Array.isArray(arr)) && (arr.length > 0)) {
+          //       var newArr = arr.sort(function(a, b) {
+          //         if (a.value > b.value) return 1;
+          //         if (a.value < b.value) return -1;
+          //         return 0;
+          //       })
+          //       $('#faults').val(JSON.stringify(newArr));
+          //     }
+          // }
+      };
+
+      function sortGrid(colNum, type) {
+        var tbody = grid.getElementsByTagName('tbody')[0];
+        var rowsArray = [].slice.call(tbody.rows);
+
+        var compare = function (rowA, rowB) {
+          return rowA.cells[colNum].innerHTML > rowB.cells[colNum].innerHTML;
         };
 
-        var appData = new applicationData();
+        // сортировать
+        rowsArray.sort(compare);
 
-        $(document).ready(function () {
+        // Убрать tbody из большого DOM документа для лучшей производительности
+        grid.removeChild(tbody);
 
-            $('[data-toggle="tooltip"]').tooltip();
+        // добавить результат в нужном порядке в TBODY
+        // они автоматически будут убраны со старых мест и вставлены в правильном порядке
+        for (var i = 0; i < rowsArray.length; i++) {
+          tbody.appendChild(rowsArray[i]);
+        }
+        grid.appendChild(tbody);
+      }
 
-            $('#datetimepicker_create_date').datetimepicker({
-                locale: 'ru'
-            });
+      function addFault(item) {
 
-            $('#datetimepicker_close_date').datetimepicker({
-                locale: 'ru'
-            });
+        var dataTable = [];
+        var data = $('#faults').val();
+        try {
+          dataTable = JSON.parse(data);
+        }
+        catch (e) {
 
-            // autocomplete city + street + house
-            $('#address').typeahead({
-                items: 15,
-                source: function (query, process) {
-                    var results = [];
-                    map = {};
-                    $.ajax({
-                        'url': '/applications/address_autocomplete',
-                        'type': 'POST',
-                        'contentType': 'application/json',
-                        'data': JSON.stringify({
-                            'suggestion': query,
-                            'limit': 15
-                        }),
-                        success: function (datas) {
-                            if ((typeof datas == 'object') && ('items' in datas) && ('level' in datas)) {
-                                var level = datas.level;
-                                var data = datas.items;
-                                var text;
-                                if (Array.isArray(data)) {
-                                    data.forEach(function (item, index) {
-                                        item.level = level;
-                                        switch (level) {
-                                            case 0:
-                                                text = item.cityName;
-                                                map[text] = item;
-                                                results.push(text);
-                                                break;
-                                            case 1:
-                                                text = item.cityName + ', ' + item.streetName;
-                                                if (item.streetName.trim() !== '') {
-                                                    map[text] = item;
-                                                    results.push(text);
-                                                }
-                                                break;
-                                            case 2:
-                                                text = item.cityName + ', ' + item.streetName + ', ' + item.houseNumber;
-                                                if (item.houseNumber.trim() !== '') {
-                                                    map[text] = item;
-                                                    results.push(text);
-                                                }
-                                                break;
-                                            default:
-                                        }
-                                    });
-                                }
-                            }
-                            process(results);
-                        }
-                    });
-                },
-                updater: function (element) {
-                    var selectedElement = map[element];
-                    switch (selectedElement.level) {
-                        case 0:
-                            appData.address.cityId = selectedElement.cityId;
-                            appData.address.cityName = selectedElement.cityName;
-                            appData.setCityId(selectedElement.cityId);
-                            appData.clearStreet();
-                            return selectedElement.cityName + ', ';
-                        case 1:
-                            appData.address.cityId = selectedElement.cityId;
-                            appData.address.cityName = selectedElement.cityName;
-                            appData.address.streetId = selectedElement.streetId;
-                            appData.address.streetName = selectedElement.streetName;
-                            appData.setCityId(selectedElement.cityId);
-                            appData.setStreetId(selectedElement.streetId);
-                            appData.clearHouse();
-                            return selectedElement.cityName + ', ' + selectedElement.streetName + ', ';
-                        case 2:
-                            appData.address.cityId = selectedElement.cityId;
-                            appData.address.cityName = selectedElement.cityName;
-                            appData.address.streetId = selectedElement.streetId;
-                            appData.address.streetName = selectedElement.streetName;
-                            appData.address.houseId = selectedElement.houseId;
-                            appData.address.houseNumber = selectedElement.houseNumber;
-                            appData.setCityId(selectedElement.cityId);
-                            appData.setStreetId(selectedElement.streetId);
-                            appData.setHouseId(selectedElement.houseId);
-                            return selectedElement.cityName + ', ' + selectedElement.streetName + ', ' + selectedElement.houseNumber;
-                        default:
-                            return selectedElement.cityName;
-                    }
-                }
-            });
+        }
 
-            $('#performer').typeahead({
-                items: 15,
-                source: function (query, process) {
-                    var results = [];
-                    map = {};
-                    $.ajax({
-                        'url': '/applications/search_performer',
-                        'type': 'POST',
-                        'contentType': 'application/json',
-                        'data': JSON.stringify({
-                            'suggestion': query,
-                            'limit': 15
-                        }),
-                        success: function (datas) {
-                            $.each(datas, function (i, result) {
-                                map[result.value] = result;
-                                results.push(result.value);
-                            });
-                            process(results);
-                        }
-                    });
-                },
-                updater: function (element) {
-                    $('#performerId').val(map[element].id);
-                    return element;
-                }
-            });
+        if (typeof dataTable == 'string') {
+          dataTable = [];
+        }
 
-            $('#fault').typeahead({
-                items: 15,
-                minLength: 1,
-                source: function (query, process) {
-                    var results = [];
-                    map = {};
-                    $.ajax({
-                        'url': '/applications/find_fault',
-                        'type': 'POST',
-                        'contentType': 'application/json',
-                        'data': JSON.stringify({
-                            'suggestion': query,
-                            'limit': 15
-                        }),
-                        success: function (datas) {
-                            $.each(datas, function (i, result) {
-                                map[result.value] = result;
-                                results.push(result.value);
-                            });
-                            process(results);
-                        }
-                    });
-                },
-                updater: function (element) {
-                    dataTable = JSON.parse($('#faults').val());
-                    dataTable.push(map[element]);
+        var uid = --appData.generateUID;
 
-                    // https://stackoverflow.com/questions/15604122/jquery-delete-table-row
-                    var firstRow = $('#tableFaults > tbody > tr:first');
-                    try {
-                        if ((typeof (firstRow) == 'object') && ('length' in firstRow) && (firstRow.length == 1)) {
-                            // if (firstRow[0].cells[0].innerText.trim().tolowerCase() == 'нет данных')
-                            if (firstRow[0].cells[0].colSpan == 2) {
-                                firstRow.parent().remove();
-                            }
-                        }
-                    }
-                    catch (e) {
-                        //
-                    }
+        if ((typeof item === 'string') && (item.trim().length > 0)) {
 
-                    $('#tableFaults').last().append(
-                        '<tr class="warning">' +
-                        '<td>' + map[element].value + '</td>' +
-                        '<td class="warning text-center deleteRow">' + '<a href="#" class="btn btn-danger btn-xs"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span></a>' + '</td>' +
-                        '</tr>'
-                    );
-                    //
-                    $('#fault').focus().val('');
-                    // return element;
-                    $('#faults').val(JSON.stringify(dataTable));
-                }
-            });
+          var obj = {
+            id: uid,
+            faultName: item,
+            decision: '',
+            workerId: 0,
+            isDone: 0,
+            completionDT: new Date(),
+            workerName: ''
+          };
+          dataTable.push(obj);
 
-            $('body').on('click', '.deleteRow', function () {
-                dataTable = JSON.parse($('#faults').val());
-                var tr = $(this).closest('tr');
-                var rowIndex = tr.index();
-                tr.remove();
-                dataTable.splice(rowIndex, 1);
-                $('#faults').val(JSON.stringify(dataTable));
-            });
-
-            var grid = document.getElementById('tableFaults');
-            grid.onclick = function (e) {
-                if (e.target.tagName != 'TH') return;
-                var classList = e.target.className.split(' ');
-
-                bySort = false;
-                for (var i = 0; i < classList.length; i++) {
-                    if (classList[i] === 'sort') {
-                        bySort = true;
-                        break;
-                    }
-                }
-
-                if (bySort) {
-                    sortGrid(e.target.cellIndex);
-                }
-            };
-
-            function sortGrid(colNum, type) {
-                var tbody = grid.getElementsByTagName('tbody')[0];
-                var rowsArray = [].slice.call(tbody.rows);
-
-                var compare = function (rowA, rowB) {
-                    return rowA.cells[colNum].innerHTML > rowB.cells[colNum].innerHTML;
-                };
-
-                // сортировать
-                rowsArray.sort(compare);
-
-                // Убрать tbody из большого DOM документа для лучшей производительности
-                grid.removeChild(tbody);
-
-                // добавить результат в нужном порядке в TBODY
-                // они автоматически будут убраны со старых мест и вставлены в правильном порядке
-                for (var i = 0; i < rowsArray.length; i++) {
-                    tbody.appendChild(rowsArray[i]);
-                }
-                grid.appendChild(tbody);
+          var firstRow = $('#tableFaults > tbody > tr:first');
+          try {
+            if ((typeof (firstRow) == 'object') && ('length' in firstRow) && (firstRow.length == 1)) {
+              if (firstRow[0].cells[0].colSpan == 6) {
+                firstRow.parent().remove();
+              }
             }
+          }
+          catch (e) {
+            //
+          }
 
-        });
-    </script>
+          $('#tableFaults').last().append(
+            '<tr class="warning">' +
+            '<td>' + item + '</td>' +
+            '<td></td>' +
+            '<td></td>' +
+            '<td class="text-center">' + moment(new Date(obj.completionDT)).format('DD.MM.YYYY') + '</td>' +
+            '<td class="text-center"></td>' +
+            '<td class="warning text-center">' + 
+            '<button type="button" class="btn btn-info btn-xs editRow">' +
+              '<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>' +
+            '</button>&nbsp;' + 
+            '<button type="button" class="btn btn-danger btn-xs deleteRow">' +
+              '<span class="glyphicon glyphicon-minus" aria-hidden="true"></span>' +
+            '</button>' +
+            '</tr>'
+          );
+          $('#fault').focus().val('');
+
+          $('#faults').val(JSON.stringify(dataTable));
+        }
+      }
+
+      $('#application_dialog').on('show.bs.modal', function (e) {
+        //          
+      });
+
+      $('#application_dialog').on('hidden.bs.modal', function (e) {
+        //
+      });
+
+      $("#saveButton").click(function () {
+        $('#application_dialog').modal('hide');
+
+        var uid = $('#idTable').val();
+        var dataTable = JSON.parse($('#faults').val());
+
+        dataTable[uid].faultName = $('#dlgFaultName').val();
+        dataTable[uid].decision = $('#dlgDecision').val();
+        dataTable[uid].workerId = $('#dlgWorkerId').val();
+        dataTable[uid].workerName = ((+dataTable[uid].workerId) > 0) ? $('#dlgWorker').val() : '';
+        dataTable[uid].completionDT = $('#dlgCompletionDT').val();
+        dataTable[uid].isDone = $('#dlgIsDone:checked').val() === 'on' ? 1 : 0;
+
+        $('#faults').val(JSON.stringify(dataTable));
+
+        // Обновить табличную часть
+        // var $tableRow = $('#tableFaults tbody tr:eq(0)');
+        // var row = $('#tableFaults').find('tr').eq(uid);
+
+        var row = document.getElementById("tableFaults").rows[+uid + 2];
+        row.cells[0].innerText = dataTable[uid].faultName;
+        row.cells[1].innerText = dataTable[uid].decision;
+        row.cells[2].innerText = dataTable[uid].workerName;
+        row.cells[3].innerText = dataTable[uid].completionDT;
+        row.cells[4].innerHTML = +dataTable[uid].isDone == 1 ? '<button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-ok">' : '';
+
+
+
+
+        // var activeDriversTable = document.getElementById('table_active_drivers');
+        // for (var i = 1; i <= activeDriversTable.rows.length - 1; i++) {
+        //   if (activeDriversTable.rows[i].getElementsByTagName("td")[5].firstChild.checked) {
+        //     ws.send(JSON.stringify({
+        //       action: 'driver_support',
+        //       contract_number: activeDriversTable.rows[i].getElementsByTagName("td")[0].innerHTML,
+        //       no_support: true,
+        //       message: reasonLock
+        //     }));
+        //   }
+        // }
+      });
+
+      $('.select-all').on('focus', function (e) {
+        $(this)
+        .one('mouseup', function () {
+            $(this).select();
+            return false;
+        })
+        .select();
+    });
+
+    });
+  </script>
 </body>
 
 </html>

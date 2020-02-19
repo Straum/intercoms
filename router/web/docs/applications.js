@@ -1,12 +1,14 @@
 'use strict';
 
+const MAX_LENGTH = 60;
 const express = require('express');
+var PDFDocument = require('pdfkit');
 var db = require('../../../lib/db.js');
 const visibleRows = require('../../../lib/config').config.visibleRows;
 const rowsLimit = require('../../../lib/config.js').config.rowsLimit;
 var moment = require('moment');
 var utils = require('../../../lib/utils');
-const MAX_LENGTH = 60;
+var isCheckPerformer = false;
 
 // function getShortDescription(id) {
 //   return new Promise(function (resolve, reject) {
@@ -34,17 +36,65 @@ const MAX_LENGTH = 60;
 //   });
 // }
 
+var generateReport = function (req, res) {
+
+  var tableFaults = [];
+  try {
+    tableFaults = JSON.parse(req.body.faults);
+  } catch (error) {
+    //
+  }
+
+  var doc = new PDFDocument();
+  doc.registerFont('Fuh', 'fonts//DejaVuSans.ttf');
+  var filename = 'application.pdf';
+  res.setHeader('Content-disposition', 'attachment; filename="' + filename + '"');
+  res.setHeader('Content-type', 'application/pdf');
+
+  doc.registerFont('DejaVuSans', 'fonts//DejaVuSans.ttf');
+  doc.font('DejaVuSans');
+
+  doc.fontSize(14);
+  doc.text('Заявка от ' + req.body.createDate, 50, 50, { align: 'center' });
+
+  doc.fontSize(12);
+  doc
+    .text('Адрес: ' + req.body.address + ', подъезд: ' + req.body.porch, 50, 90)
+    .text('Телефон: ' + req.body.phone, 50, 110);
+
+  doc.moveDown();
+  doc.x = 50;
+  doc
+    .text('Список неисправностей', { underline: true });
+  doc.moveDown();
+
+  // var list = [];
+  // tableFaults.forEach(function (item) {
+  //   list.push(item.value);
+  // });
+  // doc.list(list);
+  // doc.moveDown();
+  doc.text('Всего неисправностей: ' + tableFaults.length);
+
+  doc.moveDown();
+  doc.text('Исполнитель: ' + req.body.performer, 50);
+
+  doc.pipe(res);
+  doc.end();
+};
+
+
 var getCity = function (cityName, callback) {
   db.get().getConnection(function (err, connection) {
     connection.query(
-      ' SELECT a.city_id AS id' +
+      ' SELECT a.city_id AS cityId' +
       ' FROM cities a' +
       ' WHERE a.name = ?' +
       ' LIMIT 1', [cityName], function (err, rows) {
         connection.release();
 
         if (typeof callback === 'function') {
-          callback(rows[0].id);
+          callback(rows[0].cityId);
         }
       }
     );
@@ -52,7 +102,7 @@ var getCity = function (cityName, callback) {
 };
 
 var getStreets = function (cityId, streetName, rowsLimit, callback) {
-  var queryText = ' SELECT a.street_id, a.name AS street_name' +
+  var queryText = ' SELECT a.street_id AS streetId, a.name AS streetName' +
     ' FROM streets a' +
     ' WHERE (a.city_id = ' + cityId + ')';
 
@@ -76,9 +126,9 @@ var getStreets = function (cityId, streetName, rowsLimit, callback) {
 };
 
 var getHouses = function (cityId, streetName, houseNumber, rowsLimit, callback) {
-  getStreets(cityId, streetName, 1, function (street) {
-    if ((Array.isArray(street)) && (street.length === 1)) {
-      var streetId = street[0].street_id;
+  getStreets(cityId, streetName, 1, function (streets) {
+    if ((Array.isArray(streets)) && (streets.length === 1)) {
+      var streetId = streets[0].streetId;
 
       var queryText = ' SELECT a.house_id, a.number AS house_number, a.street_id' +
         ' FROM houses a' +
@@ -107,91 +157,376 @@ var getHouses = function (cityId, streetName, houseNumber, rowsLimit, callback) 
 
 var saveTable = function (id, table, callback) {
 
-  var s = 'INSERT INTO faults (application_id, template_id) VALUES';
+  var s = 'INSERT INTO faults (application_id, name, decision, worker_id, is_done, completion_dt) VALUES';
+  var isAccepted = true;
   for (var ind = 0; ind < table.length; ind++) {
-    s += ' (' + id + ', ' + table[ind].id + ')';
+
+    if (+table[ind].isDone === 0) {
+      isAccepted = false;
+    }
+
+    // FIXME: Добить нормальную проверку!!!
+    // var checkDate = new utils.convertDateToMySQLDate(table[ind].completionDT, true);
+    var myDate = table[ind].completionDT;
+    if (typeof myDate === 'string') {
+      if (myDate.length > 10) {
+        myDate = myDate.substr(0, 10);
+      }
+    }
+
+    s += ' (' +
+
+      id + ', ' +
+      '"' + table[ind].faultName + '", ' +
+      '"' + table[ind].decision + '", ' +
+      table[ind].workerId + ', ' +
+      table[ind].isDone + ', ' +
+      // '"' +  checkDate.outputDate() + '"' +
+      // typeof myDate === 'string' ? '"' +  myDate + '"' : 'null' +
+      '"' + myDate + '"' +
+
+      ')';
     if (ind < table.length - 1) {
       s += ',';
     }
   }
 
+  console.log('s = ' + s);
+
   db.get().getConnection(function (err, connection) {
     connection.query(s, [], function () {
       connection.release();
 
+      if (err) {
+        throw err;
+      }
+
       if (typeof callback === 'function') {
-        callback();
+        callback(isAccepted);
       }
 
     });
   });
 };
 
-module.exports = function () {
-  var router = express.Router();
+var additionalWhereInQuery = function (req) {
+  var obj = {};
+  var result = {
+    filter: {
+      city: { id: 0, value: '' },
+      street: { id: 0, value: '' },
+      house: { id: 0, value: '' },
+      performer: { id: 0, value: '' },
+    },
+    where: ''
+  };
 
-  router.get('/', function (req, res) {
-    var pageCount = 0;
-    var countRecords = 0;
-    db.get().getConnection(function (err, connection) {
-      connection.query(
-        ' SELECT COUNT(*) AS count' +
-        ' FROM applications a WHERE (a.application_id > 0) AND' +
-        ' a.is_done = 0', [], function (err, rows) {
-          connection.release();
-          countRecords = rows[0].count;
-          pageCount =
-            (countRecords / visibleRows) < 1 ? 0 : Math.ceil(countRecords / visibleRows);
+  try {
+    if (req.query) {
+      if ('cityId' in req.query) {
+        obj = JSON.parse(req.query.cityId);
+        if (+ obj.id > 0) {
+          result.where += ' AND (a.city_id = ' + obj.id + ')';
+          result.filter.city = {
+            id: obj.id,
+            value: obj.value
+          };
+        }
+      }
+
+      // if (('streetId' in req.query) && (req.query.streetId.trim() !== '')) {
+      //   result.where += ' AND (a.street_id = ' + req.query.streetId + ')';
+      // }
+      if ('streetId' in req.query) {
+        obj = JSON.parse(req.query.streetId);
+        if (+ obj.id > 0) {
+          result.where += ' AND (a.street_id = ' + obj.id + ')';
+          result.filter.street = {
+            id: obj.id,
+            value: obj.value
+          };
+        }
+      }
+
+      if ('houseId' in req.query) {
+        obj = JSON.parse(req.query.houseId);
+        if (+ obj.id > 0) {
+          result.where += ' AND (a.house_id = ' + obj.id + ')';
+          result.filter.house = {
+            id: obj.id,
+            value: obj.value
+          };
+        }
+      }
+
+      // if (('houseId' in req.query) && (req.query.houseId.trim() !== '')) {
+      //   result.where += ' AND (a.house_id = ' + req.query.houseId + ')';
+      // }
+
+      if ('performerId' in req.query) {
+        obj = JSON.parse(req.query.performerId);
+        if (+ obj.id > 0) { // + add "No data"
+          result.where += ' AND (a.worker_id = ' + obj.id + ')';
+          result.filter.performer = {
+            id: obj.id,
+            value: obj.value
+          };
+        }
+      }
+
+      // if (('performerId' in req.query) && (req.query.performerId.trim() !== '')){
+      //   result.where += ' AND (a.worker_id = ' + req.query.performerId + ')';
+      // }
+    }
+  }
+  catch (err) {
+    throw (err);
+  }
+  return result;
+};
+
+var downloadReport = function (req, res) {
+  var additionalWhere = additionalWhereInQuery(req);
+
+  var fullQuery =
+    ' SELECT a.application_id AS documentId, DATE_FORMAT(a.create_date, "%d.%m.%Y %H:%i") AS createDate,' +
+    ' b.name AS cityName, c.name AS streetName,' +
+    ' d.number AS houseNumber, a.porch, a.kind, ' +
+    ' a.phone, ' +
+    ' f.name AS performerName,' +
+    ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc' +
+    ' FROM applications a' +
+    ' LEFT JOIN cities b ON b.city_id = a.city_id' +
+    ' LEFT JOIN streets c ON c.street_id = a.street_id' +
+    ' LEFT JOIN houses d ON d.house_id = a.house_id' +
+    ' LEFT JOIN workers f ON f.worker_id = a.worker_id' +
+    ' WHERE (a.application_id > 0)' +
+    ' AND (a.is_done = 0)' +
+    additionalWhere.where +
+    ' ORDER BY f.name , a.create_date ASC';
+
+  var doc = new PDFDocument();
+  doc.registerFont('Fuh', 'fonts//DejaVuSans.ttf');
+  var filename = 'applications.pdf';
+  res.setHeader('Content-disposition', 'attachment; filename="' + filename + '"');
+  res.setHeader('Content-type', 'applications/pdf');
+
+  doc.registerFont('DejaVuSans', 'fonts//DejaVuSans.ttf');
+  doc.font('DejaVuSans');
+
+  db.get().getConnection(function (err, connection) {
+    connection.query(
+      fullQuery, function (err, rows) {
+        if (err) {
+          throw err;
+        }
+        connection.release();
+
+        if (err) {
+          console.error(err);
+          res.status(500).send({
+            'code': 500,
+            'msg': 'Database error'
+          });
+        } else {
+
+          var dataset = rows;
+
+          var parameters = '';
+          if (Array.isArray(rows) && (rows.length > 0)) {
+            for (var ind = 0; ind < rows.length; ind++) {
+              parameters += rows[ind].documentId + (ind < rows.length - 1 ? ', ' : '');
+            }
+            parameters = '(' + parameters + ')';
+          }
 
           db.get().getConnection(function (err, connection) {
+            var stringSQL =
+              ' SELECT a.application_id AS documentId, a.name AS problemDescription' +
+              ' FROM faults a' +
+              ' WHERE a.application_id IN ';
+            if (parameters.trim().length === 0) {
+              parameters = '(-1)';
+            }
+            stringSQL += parameters;
+
             connection.query(
-              ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
-              ' b.name AS cityName, c.name AS streetName,' +
-              ' d.number AS houseNumber, a.porch, ' +
-              ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc' +
-              ' FROM applications a' +
-              ' LEFT JOIN cities b ON b.city_id = a.city_id' +
-              ' LEFT JOIN streets c ON c.street_id = a.street_id' +
-              ' LEFT JOIN houses d ON d.house_id = a.house_id' +
-              ' WHERE (a.application_id > 0)' +
-              ' AND a.is_done = 0' +
-              ' ORDER BY a.create_date ASC' +
-              ' LIMIT ?', [visibleRows], function (err, rows) {
+              stringSQL, [], function (err, rows) {
                 connection.release();
-                
+
                 if (err) {
                   res.status(500).send({
                     'code': 500,
                     'msg': 'Database error'
                   });
-                } else {
-                  var currentPage = 1;
+                }
+                else {
 
-                  var dataset = rows;
-                  for (var ind = 0; ind < dataset.length; ind++) {
-                    dataset[ind].problemDescription = '';
+                  doc.x = 50;
+                  dataset.forEach(function (item) {
+                    var list = [];
+
+                    rows.forEach(function (fault) {
+                      // FIXME: filter!!!!!
+                      if (item.documentId == fault.documentId) {
+                        list.push(fault.problemDescription);
+                      }
+                    });
+
+                    doc.fontSize(14);
+                    doc.text('Заявка от ' + item.createDate, { align: 'center' });
+                    doc.moveDown();
+
+                    doc.fontSize(12);
+                    doc
+                      .text('Адрес: ' + item.cityName + ',' + item.streetName + ', ' + item.houseNumber + (item.kind == 0 ? ', подъезд ' : ', кваритира ') + item.porch)
+                      .text('Телефон: ' + item.phone)
+
+                      .moveDown()
+                      .text('Список неисправностей', { underline: true })
+                      .list(list)
+                      .text('Всего неисправностей: ' + list.length)
+                      .moveDown()
+                      .text('Исполнитель: ' + item.performerName)
+                      .moveDown()
+                      .moveDown();
+                  });
+                  doc.pipe(res);
+                  doc.end();
+                }
+              });
+          });
+        }
+      });
+  });
+};
+
+var redirectToAccepted = function (res, uid) {
+  db.get().getConnection(function (err, connection) {
+    connection.query(
+      ' UPDATE applications SET' +
+      ' is_done = ?' +
+      ' WHERE application_id = ?', [1, uid], function (err) {
+
+        connection.release();
+
+        if (err) {
+          res.status(500).send({
+            code: 500,
+            msg: 'Database Error',
+            errorName: err.name,
+            errorMessage: err.message
+          });
+        }
+
+        res.redirect('/applications/completed');
+
+      });
+  });
+};
+
+var findRecords = function (req, res) {
+  if ('downloadReport' in req.query) {
+    downloadReport(req, res);
+    return;
+  }
+
+  var pageCount = 0;
+  var countRecords = 0;
+
+  var additionalQuery = additionalWhereInQuery(req);
+
+
+  var countRecordsQuery =
+    ' SELECT COUNT(*) AS count' +
+    ' FROM applications a WHERE (a.application_id > 0) AND' +
+    ' (a.is_done = 0)' + additionalQuery.where;
+
+  var fullQuery =
+    ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
+    ' b.name AS cityName, c.name AS streetName,' +
+    ' d.number AS houseNumber, e.name AS performerName,' +
+    ' CASE ' +
+    ' WHEN a.kind = 0 THEN CONCAT("под. ", a.porch)' +
+    ' WHEN a.kind = 1 THEN CONCAT("кв. ", a.porch)' +
+    ' END AS numeration, ' +
+    ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc' +
+    ' FROM applications a' +
+    ' LEFT JOIN cities b ON b.city_id = a.city_id' +
+    ' LEFT JOIN streets c ON c.street_id = a.street_id' +
+    ' LEFT JOIN houses d ON d.house_id = a.house_id' +
+    ' LEFT JOIN workers e ON e.worker_id = a.worker_id' +
+    ' WHERE (a.application_id > 0)' +
+    ' AND (a.is_done = 0)' + additionalQuery.where +
+    ' ORDER BY a.create_date ASC' +
+    ' LIMIT ' + visibleRows;
+
+
+  db.get().getConnection(function (err, connection) {
+    connection.query(
+      // ' SELECT COUNT(*) AS count' +
+      // ' FROM applications a WHERE (a.application_id > 0) AND' +
+      // ' a.is_done = 0', [], function (err, rows) {
+      countRecordsQuery, [], function (err, rows) {
+        connection.release();
+        countRecords = rows[0].count;
+        pageCount =
+          (countRecords / visibleRows) < 1 ? 0 : Math.ceil(countRecords / visibleRows);
+
+        db.get().getConnection(function (err, connection) {
+          connection.query(
+            fullQuery, [], function (err, rows) {
+              // ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
+              // ' b.name AS cityName, c.name AS streetName,' +
+              // ' d.number AS houseNumber, e.name AS performerName,' +
+              // ' CASE ' +
+              // ' WHEN a.kind = 0 THEN CONCAT("под. ", a.porch)' +
+              // ' WHEN a.kind = 1 THEN CONCAT("кв. ", a.porch)' +
+              // ' END AS numeration, ' +
+              // ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc' +
+              // ' FROM applications a' +
+              // ' LEFT JOIN cities b ON b.city_id = a.city_id' +
+              // ' LEFT JOIN streets c ON c.street_id = a.street_id' +
+              // ' LEFT JOIN houses d ON d.house_id = a.house_id' +
+              // ' LEFT JOIN workers e ON e.worker_id = a.worker_id' +
+              // ' WHERE (a.application_id > 0)' +
+              // ' AND a.is_done = 0' +
+              // ' ORDER BY a.create_date ASC' +
+              // ' LIMIT ?', [visibleRows], function (err, rows) {
+              connection.release();
+
+              if (err) {
+                res.status(500).send({
+                  'code': 500,
+                  'msg': 'Database error'
+                });
+              } else {
+                var currentPage = 1;
+
+                var dataset = rows;
+                for (var ind = 0; ind < dataset.length; ind++) {
+                  dataset[ind].problemDescription = '';
+                }
+
+                var parameters = '';
+                if (Array.isArray(rows) && (rows.length > 0)) {
+                  for (ind = 0; ind < rows.length; ind++) {
+                    parameters += rows[ind].documentId + (ind < rows.length - 1 ? ', ' : '');
                   }
+                  parameters = '(' + parameters + ')';
+                }
 
-                  var parameters = '';
-                  if (Array.isArray(rows) && (rows.length > 0)) {
-                    for (ind = 0; ind < rows.length; ind++) {
-                      parameters += rows[ind].documentId + (ind < rows.length - 1 ? ', ' : '');
-                    }
-                    parameters = '(' + parameters + ')';
-                  }
-
-                  db.get().getConnection(function (err, connection) {
-                    var stringSQL = 
-                    ' SELECT a.application_id AS documentId, b.name AS problemDescription FROM faults a' +
-                    ' LEFT JOIN templates b ON b.template_id = a.template_id' +
+                db.get().getConnection(function (err, connection) {
+                  var stringSQL =
+                    ' SELECT a.application_id AS documentId, a.name AS problemDescription FROM faults a' +
                     ' WHERE a.application_id IN ';
-                    if (parameters.trim().length === 0) {
-                      parameters = '(-1)';
-                    }
-                    stringSQL += parameters;
+                  if (parameters.trim().length === 0) {
+                    parameters = '(-1)';
+                  }
+                  stringSQL += parameters;
 
-                    connection.query(
-                      stringSQL, [], function (err, rows) {
+                  connection.query(
+                    stringSQL, [], function (err, rows) {
                       connection.release();
 
                       if (err) {
@@ -202,7 +537,7 @@ module.exports = function () {
                       }
                       else {
                         console.log(rows);
-                        rows.forEach( function(item) {
+                        rows.forEach(function (item) {
                           for (var ind = 0; ind < dataset.length; ind++) {
                             if (dataset[ind].documentId === item.documentId) {
                               dataset[ind].problemDescription += (dataset[ind].problemDescription.trim().length > 0 ? ', ' : '') + item.problemDescription;
@@ -219,16 +554,24 @@ module.exports = function () {
                           'currentPage': currentPage,
                           'visibleRows': visibleRows,
                           'countRecords': countRecords,
-                          'moment': moment
+                          'moment': moment,
+                          filter: additionalQuery.filter
                         });
                       }
                     });
-                  });
-                }
-              });
-          });
+                });
+              }
+            });
         });
-    });
+      });
+  });
+}
+
+module.exports = function () {
+  var router = express.Router();
+
+  router.get('/', function (req, res) {
+    findRecords(req, res);
   });
 
   router.get('/edit/:id', function (req, res) {
@@ -238,32 +581,39 @@ module.exports = function () {
     db.get().getConnection(function (err, connection) {
       // Load table
       connection.query(
-        ' SELECT a.template_id AS id, b.name AS value' +
+        ' SELECT a.fault_id AS id, a.name AS faultName, a.decision, a.worker_id AS workerId,' +
+        ' a.is_done AS isDone, a.completion_dt AS completionDT,' +
+        ' b.name AS workerName' +
         ' FROM faults a' +
-        ' LEFT JOIN templates b ON b.template_id = a.template_id' +
+        ' LEFT JOIN workers b ON b.worker_id = a.worker_id' +
         ' WHERE a.application_id = ?', [id], function (err, rows) {
           connection.release();
 
           if (err) {
             console.error(err);
             res.status(500).send({
-              'code': 500,
-              'msg': 'Database error'
+              code: 500,
+              msg: 'Database error',
+              errorName: err.name,
+              errorMessage: err.message
             });
           } else {
 
             if ((rows !== undefined) && (rows.length > 0)) {
-              data.faults = JSON.stringify(rows);
+              data.faults = rows;
             }
             else {
-              data.faults = JSON.stringify([]);
+              data.faults = '';
             }
+
+            data.faultsToString = JSON.stringify(data.faults);
+
             // Load Main form
             db.get().getConnection(function (err, connection) {
               connection.query(
                 ' SELECT a.application_id AS documentId, a.is_done AS isDone, a.create_date AS createDate,' +
                 ' b.name AS cityName, c.name AS streetName,' +
-                ' d.number AS houseNumber, a.porch, a.phone,' +
+                ' d.number AS houseNumber, a.porch, a.kind, a.phone,' +
                 ' e.name AS performer,' +
                 ' b.city_id AS cityId, c.street_id AS streetId, d.house_id AS houseId,' +
                 ' e.worker_id AS performerId,' +
@@ -273,16 +623,33 @@ module.exports = function () {
                 ' LEFT JOIN streets c ON c.street_id = a.street_id' +
                 ' LEFT JOIN houses d ON d.house_id = a.house_id' +
                 ' LEFT JOIN workers e ON e.worker_id = a.worker_id' +
-                ' WHERE (a.application_id = ?)', [id], function (err, rows) {
+                ' WHERE (a.application_id = ?)' +
+                ' LIMIT 1', [id], function (err, rows) {
                   connection.release();
 
                   if (err) {
                     console.error(err);
                     res.status(500).send({
-                      'code': 500,
-                      'msg': 'Database error'
+                      code: 500,
+                      msg: 'Database error',
+                      errorName: err.name,
+                      errorMessage: err.message
                     });
                   } else {
+
+                    data.documentId = rows[0].documentId;
+                    data.cityId = rows[0].cityId;
+                    data.streetId = rows[0].streetId;
+                    data.houseId = rows[0].houseId;
+                    data.performerId = rows[0].performerId;
+
+                    data.createDate = rows[0].createDate;
+                    data.porch = rows[0].porch;
+                    data.kind = rows[0].kind;
+                    data.phone = rows[0].phone;
+                    data.performer = rows[0].performer;
+                    data.isDone = rows[0].isDone;
+                    data.closeDate = rows[0].closeDate;
 
                     data.address = '';
                     if (rows[0].cityId > 0) {
@@ -294,19 +661,6 @@ module.exports = function () {
                         }
                       }
                     }
-
-                    data.documentId = rows[0].documentId;
-                    data.cityId = rows[0].cityId;
-                    data.streetId = rows[0].streetId;
-                    data.houseId = rows[0].houseId;
-                    data.performerId = rows[0].performerId;
-
-                    data.createDate = rows[0].createDate;
-                    data.porch = rows[0].porch;
-                    data.phone = rows[0].phone;
-                    data.performer = rows[0].performer;
-                    data.isDone = rows[0].isDone;
-                    data.closeDate = rows[0].closeDate;
 
                     res.render('docs/forms/application.ejs', {
                       'data': data,
@@ -330,13 +684,18 @@ module.exports = function () {
     res.render(
       'docs/forms/application.ejs',
       {
-        'data': {
-          'faults': JSON.stringify([])
+        data: {
+          faults: '',
+          faultsToString: JSON.stringify('')
         },
-        'moment': moment,
-        'errors': {}
+        moment: moment,
+        errors: {}
       }
     );
+  });
+
+  router.get('/filter', function (req, res) {
+    findRecords(req, res);
   });
 
   router.get('/completed', function (req, res) {
@@ -356,7 +715,7 @@ module.exports = function () {
             connection.query(
               ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
               ' b.name AS cityName, c.name AS streetName,' +
-              ' d.number AS houseNumber, a.porch, ' +
+              ' d.number AS houseNumber, a.porch, a.kind, ' +
               ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc' +
               ' FROM applications a' +
               ' LEFT JOIN cities b ON b.city_id = a.city_id' +
@@ -394,10 +753,10 @@ module.exports = function () {
                   }
 
                   db.get().getConnection(function (err, connection) {
-                    var stringSQL = 
-                    ' SELECT a.application_id AS documentId, b.name AS problemDescription FROM faults a' +
-                    ' LEFT JOIN templates b ON b.template_id = a.template_id' +
-                    ' WHERE a.application_id IN ';
+                    var stringSQL =
+                      ' SELECT a.application_id AS documentId, a.name AS problemDescription' +
+                      ' FROM faults a' +
+                      ' WHERE a.application_id IN ';
                     if (parameters.trim().length === 0) {
                       parameters = '(-1)';
                     }
@@ -405,37 +764,36 @@ module.exports = function () {
 
                     connection.query(
                       stringSQL, [], function (err, rows) {
-                      connection.release();
+                        connection.release();
 
-                      if (err) {
-                        res.status(500).send({
-                          'code': 500,
-                          'msg': 'Database error'
-                        });
-                      }
-                      else {
-                        console.log(rows);
-                        rows.forEach( function(item) {
-                          for (var ind = 0; ind < dataset.length; ind++) {
-                            if (dataset[ind].documentId === item.documentId) {
-                              dataset[ind].problemDescription += (dataset[ind].problemDescription.trim().length > 0 ? ', ' : '') + item.problemDescription;
-                              if (dataset[ind].problemDescription.length >= MAX_LENGTH) {
-                                dataset[ind].problemDescription = utils.formatStringWithEllipses(dataset[ind].problemDescription, MAX_LENGTH);
+                        if (err) {
+                          res.status(500).send({
+                            'code': 500,
+                            'msg': 'Database error'
+                          });
+                        }
+                        else {
+                          rows.forEach(function (item) {
+                            for (var ind = 0; ind < dataset.length; ind++) {
+                              if (dataset[ind].documentId === item.documentId) {
+                                dataset[ind].problemDescription += (dataset[ind].problemDescription.trim().length > 0 ? ', ' : '') + item.problemDescription;
+                                if (dataset[ind].problemDescription.length >= MAX_LENGTH) {
+                                  dataset[ind].problemDescription = utils.formatStringWithEllipses(dataset[ind].problemDescription, MAX_LENGTH);
+                                }
+                                break;
                               }
-                              break;
                             }
-                          }
-                        });
-                        res.render('docs/done_applications.ejs', {
-                          'data': dataset,
-                          'pageCount': pageCount,
-                          'currentPage': currentPage,
-                          'visibleRows': visibleRows,
-                          'countRecords': countRecords,
-                          'moment': moment
-                        });
-                      }
-                    });
+                          });
+                          res.render('docs/done_applications.ejs', {
+                            'data': dataset,
+                            'pageCount': pageCount,
+                            'currentPage': currentPage,
+                            'visibleRows': visibleRows,
+                            'countRecords': countRecords,
+                            'moment': moment
+                          });
+                        }
+                      });
                   });
                 }
               });
@@ -445,6 +803,12 @@ module.exports = function () {
   });
 
   router.post('/save', function (req, res) {
+
+    if (req.body.generateReport) {
+      generateReport(req, res);
+      return;
+    }
+
 
     if ('move' in req.body) {
       res.redirect('/applications');
@@ -512,9 +876,11 @@ module.exports = function () {
     }
 
     // Verify performer
-    var checkPerformer = ((req.body.performerId.trim() !== '') && (Number.isFinite(+req.body.performerId) ? (+req.body.performerId > 0 ? true : false) : false));
-    if ((typeof checkPerformer !== 'boolean') || ((typeof checkPerformer === 'boolean') && (!checkPerformer))) {
-      errors.performer = performer;
+    if (isCheckPerformer) {
+      var checkPerformer = ((req.body.performerId.trim() !== '') && (Number.isFinite(+req.body.performerId) ? (+req.body.performerId > 0 ? true : false) : false));
+      if ((typeof checkPerformer !== 'boolean') || ((typeof checkPerformer === 'boolean') && (!checkPerformer))) {
+        errors.performer = performer;
+      }
     }
 
     if (Object.keys(errors).length > 0) {
@@ -529,6 +895,11 @@ module.exports = function () {
     }
     else {
       // Запись в БД
+      var workerId = req.body.performerId;
+      if (workerId.trim() === '') {
+        workerId = 0;
+      }
+
       if ((req.body.documentId) && (req.body.documentId.trim() !== '') && (isFinite(req.body.documentId))) {
 
         var isDone = +req.body.isDone;
@@ -551,34 +922,41 @@ module.exports = function () {
                 ' street_id = ?,' +
                 ' house_id = ?,' +
                 ' porch = ?,' +
+                ' kind = ?,' +
                 ' phone = ?,' +
                 ' worker_id = ?,' +
                 ' is_done = ?' +
                 ' WHERE application_id = ?', [
-                  checkDate.outputDate(),
-                  req.body.cityId,
-                  req.body.streetId,
-                  req.body.houseId,
-                  req.body.porch,
-                  req.body.phone,
-                  req.body.performerId,
-                  isDone,
-                  req.body.documentId
-                ], function (err) {
-                  connection.release();
-                  if (err) {
-                    res.status(500).send({ 'code': 500, 'msg': 'Database Error' });
-                  } else {
-                    saveTable(req.body.documentId, tableFaults, function () {
-                      if (+req.body.isDone === 1) {
-                        res.redirect('/applications/completed');
-                      }
-                      else {
-                        res.redirect('/applications');
-                      }
-                    });
-                  }
+                checkDate.outputDate(),
+                req.body.cityId,
+                req.body.streetId,
+                req.body.houseId,
+                req.body.porch,
+                req.body.kind,
+                req.body.phone,
+                workerId,
+                isDone,
+                req.body.documentId
+              ], function (err) {
+                connection.release();
+                if (err) {
+                  res.status(500).send({
+                    code: 500,
+                    msg: 'Database Error',
+                    errorName: err.name,
+                    errorMessage: err.message
+                  });
+                } else {
+                  saveTable(req.body.documentId, tableFaults, function (isAccepted) {
+                    if (isAccepted) {
+                      redirectToAccepted(res, req.body.documentId);
+                    }
+                    else {
+                      res.redirect('/applications');
+                    }
+                  });
                 }
+              }
               );
             });
           });
@@ -587,28 +965,168 @@ module.exports = function () {
       else {
         db.get().getConnection(function (err, connection) {
           connection.query(
-            ' INSERT INTO applications (create_date, city_id, street_id, house_id, porch, phone, worker_id)' +
-            ' VALUE(?, ?, ?, ?, ?, ?, ?)', [
-              checkDate.outputDate(),
-              req.body.cityId,
-              req.body.streetId,
-              req.body.houseId,
-              req.body.porch,
-              req.body.phone,
-              req.body.performerId
-            ], function (err, rows) {
-              connection.release();
-              if (err) {
-                res.status(500).send({ 'code': 500, 'msg': 'Database Error' });
-              } else {
-                saveTable(rows.insertId, tableFaults, function () {
+            ' INSERT INTO applications (create_date, city_id, street_id, house_id, porch, kind, phone, worker_id)' +
+            ' VALUE(?, ?, ?, ?, ?, ?, ?, ?)', [
+            checkDate.outputDate(),
+            req.body.cityId,
+            req.body.streetId,
+            req.body.houseId,
+            req.body.porch,
+            req.body.kind,
+            req.body.phone,
+            workerId
+          ], function (err, rows) {
+            connection.release();
+            if (err) {
+              res.status(500).send({
+                code: 500,
+                msg: 'Database Error',
+                errorName: err.name,
+                errorMessage: err.message
+              });
+            } else {
+              saveTable(rows.insertId, tableFaults, function (isAccepted) {
+                if (isAccepted) {
+                  redirectToAccepted(res, rows.insertId);
+                }
+                else {
                   res.redirect('/applications');
-                });
-              }
+                }
+              });
             }
+          }
           );
         });
       }
+    }
+  });
+
+  router.post('/search_city', function (req, res) {
+    var data = req.body;
+    var suggestion = '';
+    if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
+      suggestion = data.suggestion.trim();
+
+      var queryText =
+        ' SELECT a.city_id AS id, a.name AS value' +
+        ' FROM cities a';
+      if (suggestion.length > 0) {
+        queryText += ' WHERE a.name LIKE ' + `'` + suggestion + '%' + `'`;
+      }
+      queryText += ' ORDER BY a.name ASC';
+      queryText += ' LIMIT ' + ('limit' in data ? data.limit : rowsLimit);
+
+      db.get().getConnection(function (err, connection) {
+        connection.query(
+          queryText, [], function (err, rows) {
+            connection.release();
+
+            if (err) {
+              res.status(500).send({
+                code: 500,
+                msg: 'Database Error',
+                errorName: err.name,
+                errorMessage: err.message
+              });
+            } else {
+              res.status(200).send(rows);
+            }
+          }
+        );
+      });
+    }
+    else {
+      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    }
+  });
+
+  router.post('/search_street', function (req, res) {
+    var isWhere = false;
+    var data = req.body;
+    var suggestion = '';
+    if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
+      suggestion = data.suggestion.trim();
+
+      var queryText =
+        ' SELECT a.street_id AS id, a.name AS value' +
+        ' FROM streets a';
+
+      if ('cityId' in data) {
+        isWhere = true;
+        queryText += ' WHERE (a.city_id = ' + data.cityId + ')';
+      }
+      if (suggestion.length > 0) {
+        queryText += isWhere ? ' AND ' : ' WHERE';
+        queryText += ' (a.name LIKE ' + `'` + suggestion + '%' + `'` + ')';
+      }
+      queryText += ' ORDER BY a.name ASC';
+      queryText += ' LIMIT ' + ('limit' in data ? data.limit : rowsLimit);
+
+      db.get().getConnection(function (err, connection) {
+        connection.query(
+          queryText, [], function (err, rows) {
+            connection.release();
+
+            if (err) {
+              res.status(500).send({
+                'code': 500,
+                'msg': 'Database Error',
+                'err': JSON.stringify(err)
+              });
+            } else {
+              res.status(200).send(rows);
+            }
+          }
+        );
+      });
+    }
+    else {
+      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    }
+  });
+
+  router.post('/search_house', function (req, res) {
+    var isWhere = false;
+    var data = req.body;
+    var suggestion = '';
+    if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
+      suggestion = data.suggestion.trim();
+
+      var queryText =
+        ' SELECT a.house_id AS id, a.number AS value' +
+        ' FROM houses a';
+
+      if ('streetId' in data) {
+        isWhere = true;
+        queryText += ' WHERE (a.street_id = ' + data.streetId + ')';
+      }
+      if (suggestion.length > 0) {
+        queryText += isWhere ? ' AND ' : ' WHERE';
+        queryText += ' (a.number LIKE ' + `'` + suggestion + '%' + `'` + ')';
+      }
+      queryText += ' ORDER BY a.number ASC';
+      queryText += ' LIMIT ' + ('limit' in data ? data.limit : rowsLimit);
+
+      db.get().getConnection(function (err, connection) {
+        connection.query(
+          queryText, [], function (err, rows) {
+            connection.release();
+
+            if (err) {
+              res.status(500).send({
+                'code': 500,
+                'msg': 'Database Error',
+                'err': JSON.stringify(err)
+              });
+            } else {
+              res.status(200).send(rows);
+            }
+          }
+        );
+      });
+    }
+    else {
+      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
     }
   });
 
@@ -756,8 +1274,8 @@ module.exports = function () {
                   items.push({
                     'cityId': cityId,
                     'cityName': words[0].trim(),
-                    'streetId': item.street_id,
-                    'streetName': item.street_name
+                    'streetId': item.streetId,
+                    'streetName': item.streetName
                   });
                 });
               }
@@ -851,10 +1369,10 @@ module.exports = function () {
                   }
 
                   db.get().getConnection(function (err, connection) {
-                    var stringSQL = 
-                    ' SELECT a.application_id AS documentId, b.name AS problemDescription FROM faults a' +
-                    ' LEFT JOIN templates b ON b.template_id = a.template_id' +
-                    ' WHERE a.application_id IN ';
+                    var stringSQL =
+                      ' SELECT a.application_id AS documentId, b.name AS problemDescription FROM faults a' +
+                      ' LEFT JOIN templates b ON b.template_id = a.template_id' +
+                      ' WHERE a.application_id IN ';
                     if (parameters.trim().length === 0) {
                       parameters = '(-1)';
                     }
@@ -862,37 +1380,37 @@ module.exports = function () {
 
                     connection.query(
                       stringSQL, [], function (err, rows) {
-                      connection.release();
-                      
-                      if (err) {
-                        res.status(500).send({
-                          'code': 500,
-                          'msg': 'Database error'
-                        });
-                      }
-                      else {
-                        console.log(rows);
-                        rows.forEach( function(item) {
-                          for (var ind = 0; ind < dataset.length; ind++) {
-                            if (dataset[ind].documentId === item.documentId) {
-                              dataset[ind].problemDescription += (dataset[ind].problemDescription.trim().length > 0 ? ', ' : '') + item.problemDescription;
-                              if (dataset[ind].problemDescription.length >= MAX_LENGTH) {
-                                dataset[ind].problemDescription = utils.formatStringWithEllipses(dataset[ind].problemDescription, MAX_LENGTH);
+                        connection.release();
+
+                        if (err) {
+                          res.status(500).send({
+                            'code': 500,
+                            'msg': 'Database error'
+                          });
+                        }
+                        else {
+                          console.log(rows);
+                          rows.forEach(function (item) {
+                            for (var ind = 0; ind < dataset.length; ind++) {
+                              if (dataset[ind].documentId === item.documentId) {
+                                dataset[ind].problemDescription += (dataset[ind].problemDescription.trim().length > 0 ? ', ' : '') + item.problemDescription;
+                                if (dataset[ind].problemDescription.length >= MAX_LENGTH) {
+                                  dataset[ind].problemDescription = utils.formatStringWithEllipses(dataset[ind].problemDescription, MAX_LENGTH);
+                                }
+                                break;
                               }
-                              break;
                             }
-                          }
-                        });
-                        res.render('docs/applications.ejs', {
-                          'data': dataset,
-                          'pageCount': pageCount,
-                          'currentPage': currentPage,
-                          'visibleRows': visibleRows,
-                          'countRecords': countRecords,
-                          'moment': moment
-                        });
-                      }
-                    });
+                          });
+                          res.render('docs/applications.ejs', {
+                            'data': dataset,
+                            'pageCount': pageCount,
+                            'currentPage': currentPage,
+                            'visibleRows': visibleRows,
+                            'countRecords': countRecords,
+                            'moment': moment
+                          });
+                        }
+                      });
                   });
                 }
               });
@@ -956,10 +1474,10 @@ module.exports = function () {
                   }
 
                   db.get().getConnection(function (err, connection) {
-                    var stringSQL = 
-                    ' SELECT a.application_id AS documentId, b.name AS problemDescription FROM faults a' +
-                    ' LEFT JOIN templates b ON b.template_id = a.template_id' +
-                    ' WHERE a.application_id IN ';
+                    var stringSQL =
+                      ' SELECT a.application_id AS documentId, b.name AS problemDescription FROM faults a' +
+                      ' LEFT JOIN templates b ON b.template_id = a.template_id' +
+                      ' WHERE a.application_id IN ';
                     if (parameters.trim().length === 0) {
                       parameters = '(-1)';
                     }
@@ -967,43 +1485,76 @@ module.exports = function () {
 
                     connection.query(
                       stringSQL, [], function (err, rows) {
-                      connection.release();
-                      
-                      if (err) {
-                        res.status(500).send({
-                          'code': 500,
-                          'msg': 'Database error'
-                        });
-                      }
-                      else {
-                        console.log(rows);
-                        rows.forEach( function(item) {
-                          for (var ind = 0; ind < dataset.length; ind++) {
-                            if (dataset[ind].documentId === item.documentId) {
-                              dataset[ind].problemDescription += (dataset[ind].problemDescription.trim().length > 0 ? ', ' : '') + item.problemDescription;
-                              if (dataset[ind].problemDescription.length >= MAX_LENGTH) {
-                                dataset[ind].problemDescription = utils.formatStringWithEllipses(dataset[ind].problemDescription, MAX_LENGTH);
+                        connection.release();
+
+                        if (err) {
+                          res.status(500).send({
+                            'code': 500,
+                            'msg': 'Database error'
+                          });
+                        }
+                        else {
+                          console.log(rows);
+                          rows.forEach(function (item) {
+                            for (var ind = 0; ind < dataset.length; ind++) {
+                              if (dataset[ind].documentId === item.documentId) {
+                                dataset[ind].problemDescription += (dataset[ind].problemDescription.trim().length > 0 ? ', ' : '') + item.problemDescription;
+                                if (dataset[ind].problemDescription.length >= MAX_LENGTH) {
+                                  dataset[ind].problemDescription = utils.formatStringWithEllipses(dataset[ind].problemDescription, MAX_LENGTH);
+                                }
+                                break;
                               }
-                              break;
                             }
-                          }
-                        });
-                        res.render('docs/done_applications.ejs', {
-                          'data': dataset,
-                          'pageCount': pageCount,
-                          'currentPage': currentPage,
-                          'visibleRows': visibleRows,
-                          'countRecords': countRecords,
-                          'moment': moment
-                        });
-                      }
-                    });
+                          });
+                          res.render('docs/done_applications.ejs', {
+                            'data': dataset,
+                            'pageCount': pageCount,
+                            'currentPage': currentPage,
+                            'visibleRows': visibleRows,
+                            'countRecords': countRecords,
+                            'moment': moment
+                          });
+                        }
+                      });
                   });
                 }
               });
           });
         });
     });
+  });
+
+  router.post('/delete', function (req, res) {
+    if ((req.body.id) && (isFinite(+req.body.id))) {
+      db.get().getConnection(function (err, connection) {
+        connection.query(
+          ' DELETE FROM applications WHERE application_id = ?', [+req.body.id], function (err) {
+            connection.release();
+            if (err) {
+              res.status(500).send(
+                {
+                  code: 500,
+                  msg: 'Database Error',
+                  errorName: err.name,
+                  errorMessage: err.message
+                });
+            } else {
+              res.status(200).send(
+                {
+                  result: 'OK'
+                });
+            }
+          }
+        );
+      });
+    }
+    else {
+      res.status(500).send(
+        {
+          code: 500,
+          msg: 'Incorrect parameter'
+        });
+    }
   });
 
   return router;

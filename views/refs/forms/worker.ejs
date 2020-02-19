@@ -26,10 +26,16 @@
                 <div class="card-body">
                     <input type="text" hidden id="id" name="id" value="<%= typeof data != 'undefined' ? data.id : ''  %>">
                     <div class="row">
-                        <div class="col-md-12">
+                        <div class="col-md-9">
                             <div class="form-group">
                                 <label for="name">ФИО</label>
                                 <input type="text" class="form-control" id="name" name="name" placeholder="" autofocus="autofocus" value="<%= typeof data != 'undefined' ? data.name : '' %>">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="name">Телефон</label>
+                                <input type="text" class="form-control" id="phone" name="phone" placeholder="" value="<%= typeof data != 'undefined' ? data.phone : '' %>">
                             </div>
                         </div>
                     </div>

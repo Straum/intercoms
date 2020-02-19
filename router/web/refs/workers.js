@@ -19,7 +19,7 @@ module.exports = function () {
 
           db.get().getConnection(function (err, connection) {
             connection.query(
-              ' SELECT a.worker_id AS id, a.name, a.is_work' +
+              ' SELECT a.worker_id AS id, a.name, a.is_work, a.phone' +
               ' FROM workers a' +
               ' WHERE a.worker_id > 0' +
               ' ORDER BY a.name ASC' +
@@ -55,7 +55,7 @@ module.exports = function () {
     var id = req.params.id;
     db.get().getConnection(function (err, connection) {
       connection.query(
-        ' SELECT a.worker_id AS id, a.name, a.is_work' +
+        ' SELECT a.worker_id AS id, a.name, a.is_work, a.phone' +
         ' FROM workers a' +
         ' WHERE a.worker_id = ?', [id], function (err, rows) {
           if (err) {
@@ -101,7 +101,7 @@ module.exports = function () {
 
           db.get().getConnection(function (err, connection) {
             connection.query(
-              ' SELECT a.worker_id AS id, a.name' +
+              ' SELECT a.worker_id AS id, a.name, a.phone' +
               ' FROM workers a' +
               ' WHERE a.worker_id > 0' +
               ' ORDER BY a.name ASC' +
@@ -139,10 +139,11 @@ module.exports = function () {
     if ((req.body.id) && (isFinite(+req.body.id))) {
       db.get().getConnection(function (err, connection) {
         connection.query(
-          ' UPDATE workers SET name = ?, is_work = ?' +
+          ' UPDATE workers SET name = ?, is_work = ?, phone = ?' +
           ' WHERE worker_id = ?', [
               req.body.name,
               isWork,
+              req.body.phone,
               req.body.id
             ], function (err) {
             connection.release();
@@ -158,10 +159,11 @@ module.exports = function () {
     else {
       db.get().getConnection(function (err, connection) {
         connection.query(
-          ' INSERT INTO workers (name, is_work)' +
+          ' INSERT INTO workers (name, is_work, phone)' +
           ' VALUE(?, ?)', [
               req.body.name, 
-              isWork
+              isWork,
+              req.body.phone
             ], function (err) {
             connection.release();
             if (err) {

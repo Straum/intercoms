@@ -1,9 +1,25 @@
 'use strict';
 
+var fs = require('fs');
+
 const express = require('express');
 
 module.exports = function () {
   var router = express.Router();
+
+  router.post('/image', function (req, res) {
+    var name = req.body.name;
+    var img = req.body.image;
+    var realFile = Buffer.from(img, 'base64');
+
+    var fileName = './public/photos/' + name;
+
+    fs.writeFile(fileName, realFile, function (err) {
+      if (err)
+        console.log(err);
+    });
+    res.send('OK');
+  });
 
   // References
   router.use('/equipment', require('./refs/equipment')());
