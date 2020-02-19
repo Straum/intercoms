@@ -10,32 +10,6 @@ var moment = require('moment');
 var utils = require('../../../lib/utils');
 var isCheckPerformer = false;
 
-// function getShortDescription(id) {
-//   return new Promise(function (resolve, reject) {
-//     db.get().getConnection(function (err, connection) {
-//       connection.query(
-//         ' SELECT b.name AS faultName FROM faults a' +
-//         ' LEFT JOIN templates b ON b.template_id = a.template_id' +
-//         ' WHERE a.application_id = ?', [id], function (err, rows) {
-//           connection.release();
-
-//           if (err) {
-//             return reject(err);
-//           }
-
-//           var description = '';
-//           for (var ind = 0; ind < rows.length; ind++) {
-//             description += rows[ind].faultName + (ind < rows.length - 1 ? ', ' : '');
-//           }
-//           // console.log(description);
-
-//           resolve(description);
-//         }
-//       );
-//     });
-//   });
-// }
-
 var generateReport = function (req, res) {
 
   var tableFaults = [];
@@ -82,7 +56,6 @@ var generateReport = function (req, res) {
   doc.pipe(res);
   doc.end();
 };
-
 
 var getCity = function (cityName, callback) {
   db.get().getConnection(function (err, connection) {
@@ -302,6 +275,7 @@ var downloadReport = function (req, res) {
     ' LEFT JOIN workers f ON f.worker_id = a.worker_id' +
     ' WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 0)' +
+    ' AND (a.is_deleted = 0)' +
     additionalWhere.where +
     ' ORDER BY f.name , a.create_date ASC';
 
@@ -325,8 +299,8 @@ var downloadReport = function (req, res) {
         if (err) {
           console.error(err);
           res.status(500).send({
-            'code': 500,
-            'msg': 'Database error'
+            code: 500,
+            msg: 'Database error'
           });
         } else {
 
@@ -356,8 +330,8 @@ var downloadReport = function (req, res) {
 
                 if (err) {
                   res.status(500).send({
-                    'code': 500,
-                    'msg': 'Database error'
+                    code: 500,
+                    msg: 'Database error'
                   });
                 }
                 else {
@@ -439,8 +413,9 @@ var findRecords = function (req, res) {
 
   var countRecordsQuery =
     ' SELECT COUNT(*) AS count' +
-    ' FROM applications a WHERE (a.application_id > 0) AND' +
-    ' (a.is_done = 0)' + additionalQuery.where;
+    ' FROM applications a WHERE (a.application_id > 0)' +
+    ' AND (a.is_done = 0)' +
+    ' AND (a.is_deleted = 0)' + additionalQuery.where;
 
   var fullQuery =
     ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
@@ -457,16 +432,14 @@ var findRecords = function (req, res) {
     ' LEFT JOIN houses d ON d.house_id = a.house_id' +
     ' LEFT JOIN workers e ON e.worker_id = a.worker_id' +
     ' WHERE (a.application_id > 0)' +
-    ' AND (a.is_done = 0)' + additionalQuery.where +
+    ' AND (a.is_done = 0)' + 
+    ' AND (a.is_deleted = 0)' + additionalQuery.where +
     ' ORDER BY a.create_date ASC' +
     ' LIMIT ' + visibleRows;
 
 
   db.get().getConnection(function (err, connection) {
     connection.query(
-      // ' SELECT COUNT(*) AS count' +
-      // ' FROM applications a WHERE (a.application_id > 0) AND' +
-      // ' a.is_done = 0', [], function (err, rows) {
       countRecordsQuery, [], function (err, rows) {
         connection.release();
         countRecords = rows[0].count;
@@ -476,23 +449,6 @@ var findRecords = function (req, res) {
         db.get().getConnection(function (err, connection) {
           connection.query(
             fullQuery, [], function (err, rows) {
-              // ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
-              // ' b.name AS cityName, c.name AS streetName,' +
-              // ' d.number AS houseNumber, e.name AS performerName,' +
-              // ' CASE ' +
-              // ' WHEN a.kind = 0 THEN CONCAT("под. ", a.porch)' +
-              // ' WHEN a.kind = 1 THEN CONCAT("кв. ", a.porch)' +
-              // ' END AS numeration, ' +
-              // ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc' +
-              // ' FROM applications a' +
-              // ' LEFT JOIN cities b ON b.city_id = a.city_id' +
-              // ' LEFT JOIN streets c ON c.street_id = a.street_id' +
-              // ' LEFT JOIN houses d ON d.house_id = a.house_id' +
-              // ' LEFT JOIN workers e ON e.worker_id = a.worker_id' +
-              // ' WHERE (a.application_id > 0)' +
-              // ' AND a.is_done = 0' +
-              // ' ORDER BY a.create_date ASC' +
-              // ' LIMIT ?', [visibleRows], function (err, rows) {
               connection.release();
 
               if (err) {
@@ -531,8 +487,8 @@ var findRecords = function (req, res) {
 
                       if (err) {
                         res.status(500).send({
-                          'code': 500,
-                          'msg': 'Database error'
+                          code: 500,
+                          msg: 'Database error'
                         });
                       }
                       else {
@@ -549,12 +505,12 @@ var findRecords = function (req, res) {
                           }
                         });
                         res.render('docs/applications.ejs', {
-                          'data': dataset,
-                          'pageCount': pageCount,
-                          'currentPage': currentPage,
-                          'visibleRows': visibleRows,
-                          'countRecords': countRecords,
-                          'moment': moment,
+                          data: dataset,
+                          pageCount: pageCount,
+                          currentPage: currentPage,
+                          visibleRows: visibleRows,
+                          countRecords: countRecords,
+                          moment: moment,
                           filter: additionalQuery.filter
                         });
                       }
@@ -705,7 +661,8 @@ module.exports = function () {
       connection.query(
         ' SELECT COUNT(*) AS count' +
         ' FROM applications a WHERE (a.application_id > 0) AND' +
-        ' a.is_done = 1', [], function (err, rows) {
+        ' AND (a.is_done = 1)' +
+        ' AND (a.is_deleted = 0)', [], function (err, rows) {
           connection.release();
           countRecords = rows[0].count;
           pageCount =
@@ -722,7 +679,8 @@ module.exports = function () {
               ' LEFT JOIN streets c ON c.street_id = a.street_id' +
               ' LEFT JOIN houses d ON d.house_id = a.house_id' +
               ' WHERE (a.application_id > 0)' +
-              ' AND a.is_done = 1' +
+              ' AND (a.is_done = 1)' +
+              ' AND (a.is_deleted = 0)' +
               ' ORDER BY a.create_date ASC' +
               ' LIMIT ?', [visibleRows], function (err, rows) {
                 if (err) {
@@ -733,8 +691,8 @@ module.exports = function () {
                 if (err) {
                   console.error(err);
                   res.status(500).send({
-                    'code': 500,
-                    'msg': 'Database error'
+                    code: 500,
+                    msg: 'Database error'
                   });
                 } else {
                   var currentPage = 1;
@@ -768,8 +726,8 @@ module.exports = function () {
 
                         if (err) {
                           res.status(500).send({
-                            'code': 500,
-                            'msg': 'Database error'
+                            code: 500,
+                            msg: 'Database error'
                           });
                         }
                         else {
@@ -785,12 +743,12 @@ module.exports = function () {
                             }
                           });
                           res.render('docs/done_applications.ejs', {
-                            'data': dataset,
-                            'pageCount': pageCount,
-                            'currentPage': currentPage,
-                            'visibleRows': visibleRows,
-                            'countRecords': countRecords,
-                            'moment': moment
+                            data: dataset,
+                            pageCount: pageCount,
+                            currentPage: currentPage,
+                            visibleRows: visibleRows,
+                            countRecords: countRecords,
+                            moment: moment
                           });
                         }
                       });
@@ -1069,9 +1027,9 @@ module.exports = function () {
 
             if (err) {
               res.status(500).send({
-                'code': 500,
-                'msg': 'Database Error',
-                'err': JSON.stringify(err)
+                code: 500,
+                msg: 'Database Error',
+                err: JSON.stringify(err)
               });
             } else {
               res.status(200).send(rows);
@@ -1114,9 +1072,9 @@ module.exports = function () {
 
             if (err) {
               res.status(500).send({
-                'code': 500,
-                'msg': 'Database Error',
-                'err': JSON.stringify(err)
+                code: 500,
+                msg: 'Database Error',
+                err: JSON.stringify(err)
               });
             } else {
               res.status(200).send(rows);
@@ -1152,9 +1110,9 @@ module.exports = function () {
 
             if (err) {
               res.status(500).send({
-                'code': 500,
-                'msg': 'Database Error',
-                'err': JSON.stringify(err)
+                code: 500,
+                msg: 'Database Error',
+                err: JSON.stringify(err)
               });
             } else {
               res.status(200).send(rows);
@@ -1191,9 +1149,9 @@ module.exports = function () {
 
             if (err) {
               res.status(500).send({
-                'code': 500,
-                'msg': 'Database Error',
-                'err': JSON.stringify(err)
+                code: 500,
+                msg: 'Database Error',
+                err: JSON.stringify(err)
               });
             } else {
               res.status(200).send(rows);
@@ -1241,16 +1199,16 @@ module.exports = function () {
 
               if (err) {
                 res.status(500).send({
-                  'code': 500,
-                  'msg': 'Database Error',
-                  'err': JSON.stringify(err)
+                  code: 500,
+                  msg: 'Database Error',
+                  err: JSON.stringify(err)
                 });
               } else {
                 if (Array.isArray(rows)) {
                   rows.forEach(function (item) {
                     items.push({
-                      'cityId': item.city_id,
-                      'cityName': item.city_name
+                      cityId: item.city_id,
+                      cityName: item.city_name
                     });
                   });
                 }
@@ -1272,10 +1230,10 @@ module.exports = function () {
               if (Array.isArray(streets)) {
                 streets.forEach(function (item) {
                   items.push({
-                    'cityId': cityId,
-                    'cityName': words[0].trim(),
-                    'streetId': item.streetId,
-                    'streetName': item.streetName
+                    cityId: cityId,
+                    cityName: words[0].trim(),
+                    streetId: item.streetId,
+                    streetName: item.streetName
                   });
                 });
               }
@@ -1289,12 +1247,12 @@ module.exports = function () {
                 if (Array.isArray(houses)) {
                   houses.forEach(function (item) {
                     items.push({
-                      'cityId': cityId,
-                      'cityName': words[0].trim(),
-                      'streetId': item.street_id,
-                      'streetName': words[1].trim(),
-                      'houseId': item.house_id,
-                      'houseNumber': item.house_number
+                      cityId: cityId,
+                      cityName: words[0].trim(),
+                      streetId: item.street_id,
+                      streetName: words[1].trim(),
+                      houseId: item.house_id,
+                      houseNumber: item.house_number
                     });
                   });
                 }
@@ -1321,8 +1279,9 @@ module.exports = function () {
     db.get().getConnection(function (err, connection) {
       connection.query(
         ' SELECT COUNT(*) AS count' +
-        ' FROM applications a WHERE (a.application_id > 0) AND' +
-        ' a.is_done = 0', [], function (err, rows) {
+        ' FROM applications a WHERE (a.application_id > 0)' +
+        ' AND (a.is_done = 0)' +
+        ' AND (a.is_deleted = 0)', [], function (err, rows) {
           connection.release();
           countRecords = rows[0].count;
           pageCount =
@@ -1342,7 +1301,8 @@ module.exports = function () {
               ' LEFT JOIN streets c ON c.street_id = a.street_id' +
               ' LEFT JOIN houses d ON d.house_id = a.house_id' +
               ' WHERE (a.application_id > 0)' +
-              ' AND a.is_done = 0' +
+              ' AND (a.is_done = 0)' +
+              ' AND (a.is_deleted = 0)' +
               ' ORDER BY a.create_date ASC' +
               ' LIMIT ?' +
               ' OFFSET ?', [visibleRows, offset], function (err, rows) {
@@ -1350,8 +1310,8 @@ module.exports = function () {
 
                 if (err) {
                   res.status(500).send({
-                    'code': 500,
-                    'msg': 'Database error'
+                    code: 500,
+                    msg: 'Database error'
                   });
                 } else {
                   var currentPage = Math.ceil(offset / visibleRows) + 1;
@@ -1384,8 +1344,8 @@ module.exports = function () {
 
                         if (err) {
                           res.status(500).send({
-                            'code': 500,
-                            'msg': 'Database error'
+                            code: 500,
+                            msg: 'Database error'
                           });
                         }
                         else {
@@ -1402,12 +1362,12 @@ module.exports = function () {
                             }
                           });
                           res.render('docs/applications.ejs', {
-                            'data': dataset,
-                            'pageCount': pageCount,
-                            'currentPage': currentPage,
-                            'visibleRows': visibleRows,
-                            'countRecords': countRecords,
-                            'moment': moment
+                            data: dataset,
+                            pageCount: pageCount,
+                            currentPage: currentPage,
+                            visibleRows: visibleRows,
+                            countRecords: countRecords,
+                            moment: moment
                           });
                         }
                       });
@@ -1426,8 +1386,9 @@ module.exports = function () {
     db.get().getConnection(function (err, connection) {
       connection.query(
         ' SELECT COUNT(*) AS count' +
-        ' FROM applications a WHERE (a.application_id > 0) AND' +
-        ' a.is_done = 1', [], function (err, rows) {
+        ' FROM applications a WHERE (a.application_id > 0)' +
+        ' AND (a.is_done = 1)' +
+        ' AND (a.is_deleted = 0)', [], function (err, rows) {
           connection.release();
           countRecords = rows[0].count;
           pageCount =
@@ -1447,7 +1408,8 @@ module.exports = function () {
               ' LEFT JOIN streets c ON c.street_id = a.street_id' +
               ' LEFT JOIN houses d ON d.house_id = a.house_id' +
               ' WHERE (a.application_id > 0)' +
-              ' AND a.is_done = 1' +
+              ' AND (a.is_done = 1)' +
+              ' AND (a.is_deleted = 0)' +
               ' ORDER BY a.create_date ASC' +
               ' LIMIT ?' +
               ' OFFSET ?', [visibleRows, offset], function (err, rows) {
@@ -1455,8 +1417,8 @@ module.exports = function () {
 
                 if (err) {
                   res.status(500).send({
-                    'code': 500,
-                    'msg': 'Database error'
+                    code: 500,
+                    msg: 'Database error'
                   });
                 } else {
                   var currentPage = Math.ceil(offset / visibleRows) + 1;
@@ -1489,8 +1451,8 @@ module.exports = function () {
 
                         if (err) {
                           res.status(500).send({
-                            'code': 500,
-                            'msg': 'Database error'
+                            code: 500,
+                            msg: 'Database error'
                           });
                         }
                         else {
@@ -1507,12 +1469,12 @@ module.exports = function () {
                             }
                           });
                           res.render('docs/done_applications.ejs', {
-                            'data': dataset,
-                            'pageCount': pageCount,
-                            'currentPage': currentPage,
-                            'visibleRows': visibleRows,
-                            'countRecords': countRecords,
-                            'moment': moment
+                            data: dataset,
+                            pageCount: pageCount,
+                            currentPage: currentPage,
+                            visibleRows: visibleRows,
+                            countRecords: countRecords,
+                            moment: moment
                           });
                         }
                       });
@@ -1528,7 +1490,9 @@ module.exports = function () {
     if ((req.body.id) && (isFinite(+req.body.id))) {
       db.get().getConnection(function (err, connection) {
         connection.query(
-          ' DELETE FROM applications WHERE application_id = ?', [+req.body.id], function (err) {
+          ' UPDATE applications SET' +
+          ' is_deleted = ?' +
+          ' WHERE application_id = ?', [1, +req.body.id], function (err) {
             connection.release();
             if (err) {
               res.status(500).send(
