@@ -434,7 +434,7 @@ var findRecords = function (req, res) {
     ' WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 0)' + 
     ' AND (a.is_deleted = 0)' + additionalQuery.where +
-    ' ORDER BY a.create_date ASC' +
+    ' ORDER BY a.create_date DESC' +
     ' LIMIT ' + visibleRows;
 
 
@@ -660,7 +660,7 @@ module.exports = function () {
     db.get().getConnection(function (err, connection) {
       connection.query(
         ' SELECT COUNT(*) AS count' +
-        ' FROM applications a WHERE (a.application_id > 0) AND' +
+        ' FROM applications a WHERE (a.application_id > 0)' +
         ' AND (a.is_done = 1)' +
         ' AND (a.is_deleted = 0)', [], function (err, rows) {
           connection.release();
@@ -681,7 +681,7 @@ module.exports = function () {
               ' WHERE (a.application_id > 0)' +
               ' AND (a.is_done = 1)' +
               ' AND (a.is_deleted = 0)' +
-              ' ORDER BY a.create_date ASC' +
+              ' ORDER BY a.create_date DESC' +
               ' LIMIT ?', [visibleRows], function (err, rows) {
                 if (err) {
                   throw err;
@@ -1303,7 +1303,7 @@ module.exports = function () {
               ' WHERE (a.application_id > 0)' +
               ' AND (a.is_done = 0)' +
               ' AND (a.is_deleted = 0)' +
-              ' ORDER BY a.create_date ASC' +
+              ' ORDER BY a.create_date DESC' +
               ' LIMIT ?' +
               ' OFFSET ?', [visibleRows, offset], function (err, rows) {
                 connection.release();
