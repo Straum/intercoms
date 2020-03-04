@@ -53,8 +53,7 @@
             <th style="width: 6%;" class="text-center align-middle">Дом</th>
             <th style="width: 6%;  vertical-align: middle" rowspan="2" class="text-center align-middle">Номера</th>
             <th style="width: 10%;" class="text-center align-middle">Исполнитель</th>
-            <th style="width: 5%; vertical-align: middle" rowspan="2" class="text-center align-middle">Проблем</th>
-            <th style="width: 25%; vertical-align: middle" rowspan="2" class="text-center align-middle">Описание проблем
+            <th style="width: 30%; vertical-align: middle" rowspan="2" class="text-center align-middle">Описание проблем
             </th>
             <th style="width: 8%; vertical-align: middle" rowspan="2" class="text-center align-middle">Действия</th>
           </tr>
@@ -125,9 +124,6 @@
             </td>
             <td class="text-left align-middle">
               <%= data[ind].performerName %>
-            </td>
-            <td class="text-center align-middle">
-              <%= data[ind].rowsInDoc === 0 ? '' : data[ind].rowsInDoc %>
             </td>
             <td class="text-left align-middle">
               <%= 'problemDescription' in data[ind] ? data[ind].problemDescription : '' %>

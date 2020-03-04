@@ -47,6 +47,7 @@
           value="<%= typeof data != 'undefined' ? data.faultsToString : '' %>">
         <input type="text" hidden id="isDone" name="isDone"
           value="<%= typeof data != 'undefined' ? data.isDone : '0' %>">
+        <input type="text" hidden id="cardId" name="cardId" value="<%= data.cardId %>">
 
         <div class="form-group">
           <div class="row">
@@ -149,7 +150,7 @@
                   <td><%= table[ind].faultName %></td>
                   <td><%= table[ind].decision %></td>
                   <td><%= table[ind].workerId > 0 ? table[ind].workerName : '' %></td>
-                  <td class="text-center"><%= typeof data !== 'undefined' ? moment(table[ind].completionDT).format( 'DD.MM.YYYY' ) : '' %></td>
+                  <td class="text-center"><%= table[ind].completionDT !== null ? moment(table[ind].completionDT).format( 'DD.MM.YYYY' ) : '' %></td>
                   <td class="text-center">
                     <% if (table[ind].isDone == 1) { %>
                       <button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-ok"></span></button>
@@ -178,8 +179,15 @@
           <div class="row">
             <div class="col-md-12 <%= errors.performer ? 'has-error' : '' %>">
               <label class="control-label" for="performer">Исполнитель</label>
-              <input type="text" class="form-control select-all" id="performer" name="performer" placeholder="Фамилия исполнителя"
-                value="<%= typeof data !== 'undefined' ? data.performer : '' %>">
+              <div class="input-group">
+                <input type="text" class="form-control select-all" id="performer" name="performer" placeholder="Фамилия исполнителя"
+                  value="<%= typeof data !== 'undefined' ? (+data.performerId > 0 ? data.performer : '') : '' %>">
+                <span class="input-group-btn">
+                  <button class="btn btn-default" type="button" id="clearPerformer">
+                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                  </button>
+                </span>
+              </div>
               <% if (errors.performer) { %>
               <span class="help-block"><%= errors.performer.msg %></span>
               <% } %>
@@ -193,7 +201,7 @@
               <label for="create_date" class="control-label">Выполнено</label>
               <div class="input-group date" id='datetimepicker_close_date'>
                 <input type="text" class="form-control" name="closeDate" id="closeDate"
-                  value="<%= typeof data !== 'undefined' ? moment(data.closeDate).format( 'DD.MM.YYYY HH:mm' ) : moment(new Date()).format( 'DD.MM.YYYY HH:mm' )  %>">
+                  value="<%= typeof data !== 'undefined' ? moment(data.closeDate).format( 'DD.MM.YYYY HH:mm' ) : '' %>">
                 <span class="input-group-addon">
                   <span class="glyphicon glyphicon-calendar"></span>
                 </span>
@@ -206,9 +214,13 @@
           <div class="col-md-12">
             <button type="submit" class="btn btn-success" id="save">Записать</button>
             <% if (data.isDone) { %>
-            &nbsp;
-            <button type="submit" class="btn btn-info" id="move" name="move">Перенести в Текущие заявки</button>
+              &nbsp;
+              <button type="submit" class="btn btn-info" id="move" name="move">Перенести в Текущие заявки</button>
             <% } %>
+            &nbsp;
+            <button class="btn btn-info" id="orderInformation"><span class="glyphicon glyphicon-search"></span>&nbsp;&nbsp;Гарантийный договор</button>
+            &nbsp;
+            <a id="linkToOrder" href="/orders/edit/<%= data.cardId %>" class="stretched-link <%= data.cardId > 0 ? 'visible' : 'invisible' %>"><%= data.cardId > 0 ? (data.contractNumber + (data.mContractNumber.trim() > '' ? ' (' + data.mContractNumber + ')' : '' )) : '' %></a>
           </div>
         </div>
       </div>
@@ -230,55 +242,42 @@
             <input type="text" class="hidden" id="dlgWorkerId" value="">
             <div class="form-group">
               <div class="row">
-                <div class="col-md-12">
-                  <label for="percent">Описание</label>
+                <div class="col-xs-12">
+                  <label for="dlgFaultName">Описание</label>
                   <input type="text" class="form-control select-all" id="dlgFaultName">
                 </div>
               </div>
             </div>
             <div class="form-group">
               <div class="row">
-                <div class="col-md-12">
-                  <label for="percent">Решение</label>
+                <div class="col-xs-12">
+                  <label for="dlgDecision">Решение</label>
                   <input type="text" class="form-control select-all" id="dlgDecision">
                 </div>
               </div>
             </div>
             <div class="form-group">
               <div class="row">
-                <div class="col-md-12">
-                  <label for="car">Исполнитель</label>
+                <div class="col-xs-12">
+                  <label for="dlgWorker">Исполнитель</label>
                   <input type="text" class="form-control select-all" id="dlgWorker">
                 </div>
               </div>
             </div>
             <div class="form-group">
               <div class="row">
-                <div class="col-md-5">
-                  <label for="create_date" class="control-label">Дата исполнения</label>
-                  <div class="input-group date" id='datetimepicker_completion'>
-                    <input type="text" class="form-control" name="executionDate" id="dlgCompletionDT" >
-                    <span class="input-group-addon">
-                      <span class="glyphicon glyphicon-calendar"></span>
-                    </span>
-                  </div>
-                </div>
-                <div class="col-md-2">
-                  <label for="create_date" class="control-label">&nbsp;</label>
-                  <div class="input-group">
-                    <div class="checkbox">
-                      <label>
-                        <input type="checkbox" id="dlgIsDone"> Исполнено
-                      </label>
-                    </div>
-                  </div>
+                <div class="col-md-12">
+                <label>
+                  <input type="checkbox" id="dlgIsDone">
+                    &nbsp;Выполнено
+                </label>
                 </div>
               </div>
             </div>
           </form>
         </div>
         <div class="modal-footer">
-          <button type="submit" class="btn btn-success" id="saveButton" onclick="saveApplication">&nbsp;Записать&nbsp;</button>
+          <button type="submit" class="btn btn-success" id="saveButton">&nbsp;Записать&nbsp;</button>
           <button type="submit" class="btn btn-warning" data-dismiss="modal">&nbsp;Отмена&nbsp;</button>
         </div>
       </div>
@@ -341,6 +340,11 @@
 
       this.setHouseId = function (houseId) {
         $('#houseId').val(houseId);
+      }
+
+      this.clearPerformer = function () {
+        $('#performerId').val('0');
+        $('#performer').val('');
       }
     };
 
@@ -566,6 +570,9 @@
         $('#address').focus();
       });
 
+      $('#clearPerformer').on('click', function() {
+        appData.clearPerformer();
+      });
 
       $('body').on('click', '.deleteRow', function () {
           var dataTable = JSON.parse($('#faults').val());
@@ -585,7 +592,7 @@
           $('#dlgDecision').val(dataTable[rowIndex].decision);
           $('#dlgWorkerId').val(dataTable[rowIndex].workerId);
           $('#dlgWorker').val(dataTable[rowIndex].workerId > 0 ? dataTable[rowIndex].workerName : '');
-          $('#dlgCompletionDT').val(moment(new Date(dataTable[rowIndex].completionDT)).format( 'DD.MM.YYYY' ));
+          // $('#dlgCompletionDT').val(moment(new Date(dataTable[rowIndex].completionDT)).format( 'DD.MM.YYYY' ));
           $('#dlgIsDone').prop('checked', dataTable[rowIndex].isDone > 0);
 
           $('#idTable').val(rowIndex);
@@ -672,7 +679,7 @@
             decision: '',
             workerId: 0,
             isDone: 0,
-            completionDT: new Date(),
+            completionDT: '', //new Date(),
             workerName: ''
           };
           dataTable.push(obj);
@@ -694,7 +701,8 @@
             '<td>' + item + '</td>' +
             '<td></td>' +
             '<td></td>' +
-            '<td class="text-center">' + moment(new Date(obj.completionDT)).format('DD.MM.YYYY') + '</td>' +
+            // '<td class="text-center">' + moment(new Date(obj.completionDT)).format('DD.MM.YYYY') + '</td>' +
+            '<td class="text-center">' + obj.completionDT + '</td>' +
             '<td class="text-center"></td>' +
             '<td class="warning text-center">' + 
             '<button type="button" class="btn btn-info btn-xs editRow">' +
@@ -729,36 +737,47 @@
         dataTable[uid].decision = $('#dlgDecision').val();
         dataTable[uid].workerId = $('#dlgWorkerId').val();
         dataTable[uid].workerName = ((+dataTable[uid].workerId) > 0) ? $('#dlgWorker').val() : '';
-        dataTable[uid].completionDT = $('#dlgCompletionDT').val();
+        // dataTable[uid].completionDT = $('#dlgCompletionDT').val();
         dataTable[uid].isDone = $('#dlgIsDone:checked').val() === 'on' ? 1 : 0;
 
         $('#faults').val(JSON.stringify(dataTable));
-
-        // Обновить табличную часть
-        // var $tableRow = $('#tableFaults tbody tr:eq(0)');
-        // var row = $('#tableFaults').find('tr').eq(uid);
 
         var row = document.getElementById("tableFaults").rows[+uid + 2];
         row.cells[0].innerText = dataTable[uid].faultName;
         row.cells[1].innerText = dataTable[uid].decision;
         row.cells[2].innerText = dataTable[uid].workerName;
-        row.cells[3].innerText = dataTable[uid].completionDT;
+        // row.cells[3].innerText = dataTable[uid].completionDT;
         row.cells[4].innerHTML = +dataTable[uid].isDone == 1 ? '<button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-ok">' : '';
 
+        if ( ($('#performerId').val() == undefined) || (+$('#performerId').val() === 0) && (+$('#dlgWorkerId').val() > 0) ) {
+          $('#performerId').val($('#dlgWorkerId').val());
+          $('#performer').val($('#dlgWorker').val());
+        }
+      });
 
+      $("#orderInformation").click(function (e) {
+        e.preventDefault();
+        //
+        axios.post('/applications/order_info', {
+          houseId: $('#houseId').val(),
+          porch: $('#porch').val(),
+          kind: $('#kind').val()
+        }).then(function (response) {
 
-
-        // var activeDriversTable = document.getElementById('table_active_drivers');
-        // for (var i = 1; i <= activeDriversTable.rows.length - 1; i++) {
-        //   if (activeDriversTable.rows[i].getElementsByTagName("td")[5].firstChild.checked) {
-        //     ws.send(JSON.stringify({
-        //       action: 'driver_support',
-        //       contract_number: activeDriversTable.rows[i].getElementsByTagName("td")[0].innerHTML,
-        //       no_support: true,
-        //       message: reasonLock
-        //     }));
-        //   }
-        // }
+          var data = response.data;
+          if ((Array.isArray(data)) && (data.length == 1)) {
+            $('#cardId').val(data[0].cardId);
+            var link = '/orders/edit/' + data[0].cardId;
+            var info = data[0].contractNumber + (+data[0].maintenanceContract >= 1 ? ' (' +  data[0].mContractNumber + ')' : '');
+            $('#linkToOrder').attr('href', link).text(info);
+            if ($('#linkToOrder').hasClass('invisible')) {
+              $('#linkToOrder').removeClass('invisible');
+              $('#linkToOrder').addClass('visible');
+            }
+          }
+        }).catch(function (error) {
+          console.log(error);
+        });
       });
 
       $('.select-all').on('focus', function (e) {

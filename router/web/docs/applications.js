@@ -140,11 +140,17 @@ var saveTable = function (id, table, callback) {
 
     // FIXME: Добить нормальную проверку!!!
     // var checkDate = new utils.convertDateToMySQLDate(table[ind].completionDT, true);
-    var myDate = table[ind].completionDT;
-    if (typeof myDate === 'string') {
-      if (myDate.length > 10) {
-        myDate = myDate.substr(0, 10);
-      }
+    // var myDate = table[ind].completionDT;
+    // if (typeof myDate === 'string') {
+    //   if (myDate.length > 10) {
+    //     myDate = myDate.substr(0, 10);
+    //   }
+    // }
+
+    var saveDate = 'null';
+    if (+table[ind].isDone === 1) {
+      var myDate = moment(new Date()).format('YYYY-MM-DD');
+      saveDate = '"' + myDate + '"';
     }
 
     s += ' (' +
@@ -156,7 +162,8 @@ var saveTable = function (id, table, callback) {
       table[ind].isDone + ', ' +
       // '"' +  checkDate.outputDate() + '"' +
       // typeof myDate === 'string' ? '"' +  myDate + '"' : 'null' +
-      '"' + myDate + '"' +
+      // '"' + myDate + '"' + 
+      saveDate +
 
       ')';
     if (ind < table.length - 1) {
@@ -379,7 +386,8 @@ var redirectToAccepted = function (res, uid) {
   db.get().getConnection(function (err, connection) {
     connection.query(
       ' UPDATE applications SET' +
-      ' is_done = ?' +
+      ' is_done = ?,' +
+      ' close_date = NOW()' +
       ' WHERE application_id = ?', [1, uid], function (err) {
 
         connection.release();
@@ -410,7 +418,6 @@ var findRecords = function (req, res) {
 
   var additionalQuery = additionalWhereInQuery(req);
 
-
   var countRecordsQuery =
     ' SELECT COUNT(*) AS count' +
     ' FROM applications a WHERE (a.application_id > 0)' +
@@ -425,7 +432,7 @@ var findRecords = function (req, res) {
     ' WHEN a.kind = 0 THEN CONCAT("под. ", a.porch)' +
     ' WHEN a.kind = 1 THEN CONCAT("кв. ", a.porch)' +
     ' END AS numeration, ' +
-    ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc' +
+    ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc ' +
     ' FROM applications a' +
     ' LEFT JOIN cities b ON b.city_id = a.city_id' +
     ' LEFT JOIN streets c ON c.street_id = a.street_id' +
@@ -573,7 +580,10 @@ module.exports = function () {
                 ' e.name AS performer,' +
                 ' b.city_id AS cityId, c.street_id AS streetId, d.house_id AS houseId,' +
                 ' e.worker_id AS performerId,' +
-                ' a.is_done AS isDone, a.close_date AS closeDate' +
+                ' a.is_done AS isDone, a.close_date AS closeDate,' +
+                ' a.card_id AS cardId,' +
+                ' (SELECT g.contract_number FROM cards g WHERE g.card_id = a.card_id) AS contractNumber,' +
+					      ' (SELECT h.m_contract_number FROM cards h WHERE h.card_id = a.card_id) AS mContractNumber' +
                 ' FROM applications a' +
                 ' LEFT JOIN cities b ON b.city_id = a.city_id' +
                 ' LEFT JOIN streets c ON c.street_id = a.street_id' +
@@ -605,6 +615,10 @@ module.exports = function () {
                     data.phone = rows[0].phone;
                     data.performer = rows[0].performer;
                     data.isDone = rows[0].isDone;
+                    data.closeDate = rows[0].closeDate;
+                    data.cardId = rows[0].cardId;
+                    data.contractNumber = rows[0].contractNumber;
+                    data.mContractNumber = rows[0].mContractNumber;
                     data.closeDate = rows[0].closeDate;
 
                     data.address = '';
@@ -673,6 +687,11 @@ module.exports = function () {
               ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
               ' b.name AS cityName, c.name AS streetName,' +
               ' d.number AS houseNumber, a.porch, a.kind, ' +
+              ' CASE ' +
+              ' WHEN a.kind = 0 THEN CONCAT("под. ", a.porch)' +
+              ' WHEN a.kind = 1 THEN CONCAT("кв. ", a.porch)' +
+              ' END AS numeration, ' +
+              ' a.close_date AS closeDate, ' +
               ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc' +
               ' FROM applications a' +
               ' LEFT JOIN cities b ON b.city_id = a.city_id' +
@@ -858,6 +877,8 @@ module.exports = function () {
         workerId = 0;
       }
 
+      var cardId = +req.body.cardId;
+
       if ((req.body.documentId) && (req.body.documentId.trim() !== '') && (isFinite(req.body.documentId))) {
 
         var isDone = +req.body.isDone;
@@ -883,7 +904,8 @@ module.exports = function () {
                 ' kind = ?,' +
                 ' phone = ?,' +
                 ' worker_id = ?,' +
-                ' is_done = ?' +
+                ' is_done = ?,' +
+                ' card_id = ?' +
                 ' WHERE application_id = ?', [
                 checkDate.outputDate(),
                 req.body.cityId,
@@ -894,6 +916,7 @@ module.exports = function () {
                 req.body.phone,
                 workerId,
                 isDone,
+                cardId,
                 req.body.documentId
               ], function (err) {
                 connection.release();
@@ -923,8 +946,8 @@ module.exports = function () {
       else {
         db.get().getConnection(function (err, connection) {
           connection.query(
-            ' INSERT INTO applications (create_date, city_id, street_id, house_id, porch, kind, phone, worker_id)' +
-            ' VALUE(?, ?, ?, ?, ?, ?, ?, ?)', [
+            ' INSERT INTO applications (create_date, city_id, street_id, house_id, porch, kind, phone, worker_id, card_id)' +
+            ' VALUE(?, ?, ?, ?, ?, ?, ?, ?, ?)', [
             checkDate.outputDate(),
             req.body.cityId,
             req.body.streetId,
@@ -932,7 +955,8 @@ module.exports = function () {
             req.body.porch,
             req.body.kind,
             req.body.phone,
-            workerId
+            workerId,
+            cardId
           ], function (err, rows) {
             connection.release();
             if (err) {
@@ -1164,6 +1188,7 @@ module.exports = function () {
       res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
     }
   });
+ 
 
   router.post('/address_autocomplete', function (req, res) {
     var data = req.body;
@@ -1272,16 +1297,96 @@ module.exports = function () {
 
   });
 
+  router.post('/order_info', function (req, res) {
+    console.log('houseId: ' + req.body.houseId);
+    console.log('porch: ' + req.body.porch);
+    console.log('kind: ' + req.body.kind);
+
+    var queryText;
+    if (+req.body.kind === 0) {
+      queryText = 
+      ' SELECT a.card_id AS cardId, a.contract_number AS contractNumber,' + 
+      ' a.m_contract_number AS mContractNumber,' + 
+      ' a.maintenance_contract AS maintenanceContract FROM cards a' +
+      ' WHERE (a.house_id = ' + req.body.houseId + ')' +
+      ' AND (a.porch = ' + req.body.porch + ')' +
+      ' AND (a.maintenance_contract = 1)' +
+      ' LIMIT 1';
+    }
+    else {
+      queryText = 
+      ' SELECT a.card_id AS cardId, a.contract_number AS contractNumber,' + 
+      ' a.m_contract_number AS mContractNumber,' + 
+      ' a.maintenance_contract AS maintenanceContract FROM cards a' +
+      ' WHERE (a.house_id = ' + req.body.houseId + ')' +
+      ' AND (' + req.body.porch  + ' >= a.m_start_apartment)' +
+      ' AND (' + req.body.porch +  ' <= a.m_end_apartment)' +
+      ' AND (a.maintenance_contract = 1)' +
+      ' LIMIT 1';
+    }
+
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        queryText, [], function (err, rows) {
+          connection.release();
+
+          if (err) {
+            res.status(500).send({
+              code: 500,
+              msg: 'Database Error',
+              err: JSON.stringify(err)
+            });
+          } else {
+            res.status(200).send(rows);
+          }
+        });
+    });
+
+    // res.status(200).send(
+    //   { 
+    //     msg: 'Operation sucesfull! (Валере)'
+    //   }
+    // );
+  });
+
   router.get('/:offset', function (req, res) {
     var offset = +req.params.offset;
     var pageCount = 0;
     var countRecords = 0;
+
+    var additionalQuery = additionalWhereInQuery(req);
+
+    var countRecordsQuery =
+    ' SELECT COUNT(*) AS count' +
+    ' FROM applications a WHERE (a.application_id > 0)' +
+    ' AND (a.is_done = 0)' +
+    ' AND (a.is_deleted = 0)' + additionalQuery.where;
+
+    var fullQuery =
+    ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
+    ' b.name AS cityName, c.name AS streetName,' +
+    ' d.number AS houseNumber, e.name AS performerName,' +
+    ' CASE ' +
+    ' WHEN a.kind = 0 THEN CONCAT("под. ", a.porch)' +
+    ' WHEN a.kind = 1 THEN CONCAT("кв. ", a.porch)' +
+    ' END AS numeration, ' +
+    ' a.close_date AS closeData, ' +
+    ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc ' +
+    ' FROM applications a' +
+    ' LEFT JOIN cities b ON b.city_id = a.city_id' +
+    ' LEFT JOIN streets c ON c.street_id = a.street_id' +
+    ' LEFT JOIN houses d ON d.house_id = a.house_id' +
+    ' LEFT JOIN workers e ON e.worker_id = a.worker_id' +
+    ' WHERE (a.application_id > 0)' +
+    ' AND (a.is_done = 0)' + 
+    ' AND (a.is_deleted = 0)' + additionalQuery.where +
+    ' ORDER BY a.create_date DESC' +
+    ' LIMIT ' + visibleRows +
+    ' OFFSET ' + offset;
+
     db.get().getConnection(function (err, connection) {
       connection.query(
-        ' SELECT COUNT(*) AS count' +
-        ' FROM applications a WHERE (a.application_id > 0)' +
-        ' AND (a.is_done = 0)' +
-        ' AND (a.is_deleted = 0)', [], function (err, rows) {
+        countRecordsQuery, [], function (err, rows) {
           connection.release();
           countRecords = rows[0].count;
           pageCount =
@@ -1292,20 +1397,7 @@ module.exports = function () {
 
           db.get().getConnection(function (err, connection) {
             connection.query(
-              ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
-              ' b.name AS cityName, c.name AS streetName,' +
-              ' d.number AS houseNumber, a.porch, ' +
-              ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc' +
-              ' FROM applications a' +
-              ' LEFT JOIN cities b ON b.city_id = a.city_id' +
-              ' LEFT JOIN streets c ON c.street_id = a.street_id' +
-              ' LEFT JOIN houses d ON d.house_id = a.house_id' +
-              ' WHERE (a.application_id > 0)' +
-              ' AND (a.is_done = 0)' +
-              ' AND (a.is_deleted = 0)' +
-              ' ORDER BY a.create_date DESC' +
-              ' LIMIT ?' +
-              ' OFFSET ?', [visibleRows, offset], function (err, rows) {
+              fullQuery, [], function (err, rows) {
                 connection.release();
 
                 if (err) {
@@ -1330,8 +1422,7 @@ module.exports = function () {
 
                   db.get().getConnection(function (err, connection) {
                     var stringSQL =
-                      ' SELECT a.application_id AS documentId, b.name AS problemDescription FROM faults a' +
-                      ' LEFT JOIN templates b ON b.template_id = a.template_id' +
+                      ' SELECT a.application_id AS documentId, a.name AS problemDescription FROM faults a' +
                       ' WHERE a.application_id IN ';
                     if (parameters.trim().length === 0) {
                       parameters = '(-1)';
@@ -1367,7 +1458,8 @@ module.exports = function () {
                             currentPage: currentPage,
                             visibleRows: visibleRows,
                             countRecords: countRecords,
-                            moment: moment
+                            moment: moment,
+                            filter: additionalQuery.filter
                           });
                         }
                       });
@@ -1383,12 +1475,40 @@ module.exports = function () {
     var offset = +req.params.offset;
     var pageCount = 0;
     var countRecords = 0;
+
+    var additionalQuery = additionalWhereInQuery(req);
+
+    var countRecordsQuery =
+    ' SELECT COUNT(*) AS count' +
+    ' FROM applications a WHERE (a.application_id > 0)' +
+    ' AND (a.is_done = 1)' +
+    ' AND (a.is_deleted = 0)' + additionalQuery.where;
+
+    var fullQuery =
+    ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
+    ' b.name AS cityName, c.name AS streetName,' +
+    ' d.number AS houseNumber, e.name AS performerName,' +
+    ' CASE ' +
+    ' WHEN a.kind = 0 THEN CONCAT("под. ", a.porch)' +
+    ' WHEN a.kind = 1 THEN CONCAT("кв. ", a.porch)' +
+    ' END AS numeration, ' +
+    ' a.close_date AS closeDate, ' +
+    ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc ' +
+    ' FROM applications a' +
+    ' LEFT JOIN cities b ON b.city_id = a.city_id' +
+    ' LEFT JOIN streets c ON c.street_id = a.street_id' +
+    ' LEFT JOIN houses d ON d.house_id = a.house_id' +
+    ' LEFT JOIN workers e ON e.worker_id = a.worker_id' +
+    ' WHERE (a.application_id > 0)' +
+    ' AND (a.is_done = 1)' + 
+    ' AND (a.is_deleted = 0)' + additionalQuery.where +
+    ' ORDER BY a.create_date DESC' +
+    ' LIMIT ' + visibleRows +
+    ' OFFSET ' + offset;
+
     db.get().getConnection(function (err, connection) {
       connection.query(
-        ' SELECT COUNT(*) AS count' +
-        ' FROM applications a WHERE (a.application_id > 0)' +
-        ' AND (a.is_done = 1)' +
-        ' AND (a.is_deleted = 0)', [], function (err, rows) {
+        countRecordsQuery, [], function (err, rows) {
           connection.release();
           countRecords = rows[0].count;
           pageCount =
@@ -1399,26 +1519,15 @@ module.exports = function () {
 
           db.get().getConnection(function (err, connection) {
             connection.query(
-              ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
-              ' b.name AS cityName, c.name AS streetName,' +
-              ' d.number AS houseNumber, a.porch, ' +
-              ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc' +
-              ' FROM applications a' +
-              ' LEFT JOIN cities b ON b.city_id = a.city_id' +
-              ' LEFT JOIN streets c ON c.street_id = a.street_id' +
-              ' LEFT JOIN houses d ON d.house_id = a.house_id' +
-              ' WHERE (a.application_id > 0)' +
-              ' AND (a.is_done = 1)' +
-              ' AND (a.is_deleted = 0)' +
-              ' ORDER BY a.create_date ASC' +
-              ' LIMIT ?' +
-              ' OFFSET ?', [visibleRows, offset], function (err, rows) {
+              fullQuery, [visibleRows, offset], function (err, rows) {
                 connection.release();
 
                 if (err) {
                   res.status(500).send({
                     code: 500,
-                    msg: 'Database error'
+                    msg: 'Database error',
+                    errorName: err.name,
+                    errorMessage: err.message
                   });
                 } else {
                   var currentPage = Math.ceil(offset / visibleRows) + 1;
@@ -1437,9 +1546,8 @@ module.exports = function () {
 
                   db.get().getConnection(function (err, connection) {
                     var stringSQL =
-                      ' SELECT a.application_id AS documentId, b.name AS problemDescription FROM faults a' +
-                      ' LEFT JOIN templates b ON b.template_id = a.template_id' +
-                      ' WHERE a.application_id IN ';
+                    ' SELECT a.application_id AS documentId, a.name AS problemDescription FROM faults a' +
+                    ' WHERE a.application_id IN ';
                     if (parameters.trim().length === 0) {
                       parameters = '(-1)';
                     }
@@ -1452,7 +1560,9 @@ module.exports = function () {
                         if (err) {
                           res.status(500).send({
                             code: 500,
-                            msg: 'Database error'
+                            msg: 'Database error',
+                            errorName: err.name,
+                            errorMessage: err.message
                           });
                         }
                         else {
