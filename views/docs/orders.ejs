@@ -30,94 +30,61 @@
             <a href="/orders/add" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Новый договор"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
         </form>
         <p>
-        <table class="table table-bordered table-condensed">
+        <table class="table table-bordered table-condensed table-hover">
             <thead>
                 <tr class="active">
-                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Номер</th>
-                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Дата</th>
-                    <th rowspan="2" style="width: 5%; vertical-align: middle" class="text-center">TO</th>
-                    <th rowspan="2" style="width: 3%; vertical-align: middle" class="text-center">!!!</th>
-                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Кредит до</th>
-                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Конец<br>гарантии</th>
-                    <th style="width: 12%; vertical-align: middle" class="text-center">Улица</th>
-                    <th style="width: 12%; vertical-align: middle" class="text-center">Город</th>
-                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Нумерация</th>
-                    <th rowspan="2" style="width: 13%; vertical-align: middle" class="text-center">Оборудование</th>
-                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Договор ТО</th>
-                    <th style="width: 8%;" class="text-center">Конец договора ТО</th>
-                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Дата<br>печати</th>
-                    <th rowspan="2" style="width: 5%; vertical-align: middle" class="text-center">Действия</th>
-                </tr>
-                <tr class="active">
-                    <th style="vertical-align: middle" class="text-center">Дом</th>
-                    <th style="vertical-align: middle" class="text-center">Подьезд</th>
-                    <th style="vertical-align: middle" class="text-center">ТО продлен до</th>
+                    <th style="width: 6%; vertical-align: middle" class="text-center">Номер</th>
+                    <th style="width: 6%; vertical-align: middle" class="text-center">Дата</th>
+                    <th style="width: 6%; vertical-align: middle" class="text-center">Кредит до</th>
+                    <th style="width: 17%; vertical-align: middle" class="text-center">Город</th>
+                    <th style="width: 18%; vertical-align: middle" class="text-center">Улица</th>
+                    <th style="width: 4%; vertical-align: middle" class="text-center">Дом</th>
+                    <th style="width: 4%; vertical-align: middle" class="text-center">Подъезд</th>
+                    <th style="width: 6%; vertical-align: middle" class="text-center">Нумерация</th>
+                    <th style="width: 13%; vertical-align: middle" class="text-center">Оборудование</th>
+                    <th style="width: 6%; vertical-align: middle" class="text-center">Договор ТО</th>
+                    <th style="width: 8%; vertical-align: middle" class="text-center">Конец ТО</th>
+                    <th style="width: 6%; vertical-align: middle" class="text-center">Дата<br>печати</th>
                 </tr>
             </thead>
             <tbody>
                 <% for (var ind = 0, max = data.length; ind < max; ind++) {%>
                 <tr>
-                    <td rowspan="2" class="text-center <%= data[ind].repaid == 1 ? ' table-success' : ' table-danger' %>" style="vertical-align: middle">
-                        <%= data[ind].contract_number %>
+                    <td class="text-center <%= data[ind].repaid == 1 ? ' table-success' : ' table-danger' %>" style="vertical-align: middle">
+                        <a href="/orders/edit/<%= data[ind].id %>"><%= data[ind].contract_number %>
                     </td>
-                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                    <td class="text-center" style="vertical-align: middle">
                         <%= moment(data[ind].create_date).format( 'DD.MM.YYYY') %>
                     </td>
-                    <td rowspan="2" class="text-center" style="vertical-align: middle">
-                        <img src="<%= data[ind].maintenance_contract == 1 ? '/images/green1.png' : (data[ind].maintenance_contract == 2 ? '/images/red1.png' : '/images/blue_minus.png') %>"    
-                    </td>
-                    <td rowspan="2" class="text-center" style="vertical-align: middle">
-                    <% if (data[ind].attention == 1) {%>
-                        <img src="/images/attention.png">
-                    <% } %>
-                    </td>
-                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                    <td class="text-center" style="vertical-align: middle">
                         <%= moment(data[ind].credit_to).format( 'DD.MM.YYYY') %>
                     </td>
-                    <td rowspan="2" class="text-center" style="vertical-align: middle">
-                        <%= moment(data[ind].end_contract).format( 'DD.MM.YYYY') %>
-                    </td>
-                    <td class="text-left">
-                        <%= data[ind].street_name %>
-                    </td>
-                    <td class="text-left">
+                    <td class="text-left" style="vertical-align: middle">
                         <%= data[ind].city_name %>
                     </td>
-                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                    <td class="text-left" style="vertical-align: middle">
+                        <%= data[ind].street_name %>
+                    </td>
+                    <td class="text-center" style="vertical-align: middle">
+                        <%= data[ind].house_number %>
+                    </td>
+                    <td class="text-center" style="vertical-align: middle">
+                        <%= data[ind].porch %>
+                    </td>
+                    <td class="text-center" style="vertical-align: middle">
                         <%= data[ind].numeration %>
                     </td>
-                    <td rowspan="2" class="text-center" style="vertical-align: middle">
+                    <td class="text-left" style="vertical-align: middle">
                         <%= data[ind].equipment_name %>
                     </td>
-                    <td rowspan="2" class="text-center <%= data[ind].m_repaid == 1 ? ' table-success' : ' table-danger' %>" style="vertical-align: middle">
+                    <td class="text-center <%= data[ind].m_repaid == 1 ? ' table-success' : ' table-danger' %>" style="vertical-align: middle">
                         <%= data[ind].m_contract_number %>
                     </td>
                     <td class="text-center" style="vertical-align: middle">
-                        <%= data[ind].end_service !== null ? moment(data[ind].end_service).format( 'DD.MM.YYYY' ) : '' %>
+                        <%= data[ind].end_service !== null ? moment(data[ind].end_service).format( 'DD.MM.YYYY' ) : '\u00A0' %>
                     </td>
-                    <td rowspan="2" class="text-center" style="vertical-align: middle">
-                        <%= data[ind].receipt_printing !== null ? moment(data[ind].receipt_printing).format( 'DD.MM.YYYY' ) : '' %>
-                    </td>
-                    <td rowspan="2" class="text-center" style="vertical-align: middle">
-                        <a href="/orders/edit/<%= data[ind].id %>" class="btn btn-info btn-xs" id="edit">
-                            <span class="glyphicon glyphicon-pencil" aria-hidden="true">
-                            </span>
-                        </a>
-                        <a href="#" onclick="confirmDelete(+<%= data[ind].id %>);" class="btn btn-danger btn-xs" id="orders_info">
-                            <span class="glyphicon glyphicon-minus" aria-hidden="true">
-                            </span>
-                        </a>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="text-right">
-                        <%= data[ind].house_number %>
-                    </td>
-                    <td class="text-right">
-                        <%= data[ind].porch %>
-                    </td>
-                    <td class="text-center">
-                        <%= data[ind].m_prolongation !== null ? moment(data[ind].m_prolongation).format( 'DD.MM.YYYY' ) : '' %>
+                    <td class="text-center" style="vertical-align: middle">
+                        <%= data[ind].receipt_printing !== null ? moment(data[ind].receipt_printing).format( 'DD.MM.YYYY' ) : '\u00A0' %>
                     </td>
                 </tr>
                 <% } %>

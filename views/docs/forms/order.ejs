@@ -44,30 +44,43 @@
                         <input type="text" hidden id="id" name="id" value="<%= typeof data != 'undefined' ? data.id : ''  %>">
                         <input type="text" hidden id="apartment_id" name="apartment_id" value="<%= typeof data != 'undefined' ? data.apartment_id : ''  %>">
                         <div class="row">
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <div class="form-group">
                                     <label for="contract_number">Номер</label>
                                     <input type="text" class="form-control" id="contract_number" name="contract_number" placeholder="" autofocus="autofocus" value="<%= typeof data !== 'undefined' ? data.contract_number : '' %>">
                                 </div>
                             </div>
-                            <div class="col-md-3 offset-md-6">
+                            <div class="col-md-2 <%= errors.createDate ? 'has-error' : '' %>">
                                 <div class="form-group">
-                                    <label for="create_date">Дата заполнения</label>
-                                    <input type="text" class="form-control" id="create_date" name="create_date" placeholder="" value="<%= typeof data !== 'undefined' ? moment(data.create_date).format( 'DD.MM.YYYY' ) : '' %>">
+                                    <label for="createDate" class="control-label">Создано</label>
+                                    <div class="input-group date" id="dtCreateDate">
+                                        <input type="text" class="form-control" name="createDate" id="createDate"
+                                        value="<%= typeof data !== 'undefined' ? moment(data.createDate).format( 'DD.MM.YYYY' ) : moment(new Date()).format( 'DD.MM.YYYY' )  %>">
+                                        <span class="input-group-addon">
+                                        <span class="glyphicon glyphicon-calendar"></span>
+                                        </span>
+                                    </div>
+                                    <% if (errors.createDate) { %>
+                                    <span class="help-block"><%= errors.createDate.msg  %></span>
+                                    <% } %>
                                 </div>
                             </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-9">
+                            <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="equipment_name">Оборудование</label>
                                     <input type="text" class="form-control" id="equipment_name" name="equipment_name" placeholder="Выберите оборудование" value="<%= typeof data !== 'undefined' ? data.equipment_name : '' %>">
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <div class="form-group">
-                                    <label for="end_contract">Окончание договора</label>
-                                    <input type="text" class="form-control" id="end_contract" name="end_contract" placeholder="" value="<%= typeof data !== 'undefined' ? moment(data.end_contract).format( 'DD.MM.YYYY' ) : '' %>">
+                                    <label for="endContract" class="control-label">Окончание договора</label>
+                                    <div class="input-group date" id="dtEndContract">
+                                        <input type="text" class="form-control" name="endContract" id="endContract"
+                                        value="<%= typeof data !== 'undefined' ? moment(data.endContract).format( 'DD.MM.YYYY' ) : '' %>">
+                                        <span class="input-group-addon">
+                                        <span class="glyphicon glyphicon-calendar"></span>
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -83,54 +96,65 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-3 offset-md-6">
+                            <div class="col-md-2 col-md-offset-7 <%= errors.creditTo ? 'has-error' : '' %>">
                                 <div class="form-group">
-                                    <label for="credit_to">Кредит до</label>
-                                    <input type="text" class="form-control" id="credit_to" name="credit_to" placeholder="" value="<%= typeof data !== 'undefined' ? moment(data.credit_to).format( 'DD.MM.YYYY' ) : '' %>">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- <fieldset class="border p-2">
-                            <legend class="w-auto">Место установки</legend> -->
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="city">Город</label>
-                                    <input type="text" class="form-control" id="city" name="city" placeholder="" value="<%= typeof data != 'undefined' ? data.city_name : '' %>" >
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="street">Улица</label>
-                                    <input type="text" class="form-control" id="street" name="street" placeholder="" value="<%= typeof data != 'undefined' ? data.street_name : '' %>">
+                                    <label for="creditTo" class="control-label">Кредит до</label>
+                                    <div class="input-group date" id="dtCreditTo">
+                                        <input type="text" class="form-control" name="creditTo" id="creditTo"
+                                        value="<%= typeof data !== 'undefined' ? moment(data.creditTo).format( 'DD.MM.YYYY' ) : '' %>">
+                                        <span class="input-group-addon">
+                                        <span class="glyphicon glyphicon-calendar"></span>
+                                        </span>
+                                    </div>
+                                    <% if (errors.creditTo) { %>
+                                    <span class="help-block"><%= errors.creditTo.msg  %></span>
+                                    <% } %>
                                 </div>
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="house">Дом</label>
-                                    <input type="text" class="form-control" id="house" name="house" placeholder="" value="<%= typeof data != 'undefined' ? data.house_number : '' %>">
+                            <div class="col-md-9 <%= errors.address ? 'has-error' : '' %>">
+                              <div class="form-group">
+                                <label class="control-label" for="address">Адрес</label>
+                                <div class="input-group">
+                                    <span class="input-group-btn">
+                                        <button class="btn btn-default" type="button" id="addAddress">
+                                            <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                                        </button>
+                                        <button class="btn btn-default" type="button" id="clearAddress">
+                                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                                        </button>
+                                    </span>
+                                    <input type="text" class="form-control" id="address" name="address" placeholder=""
+                                      value="<%= typeof data !== 'undefined' ? data.address : '' %>">
                                 </div>
+                                <% if (errors.address) { %>
+                                <span class="help-block"><%= errors.address.msg  %></span>
+                                <% } %>
+                              </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="porch">Подьезд</label>
-                                    <input type="text" class="form-control" id="porch" name="porch" placeholder="" value="<%= typeof data != 'undefined' ? data.porch : '' %>">
-                                </div>
+                            <div class="col-md-1 <%= errors.porch ? 'has-error' : '' %>">
+                              <div class="form-group">
+                                <label class="control-label" for="porch">Подъезд</label>
+                                <input type="text" class="form-control" id="porch" name="porch" placeholder=""
+                                  value="<%= typeof data !== 'undefined' ? data.porch : '' %>">
+                                <% if (errors.porch) { %>
+                                <span class="help-block"><%= errors.porch.msg  %></span>
+                                <% } %>
+                              </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="numeration">Нумерация</label>
-                                    <input type="text" class="form-control" id="numeration" name="numeration" placeholder="" value="<%= typeof data != 'undefined' ? data.numeration : '' %>">
-                                </div>
+                            <div class="col-md-2 <%= errors.numeration ? 'has-error' : '' %>">
+                              <div class="form-group">
+                                <label class="control-label" for="numeration">Нумерация</label>
+                                <input type="text" class="form-control" id="numeration" name="numeration" placeholder=""
+                                  value="<%= typeof data !== 'undefined' ? data.numeration : '' %>">
+                                <% if (errors.numeration) { %>
+                                <span class="help-block"><%= errors.numeration.msg  %></span>
+                                <% } %>
+                              </div>
                             </div>
                         </div>
-                        <!-- <p> -->
-                        <!-- </fieldset> -->
                     </div>
-
                     <div role="tabpanel" class="tab-pane" id="seniorContract">
                         <div class="row">
                             <div class="col-md-12">
@@ -436,12 +460,34 @@
     </div>
 
     <script src="/bower_components/jquery/dist/jquery.min.js"></script>
-    <script src="/bower_components/bootstrap/assets/js/vendor/popper.min.js"></script>
     <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
     <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
-    <script src="/bower_components/bootstrap/assets/js/vendor/holder.min.js"></script>
+    <script src="/bower_components/moment/min/moment-with-locales.min.js"></script>
+    <script src="/bower_components/bootstrap/js/transition.js"></script>
+    <script src="/bower_components/bootstrap/js/collapse.js"></script>
+    <script src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
+    <script src="/bower_components/axios/dist/axios.min.js"></script>
     <script>
       $(document).ready(function () {
+
+        $('[data-toggle="tooltip"]').tooltip();
+
+        $('#dtCreateDate').datetimepicker({
+            locale: 'ru',
+            format: 'L'
+        });
+
+        $('#dtEndContract').datetimepicker({
+            locale: 'ru',
+            format: 'L'
+        });
+        
+        $('#dtCreditTo').datetimepicker({
+            locale: 'ru',
+            format: 'L'
+        });
+
         $('#equipment_name').typeahead({
           items: 15,
           source: function (query, process) {

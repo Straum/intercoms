@@ -2,201 +2,478 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
-    <!-- <link rel="icon" href="../../../../favicon.ico"> -->
-    <title>Home page - Заявки</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <!-- <link rel="icon" href="../../../../favicon.ico"> -->
+  <title>Home page - Заявки</title>
 
-    <% include ../common/bootstrap_css.ejs %>
-    <link href="/theme.css" rel="stylesheet">
+  <% include ../common/bootstrap_css.ejs %>
+  <link href="/theme.css" rel="stylesheet">
+  <link href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css"
+    rel="stylesheet">
 </head>
 
 <body role="document">
 
-    <% include ../common/full_menu.ejs %>
+  <% include ../common/full_menu.ejs %>
 
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-xs-9">
-                <ol class="breadcrumb">
-                    <li><a href="#">Документы</a></li>
-                    <li>Выполненные заявки</li>
-                </ol>
-            </div>
-            <div class="col-xs-3">
-                <ul class="nav nav-pills pull-right">
-                    <li role="presentation"><a href="/applications">Текущие</a></li>
-                    <li role="presentation" class="active"><a href="#">Выполненные</a></li>
-                </ul>
-            </div>
-        </div>
-        <table class="table table-bordered table-condensed">
-            <thead>
-                <tr class="active">
-                    <th style="width: 10%;" class="text-center align-middle">Дата</th>
-                    <th style="width: 15;" class="text-center align-middle">Город</th>
-                    <th style="width: 20%;" class="text-center align-middle">Улица</th>
-                    <th style="width: 6%;" class="text-center align-middle">Дом</th>
-                    <th style="width: 6%;" class="text-center align-middle">Номера</th>
-                    <th style="width: 10%;" class="text-center align-middle">Выполнено</th>
-                    <th style="width: 25%;" class="text-center align-middle">Описание проблем</th>
-                    <th style="width: 8%;" class="text-center align-middle">Действия</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% for (var ind = 0, max = data.length; ind < max; ind++) {%>
-                    <tr>
-                        <td class="text-center align-middle">
-                            <%= moment(data[ind].createDate).format( 'DD.MM.YYYY HH:mm') %>
-                        </td>
-                        <td class="text-left align-middle">
-                            <%= data[ind].cityName %>
-                        </td>
-                        <td class="text-left align-middle">
-                            <%= data[ind].streetName %>
-                        </td>
-                        <td class="text-center align-middle">
-                            <%= data[ind].houseNumber %>
-                        </td>
-                        <td class="text-center align-middle">
-                            <%= data[ind].numeration %>
-                        </td>
-                        <td class="text-center align-middle">
-                            <%= data[ind].closeDate == null ? '' : moment(data[ind].closeDate).format( 'DD.MM.YYYY HH:mm') %>
-                        </td>
-                        <td class="text-left align-middle">
-                            <%= 'problemDescription' in data[ind] ? data[ind].problemDescription : '' %>
-                        </td>
-                        <td class="text-center align-middle">
-                            <a href="/applications/edit/<%= data[ind].documentId %>" class="btn btn-info btn-xs" id="edit">
-                                <span class="glyphicon glyphicon-pencil" aria-hidden="true">
-                                </span>
-                            </a>
-                            <a href="#" onclick="confirmDelete(+<%= data[ind].documentId %>);" class="btn btn-danger btn-xs" id="orders_info">
-                                <span class="glyphicon glyphicon-minus" aria-hidden="true">
-                                </span>
-                            </a>
-                        </td>
-                    </tr>
-                    <% } %>
-            </tbody>
-        </table>
-        <% if (pageCount > 0) { %>
-            <nav aria-label="...">
-                <ul class="pagination text-center table_pagination">
-                    <% if (currentPage == 1) { %>
-                        <li class="page-item disabled">
-                            <span class="page-link">&laquo;</span>
-                        </li>
-                        <% } else { %>
-                            <li class="page-item">
-                                <a class="page-link" href="/applications/completed">&laquo;
-                            </a>
-                        </li>
-                    <% } %>
-                    <% var i = (Number(currentPage) > 5 ? Number(currentPage) - 4 : 1) %>
-                    <% if (i !== 1) { %>
-                        <li class="page-item disabled">
-                            <a class="page-link">...</a>
-                        </li>
-                    <% } %>
-                    <% for (; i <= (Number(currentPage) + 4) && i <= pageCount; i++) { %>
-                        <% if (i == currentPage) { %>
-                            <li class="page-item active">
-                                <span class="page-link">
-                                    <%= i %>
-                                    <span class="sr-only">(current)</span>
-                                </span>
-                            </li>
-                        <% } else { %>
-                            <li class="page-item">
-                                <a class="page-link" href="/applications/completed/<%= (i == 1) ? '' : (i - 1) * Number(visibleRows) %>">
-                                    <%= i %>
-                                </a>
-                            </li>
-                        <% } %>
-                        <% if (i == Number(currentPage) + 4 && i < pageCount) { %>
-                            <li class="page-item disabled">
-                                <a class="page-link">...</a>
-                            </li>
-                        <% } %>
-                    <% } %>
-                    <% if (currentPage == pageCount) { %>
-                        <li class="page-item disabled">
-                            <a class="page-link">&raquo;</a>
-                        </li>
-                    <% } else { %>
-                        <li class="page-item">
-                            <a class="page-link" href="/applications/completed/<%= (pageCount - 1) * Number(visibleRows) %>">&raquo;</a>
-                        </li>
-                    <% } %>
-                </ul>
-            </nav>
-        <% } %>
-        <div class="row">
-            <div class="col-xs-12">
-                <div class="alert alert-info">Записей: <strong><%= countRecords %></strong></div>
-            </div>
-        </div>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-xs-9">
+        <ol class="breadcrumb">
+          <li><a href="#">Документы</a></li>
+          <li>Выполненные заявки</li>
+        </ol>
+      </div>
+      <div class="col-xs-3">
+        <ul class="nav nav-pills pull-right">
+          <li role="presentation"><a href="/applications">Текущие</a></li>
+          <li role="presentation" class="active"><a href="#">Выполненные</a></li>
+        </ul>
+      </div>
     </div>
-
-    <div class="modal" id="modalDeleteRecord" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Подтверждение</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <form>
-                        <input type="text" hidden id="deletedUID" name="deletedUID" value="">
-                    </form>
-                    <p>Удалить запись?</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-warning" id="deleteRecord">Удалить</button>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
-                </div>
-            </div>
+    <form class="form-inline" role="form" method="get" action="/applications/done_filter">
+      <div class="input-group date my-tooltip" id="startDate" data-toggle="tooltip" data-placement="top" title="Начальная дата">
+        <input type="text" class="form-control" name="startDate" value="<%= moment(filter.period.start).format( 'DD.MM.YYYY HH:mm' )  %>" />
+        <span class="input-group-addon">
+            <span class="glyphicon glyphicon-calendar"></span>
+        </span>
+      </div>
+      <div class="input-group date my-tooltip" id="endDate" data-toggle="tooltip" data-placement="top" title="Конечная дата">
+        <input type="text" class="form-control" name="endDate" value="<%= moment(filter.period.end).format( 'DD.MM.YYYY HH:mm' )  %>" />
+        <span class="input-group-addon">
+            <span class="glyphicon glyphicon-calendar"></span>
+        </span>
+      </div>
+      <input type="text" hidden id="cityId" name="cityId" value="<%= JSON.stringify(filter.city) %>">
+      <input type="text" hidden id="streetId" name="streetId" value="<%= JSON.stringify(filter.street) %>">
+      <input type="text" hidden id="houseId" name="houseId" value="<%= JSON.stringify(filter.house) %>">
+      <input type="text" hidden id="performerId" name="performerId" value="<%= JSON.stringify(filter.performer) %>">
+      <button type="submit" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Скачать отчет"
+        name="downloadDoneReport"><span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span></button>
+      <button type="submit" class="btn btn-success" name="applyFilter">&nbsp;Применить фильтр&nbsp;</button>
+    </form>
+    <p>
+      <table class="table table-bordered table-condensed">
+        <thead>
+          <tr class="active">
+            <th rowspan="2" style="width: 5%; vertical-align: middle" class="text-center align-middle">№ дог</th>
+            <th rowspan="2" style="width: 5%; vertical-align: middle" class="text-center align-middle">№ ТО</th>
+            <th style="width: 10;" class="text-center align-middle">Город</th>
+            <th style="width: 15%;" class="text-center align-middle">Улица</th>
+            <th style="width: 6%;" class="text-center align-middle">Дом</th>
+            <th style="width: 10%;" class="text-center align-middle">Исполнитель</th>
+            <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center align-middle">Номера</th>
+            <th rowspan="2" style="width: 10%; vertical-align: middle" class="text-center align-middle">Выполнено</th>
+            <th rowspan="2" style="width: 25%; vertical-align: middle" class="text-center align-middle">Описание проблем
+            </th>
+            <th rowspan="2" style="width: 8%; vertical-align: middle" class="text-center align-middle">Действия</th>
+          </tr>
+          <tr class="active">
+            <td>
+              <div class="input-group">
+                <span class="input-group-btn">
+                  <button class="btn btn-default" type="button" id="clearCity">
+                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                  </button>
+                </span>
+                <input type="text" class="form-control" placeholder="Город" name="filterCities" id="filterCities"
+                  value="<%= filter.city.value %>">
+              </div>
+            </td>
+            <td>
+              <div class="input-group">
+                <span class="input-group-btn">
+                  <button class="btn btn-default" type="button" id="clearStreet">
+                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                  </button>
+                </span>
+                <input type="text" class="form-control" placeholder="Улица" name="filterStreets" id="filterStreets"
+                  value="<%= filter.street.value %>">
+              </div>
+            </td>
+            <td>
+              <div class="input-group">
+                <span class="input-group-btn">
+                  <button class="btn btn-default" type="button" id="clearHouse">
+                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                  </button>
+                </span>
+                <input type="text" class="form-control" placeholder="Дом" name="filterHouses" id="filterHouses"
+                  value="<%= filter.house.value %>">
+              </div>
+            </td>
+            <td>
+              <div class="input-group">
+                <span class="input-group-btn">
+                  <button class="btn btn-default" type="button" id="clearPerformer">
+                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                  </button>
+                </span>
+                <input type="text" class="form-control" placeholder="Исполнитель" name="filterPerformers"
+                  id="filterPerformers" value="<%= filter.performer.value %>">
+              </div>
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <% for (var ind = 0, max = data.length; ind < max; ind++) {%>
+          <tr>
+            <td class="text-center align-middle">
+              <% if (+data[ind].contractNumber > 0) { %>
+              <a href="/orders/edit/<%= data[ind].documentId %>"><%= data[ind].contractNumber %>
+              </a>
+              <% } %>
+            </td>
+            <td class="text-center align-middle">
+              <% if ((+data[ind].prolongedContractNumber > 0) && (+data[ind].maintenanceContract === 1) ) { %>
+              <a href="/orders/edit/<%= data[ind].documentId %>"><%= data[ind].prolongedContractNumber %>
+              </a>
+              <% } %>
+            </td>
+            <td class="text-left align-middle">
+              <%= data[ind].cityName %>
+            </td>
+            <td class="text-left align-middle">
+              <%= data[ind].streetName %>
+            </td>
+            <td class="text-center align-middle">
+              <%= data[ind].houseNumber %>
+            </td>
+            <td class="text-left align-middle">
+              <%= data[ind].performerName %>
+            </td>
+            <td class="text-center align-middle">
+              <%= data[ind].numeration %>
+            </td>
+            <td class="text-center align-middle">
+              <%= data[ind].closeDate == null ? '' : moment(data[ind].closeDate).format( 'DD.MM.YYYY HH:mm') %>
+            </td>
+            <td class="text-left align-middle">
+              <%= 'problemDescription' in data[ind] ? data[ind].problemDescription : '' %>
+            </td>
+            <td class="text-center align-middle">
+              <a href="/applications/edit/<%= data[ind].documentId %>" class="btn btn-info btn-xs" id="edit">
+                <span class="glyphicon glyphicon-pencil" aria-hidden="true">
+                </span>
+              </a>
+              <a href="#" onclick="confirmDelete(+<%= data[ind].documentId %>);" class="btn btn-danger btn-xs"
+                id="orders_info">
+                <span class="glyphicon glyphicon-minus" aria-hidden="true">
+                </span>
+              </a>
+            </td>
+          </tr>
+          <% } %>
+        </tbody>
+      </table>
+      <% if (pageCount > 0) { %>
+      <nav aria-label="...">
+        <ul class="pagination text-center table_pagination">
+          <% if (currentPage == 1) { %>
+          <li class="page-item disabled">
+            <span class="page-link">&laquo;</span>
+          </li>
+          <% } else { %>
+          <li class="page-item">
+            <a class="page-link" href="/applications/completed">&laquo;
+            </a>
+          </li>
+          <% } %>
+          <% var i = (Number(currentPage) > 5 ? Number(currentPage) - 4 : 1) %>
+          <% if (i !== 1) { %>
+          <li class="page-item disabled">
+            <a class="page-link">...</a>
+          </li>
+          <% } %>
+          <% for (; i <= (Number(currentPage) + 4) && i <= pageCount; i++) { %>
+          <% if (i == currentPage) { %>
+          <li class="page-item active">
+            <span class="page-link">
+              <%= i %>
+              <span class="sr-only">(current)</span>
+            </span>
+          </li>
+          <% } else { %>
+          <li class="page-item">
+            <a class="page-link" href="/applications/completed/<%= (i == 1) ? '' : (i - 1) * Number(visibleRows) %>">
+              <%= i %>
+            </a>
+          </li>
+          <% } %>
+          <% if (i == Number(currentPage) + 4 && i < pageCount) { %>
+          <li class="page-item disabled">
+            <a class="page-link">...</a>
+          </li>
+          <% } %>
+          <% } %>
+          <% if (currentPage == pageCount) { %>
+          <li class="page-item disabled">
+            <a class="page-link">&raquo;</a>
+          </li>
+          <% } else { %>
+          <li class="page-item">
+            <a class="page-link" href="/applications/completed/<%= (pageCount - 1) * Number(visibleRows) %>">&raquo;</a>
+          </li>
+          <% } %>
+        </ul>
+      </nav>
+      <% } %>
+      <div class="row">
+        <div class="col-xs-12">
+          <div class="alert alert-info">Записей: <strong><%= countRecords %></strong></div>
         </div>
+      </div>
+  </div>
+
+  <div class="modal" id="modalDeleteRecord" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Подтверждение</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form>
+            <input type="text" hidden id="deletedUID" name="deletedUID" value="">
+          </form>
+          <p>Удалить запись?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-warning" id="deleteRecord">Удалить</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <script src="/bower_components/jquery/dist/jquery.min.js"></script>
-    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
-    <script>
-        function confirmDelete(id) {
-            $('#deletedUID').val(id);
-            $('#modalDeleteRecord').modal({'keyboard': true});
-        }
+  <script src="/bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="/bower_components/moment/min/moment-with-locales.min.js"></script>
+  <script src="/bower_components/bootstrap/js/transition.js"></script>
+  <script src="/bower_components/bootstrap/js/collapse.js"></script>
+  <script src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
+  <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
 
-        $(document).ready(function () {
-            $('#deleteRecord').click(function() {
-                $('#modalDeleteRecord').modal('hide');
-                $.ajax({
-                    type: 'POST',
-                    url: '/applications/delete',
-                    dataType: 'json',
-                    async: true,
-                    data: {
-                        'id': $('#deletedUID').val()
-                    },
-                    success: function (data) {
-                        var path = window.location.origin + '/applications/completed';
-                        window.location.href = path;
-                        return;
-                    },
-                    error: function (data) {
-                        alert(data);
-                    }
-                });
-                
-            });
+  <script>
+
+    $('[data-toggle="tooltip"]').tooltip();
+
+    $('#startDate').datetimepicker({
+      locale: 'ru',
+      // format: 'L'
+    });
+
+    $('#endDate').datetimepicker({
+      locale: 'ru',
+      // format: 'L'
+    });
+
+    function confirmDelete(id) {
+      $('#deletedUID').val(id);
+      $('#modalDeleteRecord').modal({ 'keyboard': true });
+    }
+
+    function clearCity() {
+      $('#cityId').val(JSON.stringify({ id: 0, value: '' }));
+      $('#filterCities').val('');
+    }
+
+    function clearStreet() {
+      $('#streetId').val(JSON.stringify({ id: 0, value: '' }));
+      $('#filterStreets').val('');
+    }
+
+    function clearHouse() {
+      $('#houseId').val(JSON.stringify({ id: 0, value: '' }));
+      $('#filterHouses').val('');
+    }
+
+    function clearPerformer() {
+      $('#performerId').val(JSON.stringify({ id: 0, value: '' }));
+      $('#filterPerformers').val('');
+    }
+
+    $(document).ready(function () {
+
+      $('[data-toggle="tooltip"]').tooltip();
+
+      $('#deleteRecord').click(function () {
+        $('#modalDeleteRecord').modal('hide');
+        $.ajax({
+          type: 'POST',
+          url: '/applications/delete',
+          dataType: 'json',
+          async: true,
+          data: {
+            'id': $('#deletedUID').val()
+          },
+          success: function (data) {
+            var path = window.location.origin + '/applications/completed';
+            window.location.href = path;
+            return;
+          },
+          error: function (data) {
+            alert(data);
+          }
         });
-    </script>
+
+      });
+    });
+
+    $('#filterCities').keyup(function (e) {
+      if (e.keyCode == 13) {
+        //
+      }
+    });
+
+    $('body').on('click', '#clearCity', function () {
+      clearHouse();
+      clearStreet();
+      clearCity();
+      $('#filterCities').focus();
+    });
+
+    $('body').on('click', '#clearStreet', function () {
+      clearStreet();
+      $('#filterStreets').focus();
+    });
+
+    $('body').on('click', '#clearHouse', function () {
+      clearHouse()
+      $('#filterHouses').focus();
+    });
+
+    $('body').on('click', '#clearPerformer', function () {
+      clearPerformer()
+      $('#filterPerformers').focus();
+    });
+
+    // Typeaheads
+
+    $('#filterCities').typeahead({
+      items: 15,
+      source: function (query, process) {
+        var results = [];
+        map = {};
+        $.ajax({
+          'url': '/applications/search_city',
+          'type': 'POST',
+          'contentType': 'application/json',
+          'data': JSON.stringify({
+            'suggestion': query,
+            'limit': 15
+          }),
+          success: function (datas) {
+            $.each(datas, function (i, result) {
+              map[result.value] = result;
+              results.push(result.value);
+            });
+            process(results);
+          }
+        });
+      },
+      updater: function (element) {
+        $('#cityId').val(JSON.stringify({ id: map[element].id, value: map[element].value }));
+        return element;
+      }
+    });
+
+    $('#filterStreets').typeahead({
+      items: 15,
+      source: function (query, process) {
+        var obj = JSON.parse($('#cityId').val());
+        var results = [];
+        map = {};
+        $.ajax({
+          'url': '/applications/search_street',
+          'type': 'POST',
+          'contentType': 'application/json',
+          'data': JSON.stringify({
+            'cityId': obj.id,
+            'suggestion': query,
+            'limit': 15
+          }),
+          success: function (datas) {
+            $.each(datas, function (i, result) {
+              map[result.value] = result;
+              results.push(result.value);
+            });
+            process(results);
+          }
+        });
+      },
+      updater: function (element) {
+        $('#streetId').val(JSON.stringify({ id: map[element].id, value: map[element].value }));
+        return element;
+      }
+    });
+
+    $('#filterHouses').typeahead({
+      items: 15,
+      source: function (query, process) {
+        var obj = JSON.parse($('#streetId').val());
+        var results = [];
+        map = {};
+        $.ajax({
+          'url': '/applications/search_house',
+          'type': 'POST',
+          'contentType': 'application/json',
+          'data': JSON.stringify({
+            'streetId': obj.id,
+            'suggestion': query,
+            'limit': 15
+          }),
+          success: function (datas) {
+            $.each(datas, function (i, result) {
+              map[result.value] = result;
+              results.push(result.value);
+            });
+            process(results);
+          }
+        });
+      },
+      updater: function (element) {
+        // $('#houseId').val(map[element].id);
+        $('#houseId').val(JSON.stringify({ id: map[element].id, value: map[element].value }));
+        return element;
+      }
+    });
+
+    $('#filterPerformers').typeahead({
+      items: 15,
+      source: function (query, process) {
+        var results = [];
+        map = {};
+        $.ajax({
+          'url': '/applications/search_performer',
+          'type': 'POST',
+          'contentType': 'application/json',
+          'data': JSON.stringify({
+            'suggestion': query,
+            'limit': 15
+          }),
+          success: function (datas) {
+            $.each(datas, function (i, result) {
+              map[result.value] = result;
+              results.push(result.value);
+            });
+            process(results);
+          }
+        });
+      },
+      updater: function (element) {
+        $('#performerId').val(JSON.stringify({ id: map[element].id, value: map[element].value }));
+        return element;
+      }
+    });
+
+  </script>
 </body>
 
 </html>

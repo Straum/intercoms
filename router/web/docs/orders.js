@@ -6,6 +6,7 @@ const visibleRows = require('../../../lib/config').config.visibleRows;
 var moment = require('moment');
 var utils = require('../../../lib/utils.js');
 var order = require('../../../lib/order_service');
+const getOrder = require('../../../queries/orders').getOrder;
 
 module.exports = function () {
   var router = express.Router();
@@ -98,86 +99,45 @@ module.exports = function () {
 
           db.get().getConnection(function (err, connection) {
             connection.query(
-              ' SELECT' +
-              ' a.card_id,' +
-              ' a.contract_number,' +
-              ' a.maintenance_contract,' +
-              ' a.attention,' +
-              ' a.create_date,' +
-              ' a.credit_to,' +
-              ' a.end_contract,' +
-              ' a.repaid,' +
-              ' b.name AS city_name,' +
-              ' c.name AS street_name,' +
-              ' d.number AS house_number,' +
-              ' a.porch,' +
-              ' a.numeration,' +
-              ' e.name AS equipment_name,' +
+                getOrder, [id], function (err, rows) {
 
-              ' a.client_id,' +
-              ' f.name AS client_name,' +
-              ' h.phones,' +
-
-              ' a.m_repaid,' +
-              ' a.m_contract_number,' +
-              ' a.start_service,' +
-              ' a.end_service,' +
-              ' a.m_prolongation,' +
-              ' a.m_payment,' +
-              ' a.m_payment_type_id,' +
-              ' a.m_start_apartment,' +
-              ' a.m_end_apartment,' +
-              ' a.normal_payment,' +
-              ' a.privilege_payment,' +
-              ' a.receipt_printing,' +
-
-              ' a.m_client_id, ' +
-              ' g.name AS m_client_name,' +
-              ' i.phones AS m_phones,' +
-              ' a.is_one_person,' +
-
-              ' a.contract_info, ' +
-              ' a.service_info' +
-              ' FROM' +
-              ' cards a' +
-              ' LEFT JOIN cities b ON a.city_id = b.city_id' +
-              ' LEFT JOIN streets c ON a.street_id = c.street_id' +
-              ' LEFT JOIN houses d ON a.house_id = d.house_id' +
-              ' LEFT JOIN equipments e ON a.equipment_id = e.equipment_id' +
-              ' LEFT JOIN clients f ON a.client_id = f.client_id' +
-              ' LEFT JOIN clients g ON a.m_client_id = g.client_id' +
-              ' LEFT JOIN faces h ON a.client_id = h.client_id' +
-              ' LEFT JOIN faces i ON a.m_client_id = i.client_id' +
-              ' WHERE a.card_id = ?', [id], function (err, rows) {
-                if (err) {
-                  throw err;
-                }
                 connection.release();
 
                 if (err) {
                   console.error(err);
-                  res.status(500).send({
-                    'code': 500,
-                    'msg': 'Database error'
-                  });
+                  res.status(500).send(db.showDatabaseError(500, err));
                 } else {
-                  res.render('docs/forms/orders.ejs', {
-                    'title': 'Договор',
-                    'data': rows[0],
-                    'moment': moment,
-                    'utils': utils,
 
-                    'contractPassportData': contractClientData.passport,
-                    'contractRegisteredAddress': contractClientData.registeredAddress,
-                    'contractActualAddress': contractClientData.actualAddress,
-                    'contractPhones': contractData.phones,
+                  var data = rows[0];
+                  data.address = '';
+                  if (rows[0].cityId > 0) {
+                    data.address = rows[0].cityName.trim();
+                    if (rows[0].streetId > 0) {
+                      data.address += ', ' + rows[0].streetName;
+                      if (rows[0].houseId > 0) {
+                        data.address += ', ' + rows[0].houseNumber;
+                      }
+                    }
+                  }
 
-                    'servicePassportData': serviceClientData.passport,
-                    'serviceRegisteredAddress': serviceClientData.registeredAddress,
-                    'serviceActualAddress': serviceClientData.actualAddress,
-                    'servicePhones': serviceData.phones,
+                  res.render('docs/forms/order.ejs', {
+                    title: 'Договор',
+                    data: data,
+                    moment: moment,
+                    utils: utils,
+                    errors: {},
 
-                    'apartments': apartments
+                    contractPassportData: contractClientData.passport,
+                    contractRegisteredAddress: contractClientData.registeredAddress,
+                    contractActualAddress: contractClientData.actualAddress,
+                    contractPhones: contractData.phones,
+
+                    servicePassportData: serviceClientData.passport,
+                    serviceRegisteredAddress: serviceClientData.registeredAddress,
+                    serviceActualAddress: serviceClientData.actualAddress,
+                    servicePhones: serviceData.phones,
+
+                    apartments: apartments
                   });
                 }
               });
@@ -189,7 +149,7 @@ module.exports = function () {
 
 
   router.get('/add', function (req, res) {
-    res.render('refs/forms/orders.ejs', {
+    res.render('refs/forms/order.ejs', {
       'title': 'Договор',
     });
   });

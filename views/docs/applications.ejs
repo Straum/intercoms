@@ -40,7 +40,7 @@
       <a href="/applications/add" class="btn btn-default" data-toggle="tooltip" data-placement="top"
         title="Новая заявка"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
       <button type="submit" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Скачать отчет"
-        name="downloadReport"><span class="glyphicon glyphicon-download" aria-hidden="true"></span></button>
+        name="downloadReport"><span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span></button>
       <button type="submit" class="btn btn-success" name="applyFilter">&nbsp;Применить фильтр&nbsp;</button>
     </form>
     <p>
@@ -60,46 +60,46 @@
           <tr class="active">
             <td>
               <div class="input-group">
-                <input type="text" class="form-control" placeholder="Город" name="filterCities" id="filterCities"
-                  value="<%= filter.city.value %>">
                 <span class="input-group-btn">
                   <button class="btn btn-default" type="button" id="clearCity">
                     <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                   </button>
                 </span>
+                <input type="text" class="form-control" placeholder="Город" name="filterCities" id="filterCities"
+                  value="<%= filter.city.value %>">
               </div>
             </td>
             <td>
               <div class="input-group">
-                <input type="text" class="form-control" placeholder="Улица" name="filterStreets" id="filterStreets"
-                  value="<%= filter.street.value %>">
                 <span class="input-group-btn">
                   <button class="btn btn-default" type="button" id="clearStreet">
                     <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                   </button>
                 </span>
+                <input type="text" class="form-control" placeholder="Улица" name="filterStreets" id="filterStreets"
+                  value="<%= filter.street.value %>">
               </div>
             </td>
             <td>
               <div class="input-group">
-                <input type="text" class="form-control" placeholder="Дом" name="filterHouses" id="filterHouses"
-                  value="<%= filter.house.value %>">
                 <span class="input-group-btn">
                   <button class="btn btn-default" type="button" id="clearHouse">
                     <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                   </button>
                 </span>
+                <input type="text" class="form-control" placeholder="Дом" name="filterHouses" id="filterHouses"
+                  value="<%= filter.house.value %>">
               </div>
             </td>
             <td>
               <div class="input-group">
-                <input type="text" class="form-control" placeholder="Исполнитель" name="filterPerformers"
-                  id="filterPerformers" value="<%= filter.performer.value %>">
                 <span class="input-group-btn">
                   <button class="btn btn-default" type="button" id="clearPerformer">
                     <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                   </button>
                 </span>
+                <input type="text" class="form-control" placeholder="Исполнитель" name="filterPerformers"
+                  id="filterPerformers" value="<%= filter.performer.value %>">
               </div>
             </td>
           </tr>

@@ -220,7 +220,7 @@
             &nbsp;
             <button class="btn btn-info" id="orderInformation"><span class="glyphicon glyphicon-search"></span>&nbsp;&nbsp;Гарантийный договор</button>
             &nbsp;
-            <a id="linkToOrder" href="/orders/edit/<%= data.cardId %>" class="stretched-link <%= data.cardId > 0 ? 'visible' : 'invisible' %>"><%= data.cardId > 0 ? (data.contractNumber + (data.mContractNumber.trim() > '' ? ' (' + data.mContractNumber + ')' : '' )) : '' %></a>
+            <a id="linkToOrder" href="/orders/edit/<%= data.cardId %>" class="stretched-link <%= data.cardId > 0 ? 'visible' : 'invisible' %>"><%= data.cardId > 0 ? (data.contractNumber + ((+data.maintenaceContract === 1) ? ' (' + data.mContractNumber + ')' : '' )) : '' %></a>
           </div>
         </div>
       </div>

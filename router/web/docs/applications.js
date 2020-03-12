@@ -9,6 +9,7 @@ const rowsLimit = require('../../../lib/config.js').config.rowsLimit;
 var moment = require('moment');
 var utils = require('../../../lib/utils');
 var isCheckPerformer = false;
+var queryGetCard = require('../../../queries/applications').getCard;
 
 var generateReport = function (req, res) {
 
@@ -189,25 +190,46 @@ var saveTable = function (id, table, callback) {
   });
 };
 
-var additionalWhereInQuery = function (req) {
+var additionalWhereInQuery = function (req, usePeriod) {
+
   var obj = {};
-  var result = {
+  var settings = {
     filter: {
       city: { id: 0, value: '' },
       street: { id: 0, value: '' },
       house: { id: 0, value: '' },
       performer: { id: 0, value: '' },
+      period: {
+        start: '',
+        end: ''
+      }
     },
     where: ''
   };
+  var where = '';
+
+  if (! ('applicationsSettings' in req.session)) {
+    req.session.applicationsSettings = settings;
+  }
+
+  if (usePeriod) {
+    if (req.session.applicationsSettings.filter.period.start === '') {
+      var startDate = moment().startOf('month').toDate();  
+      req.session.applicationsSettings.filter.period.start = moment(startDate).format('YYYY-MM-DD HH:mm');
+    }
+    if (req.session.applicationsSettings.filter.period.end === '') {
+      var endDate = moment().endOf('month').toDate();  
+      req.session.applicationsSettings.filter.period.end = moment(endDate).format('YYYY-MM-DD HH:mm');
+    }
+  }
 
   try {
     if (req.query) {
       if ('cityId' in req.query) {
         obj = JSON.parse(req.query.cityId);
         if (+ obj.id > 0) {
-          result.where += ' AND (a.city_id = ' + obj.id + ')';
-          result.filter.city = {
+          where += ' AND (a.city_id = ' + obj.id + ')';
+          req.session.applicationsSettings.filter.city = {
             id: obj.id,
             value: obj.value
           };
@@ -220,8 +242,8 @@ var additionalWhereInQuery = function (req) {
       if ('streetId' in req.query) {
         obj = JSON.parse(req.query.streetId);
         if (+ obj.id > 0) {
-          result.where += ' AND (a.street_id = ' + obj.id + ')';
-          result.filter.street = {
+          where += ' AND (a.street_id = ' + obj.id + ')';
+          req.session.applicationsSettings.filter.street = {
             id: obj.id,
             value: obj.value
           };
@@ -231,8 +253,8 @@ var additionalWhereInQuery = function (req) {
       if ('houseId' in req.query) {
         obj = JSON.parse(req.query.houseId);
         if (+ obj.id > 0) {
-          result.where += ' AND (a.house_id = ' + obj.id + ')';
-          result.filter.house = {
+          where += ' AND (a.house_id = ' + obj.id + ')';
+          req.session.applicationsSettings.filter.house = {
             id: obj.id,
             value: obj.value
           };
@@ -246,27 +268,43 @@ var additionalWhereInQuery = function (req) {
       if ('performerId' in req.query) {
         obj = JSON.parse(req.query.performerId);
         if (+ obj.id > 0) { // + add "No data"
-          result.where += ' AND (a.worker_id = ' + obj.id + ')';
-          result.filter.performer = {
+        where += ' AND (a.worker_id = ' + obj.id + ')';
+        req.session.applicationsSettings.filter.performer = {
             id: obj.id,
             value: obj.value
           };
         }
       }
 
-      // if (('performerId' in req.query) && (req.query.performerId.trim() !== '')){
-      //   result.where += ' AND (a.worker_id = ' + req.query.performerId + ')';
-      // }
+      if (usePeriod) {
+        if ('startDate' in req.query) {
+          var start = req.query.startDate;
+          if ((typeof start  === 'string') && (start.length > 0)) {
+            req.session.applicationsSettings.filter.period.start = moment(start, 'DD.MM.YYYY HH:mm').format('YYYY-MM-DD HH:mm');
+          }
+        }
+        where += ' AND (a.close_date >= ' + '"' + req.session.applicationsSettings.filter.period.start + '")';
+
+        if ('endDate' in req.query) {
+          var end = req.query.endDate;
+          if ((typeof end  === 'string') && (end.length > 0)) {
+            req.session.applicationsSettings.filter.period.end = moment(end, 'DD.MM.YYYY HH:mm').format('YYYY-MM-DD HH:mm');
+          }
+        }
+        where += ' AND (a.close_date <= ' + '"' + req.session.applicationsSettings.filter.period.end + '")';
+      }
+
     }
+    req.session.applicationsSettings.where = where;
   }
   catch (err) {
     throw (err);
   }
-  return result;
+  return req.session.applicationsSettings;
 };
 
 var downloadReport = function (req, res) {
-  var additionalWhere = additionalWhereInQuery(req);
+  var additionalWhere = additionalWhereInQuery(req, false);
 
   var fullQuery =
     ' SELECT a.application_id AS documentId, DATE_FORMAT(a.create_date, "%d.%m.%Y %H:%i") AS createDate,' +
@@ -282,8 +320,7 @@ var downloadReport = function (req, res) {
     ' LEFT JOIN workers f ON f.worker_id = a.worker_id' +
     ' WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 0)' +
-    ' AND (a.is_deleted = 0)' +
-    additionalWhere.where +
+    ' AND (a.is_deleted = 0)' +  additionalWhere.where +
     ' ORDER BY f.name , a.create_date ASC';
 
   var doc = new PDFDocument();
@@ -305,10 +342,7 @@ var downloadReport = function (req, res) {
 
         if (err) {
           console.error(err);
-          res.status(500).send({
-            code: 500,
-            msg: 'Database error'
-          });
+          res.status(500).send(db.showDatabaseError(500, err));
         } else {
 
           var dataset = rows;
@@ -336,20 +370,23 @@ var downloadReport = function (req, res) {
                 connection.release();
 
                 if (err) {
-                  res.status(500).send({
-                    code: 500,
-                    msg: 'Database error'
-                  });
+                  res.status(500).send(db.showDatabaseError(500, err));
                 }
                 else {
 
                   doc.x = 50;
+
+                  doc.fontSize(14);
+                  doc.text('Текущие заявки', { align: 'center' });
+                  doc.moveDown();
+                  doc.moveDown();
+
                   dataset.forEach(function (item) {
                     var list = [];
 
                     rows.forEach(function (fault) {
                       // FIXME: filter!!!!!
-                      if (item.documentId == fault.documentId) {
+                      if (+item.documentId === +fault.documentId) {
                         list.push(fault.problemDescription);
                       }
                     });
@@ -360,15 +397,15 @@ var downloadReport = function (req, res) {
 
                     doc.fontSize(12);
                     doc
-                      .text('Адрес: ' + item.cityName + ',' + item.streetName + ', ' + item.houseNumber + (item.kind == 0 ? ', подъезд ' : ', кваритира ') + item.porch)
+                      .text('Адрес: ' + item.cityName + ',' + item.streetName + ', ' + item.houseNumber + (+item.kind === 0 ? ', подъезд ' : ', квартира ') + item.porch)
                       .text('Телефон: ' + item.phone)
 
                       .moveDown()
                       .text('Список неисправностей', { underline: true })
                       .list(list)
-                      .text('Всего неисправностей: ' + list.length)
-                      .moveDown()
-                      .text('Исполнитель: ' + item.performerName)
+                      // .text('Всего неисправностей: ' + list.length)
+                      // .moveDown()
+                      // .text('Исполнитель: ' + item.performerName)
                       .moveDown()
                       .moveDown();
                   });
@@ -382,6 +419,122 @@ var downloadReport = function (req, res) {
   });
 };
 
+var downloadDoneReport = function (req, res) {
+  var additionalWhere = additionalWhereInQuery(req, true);
+
+  var fullQuery =
+    ' SELECT a.application_id AS documentId, DATE_FORMAT(a.create_date, "%d.%m.%Y %H:%i") AS createDate,' +
+    ' b.name AS cityName, c.name AS streetName,' +
+    ' d.number AS houseNumber, a.porch, a.kind, ' +
+    ' a.phone, ' +
+    ' f.name AS performerName,' +
+    ' a.close_date AS closeDate, ' +
+    ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc' +
+    ' FROM applications a' +
+    ' LEFT JOIN cities b ON b.city_id = a.city_id' +
+    ' LEFT JOIN streets c ON c.street_id = a.street_id' +
+    ' LEFT JOIN houses d ON d.house_id = a.house_id' +
+    ' LEFT JOIN workers f ON f.worker_id = a.worker_id' +
+    ' WHERE (a.application_id > 0)' +
+    ' AND (a.is_done = 1)' +
+    ' AND (a.is_deleted = 0)' +  additionalWhere.where +
+    ' ORDER BY f.name , a.create_date ASC';
+
+  var doc = new PDFDocument();
+  doc.registerFont('Fuh', 'fonts//DejaVuSans.ttf');
+  var filename = 'done_applications.pdf';
+  res.setHeader('Content-disposition', 'attachment; filename="' + filename + '"');
+  res.setHeader('Content-type', 'applications/pdf');
+
+  doc.registerFont('DejaVuSans', 'fonts//DejaVuSans.ttf');
+  doc.font('DejaVuSans');
+
+  db.get().getConnection(function (err, connection) {
+    connection.query(
+      fullQuery, function (err, rows) {
+        if (err) {
+          throw err;
+        }
+        connection.release();
+
+        if (err) {
+          console.error(err);
+          res.status(500).send(db.showDatabaseError(500, err));
+        } else {
+
+          var dataset = rows;
+
+          var parameters = '';
+          if (Array.isArray(rows) && (rows.length > 0)) {
+            for (var ind = 0; ind < rows.length; ind++) {
+              parameters += rows[ind].documentId + (ind < rows.length - 1 ? ', ' : '');
+            }
+            parameters = '(' + parameters + ')';
+          }
+
+          db.get().getConnection(function (err, connection) {
+            var stringSQL =
+              ' SELECT a.application_id AS documentId, a.name AS problemDescription, a.decision' +
+              ' FROM faults a' +
+              ' WHERE a.application_id IN ';
+            if (parameters.trim().length === 0) {
+              parameters = '(-1)';
+            }
+            stringSQL += parameters;
+
+            connection.query(
+              stringSQL, [], function (err, rows) {
+                connection.release();
+
+                if (err) {
+                  res.status(500).send(db.showDatabaseError(500, err));
+                }
+                else {
+
+                  doc.x = 50;
+                  doc.fontSize(14);
+                  doc.text('Исполненные заявки', { align: 'center' });
+                  doc.moveDown();
+                  doc.moveDown();
+                  dataset.forEach(function (item) {
+                    var list = [];
+
+                    rows.forEach(function (fault) {
+                      // FIXME: filter!!!!!
+                      if (+item.documentId === +fault.documentId) {
+                        list.push(fault.problemDescription + ' (' + fault.decision + ')');
+                      }
+                    });
+
+                    doc.fontSize(14);
+                    doc.text('Заявка от ' + item.createDate, { align: 'center' });
+                    doc.moveDown();
+
+                    doc.fontSize(12);
+                    doc
+                      .text('Адрес: ' + item.cityName + ',' + item.streetName + ', ' + item.houseNumber + (+item.kind === 0 ? ', подъезд ' : ', квартира ') + item.porch)
+                      .text('Телефон: ' + item.phone)
+
+                      .moveDown()
+                      .text('Список неисправностей', { underline: true })
+                      .list(list)
+                      // .text('Всего неисправностей: ' + list.length)
+                      .moveDown()
+                      .text('Исполнитель: ' + item.performerName)
+                      .text('Выполнено: ' + moment(item.closeDate).format( 'DD.MM.YYYY HH:mm'))
+                      .moveDown()
+                      .moveDown();
+                  });
+                  doc.pipe(res);
+                  doc.end();
+                }
+              });
+          });
+        }
+      });
+  });
+};  
+
 var redirectToAccepted = function (res, uid) {
   db.get().getConnection(function (err, connection) {
     connection.query(
@@ -393,12 +546,7 @@ var redirectToAccepted = function (res, uid) {
         connection.release();
 
         if (err) {
-          res.status(500).send({
-            code: 500,
-            msg: 'Database Error',
-            errorName: err.name,
-            errorMessage: err.message
-          });
+          res.status(500).send(db.showDatabaseError(500, err));
         }
 
         res.redirect('/applications/completed');
@@ -416,7 +564,7 @@ var findRecords = function (req, res) {
   var pageCount = 0;
   var countRecords = 0;
 
-  var additionalQuery = additionalWhereInQuery(req);
+  var additionalQuery = additionalWhereInQuery(req, false);
 
   var countRecordsQuery =
     ' SELECT COUNT(*) AS count' +
@@ -459,10 +607,7 @@ var findRecords = function (req, res) {
               connection.release();
 
               if (err) {
-                res.status(500).send({
-                  'code': 500,
-                  'msg': 'Database error'
-                });
+                res.status(500).send(db.showDatabaseError(500, err));
               } else {
                 var currentPage = 1;
 
@@ -493,10 +638,7 @@ var findRecords = function (req, res) {
                       connection.release();
 
                       if (err) {
-                        res.status(500).send({
-                          code: 500,
-                          msg: 'Database error'
-                        });
+                        res.status(500).send(db.showDatabaseError(500, err));
                       }
                       else {
                         console.log(rows);
@@ -528,7 +670,131 @@ var findRecords = function (req, res) {
         });
       });
   });
-}
+};
+
+var findCompletedRecords = function (req, res) {
+
+  if ('downloadDoneReport' in req.query) {
+    downloadDoneReport(req, res);
+    return;
+  }
+  
+  var pageCount = 0;
+  var countRecords = 0;
+
+  var additionalQuery = additionalWhereInQuery(req, true);
+
+  var countRecordsQuery = 
+    ' SELECT COUNT(*) AS count' +
+    ' FROM applications a WHERE (a.application_id > 0)' +
+    ' AND (a.is_done = 1)' +
+    ' AND (a.is_deleted = 0)' + additionalQuery.where;
+
+  var fullQuery = 
+    ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
+    ' b.name AS cityName, c.name AS streetName,' +
+    ' d.number AS houseNumber, e.name AS performerName, a.porch, a.kind, ' +
+    ' CASE ' +
+    ' WHEN a.kind = 0 THEN CONCAT("под. ", a.porch)' +
+    ' WHEN a.kind = 1 THEN CONCAT("кв. ", a.porch)' +
+    ' END AS numeration, ' +
+    ' a.close_date AS closeDate, ' +
+    ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc,' +
+    ' f.contract_number AS contractNumber, f.m_contract_number AS prolongedContractNumber,' +
+    ' f.maintenance_contract AS maintenanceContract' +
+    ' FROM applications a' +
+    ' LEFT JOIN cities b ON b.city_id = a.city_id' +
+    ' LEFT JOIN streets c ON c.street_id = a.street_id' +
+    ' LEFT JOIN houses d ON d.house_id = a.house_id' +
+    ' LEFT JOIN workers e ON e.worker_id = a.worker_id' +
+    ' LEFT JOIN cards f ON f.card_id = a.card_id' +
+    ' WHERE (a.application_id > 0)' +
+    ' AND (a.is_done = 1)' +
+    ' AND (a.is_deleted = 0)' + additionalQuery.where +
+    ' ORDER BY a.create_date DESC' +
+    ' LIMIT ' + visibleRows;
+
+  db.get().getConnection(function (err, connection) {
+    connection.query(countRecordsQuery, [], function (err, rows) {
+        connection.release();
+        countRecords = rows[0].count;
+        pageCount =
+          (countRecords / visibleRows) < 1 ? 0 : Math.ceil(countRecords / visibleRows);
+
+        db.get().getConnection(function (err, connection) {
+          connection.query(fullQuery, [], function (err, rows) {
+              if (err) {
+                throw err;
+              }
+              connection.release();
+
+              if (err) {
+                console.error(err);
+                res.status(500).send(db.showDatabaseError(500, err));
+              } else {
+                var currentPage = 1;
+
+                var dataset = rows;
+                for (var ind = 0; ind < dataset.length; ind++) {
+                  dataset[ind].problemDescription = '';
+                }
+
+                var parameters = '';
+                if (Array.isArray(rows) && (rows.length > 0)) {
+                  for (ind = 0; ind < rows.length; ind++) {
+                    parameters += rows[ind].documentId + (ind < rows.length - 1 ? ', ' : '');
+                  }
+                  parameters = '(' + parameters + ')';
+                }
+
+                db.get().getConnection(function (err, connection) {
+                  var stringSQL =
+                    ' SELECT a.application_id AS documentId, a.name AS problemDescription' +
+                    ' FROM faults a' +
+                    ' WHERE a.application_id IN ';
+                  if (parameters.trim().length === 0) {
+                    parameters = '(-1)';
+                  }
+                  stringSQL += parameters;
+
+                  connection.query(
+                    stringSQL, [], function (err, rows) {
+                      connection.release();
+
+                      if (err) {
+                        res.status(500).send(db.showDatabaseError(500, err));
+                      }
+                      else {
+                        rows.forEach(function (item) {
+                          for (var ind = 0; ind < dataset.length; ind++) {
+                            if (dataset[ind].documentId === item.documentId) {
+                              dataset[ind].problemDescription += (dataset[ind].problemDescription.trim().length > 0 ? ', ' : '') + item.problemDescription;
+                              if (dataset[ind].problemDescription.length >= MAX_LENGTH) {
+                                dataset[ind].problemDescription = utils.formatStringWithEllipses(dataset[ind].problemDescription, MAX_LENGTH);
+                              }
+                              break;
+                            }
+                          }
+                        });
+
+                        res.render('docs/done_applications.ejs', {
+                          data: dataset,
+                          pageCount: pageCount,
+                          currentPage: currentPage,
+                          visibleRows: visibleRows,
+                          countRecords: countRecords,
+                          moment: moment,
+                          filter: additionalQuery.filter
+                        });
+                      }
+                    });
+                });
+              }
+            });
+        });
+      });
+  });
+};
 
 module.exports = function () {
   var router = express.Router();
@@ -554,12 +820,7 @@ module.exports = function () {
 
           if (err) {
             console.error(err);
-            res.status(500).send({
-              code: 500,
-              msg: 'Database error',
-              errorName: err.name,
-              errorMessage: err.message
-            });
+            res.status(500).send(db.showDatabaseError(500, err));
           } else {
 
             if ((rows !== undefined) && (rows.length > 0)) {
@@ -583,7 +844,8 @@ module.exports = function () {
                 ' a.is_done AS isDone, a.close_date AS closeDate,' +
                 ' a.card_id AS cardId,' +
                 ' (SELECT g.contract_number FROM cards g WHERE g.card_id = a.card_id) AS contractNumber,' +
-					      ' (SELECT h.m_contract_number FROM cards h WHERE h.card_id = a.card_id) AS mContractNumber' +
+                ' (SELECT h.m_contract_number FROM cards h WHERE h.card_id = a.card_id) AS mContractNumber,' +
+                ' (SELECT i.maintenance_contract FROM cards i WHERE i.card_id = a.card_id) AS maintenanceContract' +
                 ' FROM applications a' +
                 ' LEFT JOIN cities b ON b.city_id = a.city_id' +
                 ' LEFT JOIN streets c ON c.street_id = a.street_id' +
@@ -595,12 +857,7 @@ module.exports = function () {
 
                   if (err) {
                     console.error(err);
-                    res.status(500).send({
-                      code: 500,
-                      msg: 'Database error',
-                      errorName: err.name,
-                      errorMessage: err.message
-                    });
+                    res.status(500).send(db.showDatabaseError(500, err));
                   } else {
 
                     data.documentId = rows[0].documentId;
@@ -619,6 +876,7 @@ module.exports = function () {
                     data.cardId = rows[0].cardId;
                     data.contractNumber = rows[0].contractNumber;
                     data.mContractNumber = rows[0].mContractNumber;
+                    data.maintenanceContract = rows[0].maintenanceContract;
                     data.closeDate = rows[0].closeDate;
 
                     data.address = '';
@@ -669,114 +927,11 @@ module.exports = function () {
   });
 
   router.get('/completed', function (req, res) {
-    var pageCount = 0;
-    var countRecords = 0;
-    db.get().getConnection(function (err, connection) {
-      connection.query(
-        ' SELECT COUNT(*) AS count' +
-        ' FROM applications a WHERE (a.application_id > 0)' +
-        ' AND (a.is_done = 1)' +
-        ' AND (a.is_deleted = 0)', [], function (err, rows) {
-          connection.release();
-          countRecords = rows[0].count;
-          pageCount =
-            (countRecords / visibleRows) < 1 ? 0 : Math.ceil(countRecords / visibleRows);
+    findCompletedRecords(req, res);
+  });
 
-          db.get().getConnection(function (err, connection) {
-            connection.query(
-              ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
-              ' b.name AS cityName, c.name AS streetName,' +
-              ' d.number AS houseNumber, a.porch, a.kind, ' +
-              ' CASE ' +
-              ' WHEN a.kind = 0 THEN CONCAT("под. ", a.porch)' +
-              ' WHEN a.kind = 1 THEN CONCAT("кв. ", a.porch)' +
-              ' END AS numeration, ' +
-              ' a.close_date AS closeDate, ' +
-              ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc' +
-              ' FROM applications a' +
-              ' LEFT JOIN cities b ON b.city_id = a.city_id' +
-              ' LEFT JOIN streets c ON c.street_id = a.street_id' +
-              ' LEFT JOIN houses d ON d.house_id = a.house_id' +
-              ' WHERE (a.application_id > 0)' +
-              ' AND (a.is_done = 1)' +
-              ' AND (a.is_deleted = 0)' +
-              ' ORDER BY a.create_date DESC' +
-              ' LIMIT ?', [visibleRows], function (err, rows) {
-                if (err) {
-                  throw err;
-                }
-                connection.release();
-
-                if (err) {
-                  console.error(err);
-                  res.status(500).send({
-                    code: 500,
-                    msg: 'Database error'
-                  });
-                } else {
-                  var currentPage = 1;
-
-                  var dataset = rows;
-                  for (var ind = 0; ind < dataset.length; ind++) {
-                    dataset[ind].problemDescription = '';
-                  }
-
-                  var parameters = '';
-                  if (Array.isArray(rows) && (rows.length > 0)) {
-                    for (ind = 0; ind < rows.length; ind++) {
-                      parameters += rows[ind].documentId + (ind < rows.length - 1 ? ', ' : '');
-                    }
-                    parameters = '(' + parameters + ')';
-                  }
-
-                  db.get().getConnection(function (err, connection) {
-                    var stringSQL =
-                      ' SELECT a.application_id AS documentId, a.name AS problemDescription' +
-                      ' FROM faults a' +
-                      ' WHERE a.application_id IN ';
-                    if (parameters.trim().length === 0) {
-                      parameters = '(-1)';
-                    }
-                    stringSQL += parameters;
-
-                    connection.query(
-                      stringSQL, [], function (err, rows) {
-                        connection.release();
-
-                        if (err) {
-                          res.status(500).send({
-                            code: 500,
-                            msg: 'Database error'
-                          });
-                        }
-                        else {
-                          rows.forEach(function (item) {
-                            for (var ind = 0; ind < dataset.length; ind++) {
-                              if (dataset[ind].documentId === item.documentId) {
-                                dataset[ind].problemDescription += (dataset[ind].problemDescription.trim().length > 0 ? ', ' : '') + item.problemDescription;
-                                if (dataset[ind].problemDescription.length >= MAX_LENGTH) {
-                                  dataset[ind].problemDescription = utils.formatStringWithEllipses(dataset[ind].problemDescription, MAX_LENGTH);
-                                }
-                                break;
-                              }
-                            }
-                          });
-                          res.render('docs/done_applications.ejs', {
-                            data: dataset,
-                            pageCount: pageCount,
-                            currentPage: currentPage,
-                            visibleRows: visibleRows,
-                            countRecords: countRecords,
-                            moment: moment
-                          });
-                        }
-                      });
-                  });
-                }
-              });
-          });
-        });
-    });
+  router.get('/done_filter', function (req, res) {
+    findCompletedRecords(req, res);
   });
 
   router.post('/save', function (req, res) {
@@ -879,107 +1034,110 @@ module.exports = function () {
 
       var cardId = +req.body.cardId;
 
-      if ((req.body.documentId) && (req.body.documentId.trim() !== '') && (isFinite(req.body.documentId))) {
+      db.get().getConnection(function (err, connection) {
+        connection.query(queryGetCard(+req.body.kind, +req.body.houseId, +req.body.porch), [],  function (err, rows) {
+          connection.release();
+          if (err) {
+            res.status(500).send(db.showDatabaseError(500, err));
+          } else {
+      
+            if ((Array.isArray(rows)) && (rows.length === 1)) {
+              cardId = rows[0].cardId;
+            }
 
-        var isDone = +req.body.isDone;
-        if ('move' in req.body) {
-          isDone = 0;
-          // TODO: close_date = NULL
-          return;
-        }
+            if ((req.body.documentId) && (req.body.documentId.trim() !== '') && (isFinite(req.body.documentId))) {
 
-        db.get().getConnection(function (err, connection) {
-          connection.query('DELETE FROM faults WHERE application_id = ?', [req.body.documentId], function () {
-
-            connection.release();
-
-            db.get().getConnection(function (err, connection) {
-              connection.query(
-                ' UPDATE applications SET' +
-                ' create_date = ?,' +
-                ' city_id = ?,' +
-                ' street_id = ?,' +
-                ' house_id = ?,' +
-                ' porch = ?,' +
-                ' kind = ?,' +
-                ' phone = ?,' +
-                ' worker_id = ?,' +
-                ' is_done = ?,' +
-                ' card_id = ?' +
-                ' WHERE application_id = ?', [
-                checkDate.outputDate(),
-                req.body.cityId,
-                req.body.streetId,
-                req.body.houseId,
-                req.body.porch,
-                req.body.kind,
-                req.body.phone,
-                workerId,
-                isDone,
-                cardId,
-                req.body.documentId
-              ], function (err) {
-                connection.release();
-                if (err) {
-                  res.status(500).send({
-                    code: 500,
-                    msg: 'Database Error',
-                    errorName: err.name,
-                    errorMessage: err.message
-                  });
-                } else {
-                  saveTable(req.body.documentId, tableFaults, function (isAccepted) {
-                    if (isAccepted) {
-                      redirectToAccepted(res, req.body.documentId);
-                    }
-                    else {
-                      res.redirect('/applications');
-                    }
-                  });
-                }
+              var isDone = +req.body.isDone;
+              if ('move' in req.body) {
+                isDone = 0;
+                // TODO: close_date = NULL
+                return;
               }
-              );
-            });
-          });
-        });
-      }
-      else {
-        db.get().getConnection(function (err, connection) {
-          connection.query(
-            ' INSERT INTO applications (create_date, city_id, street_id, house_id, porch, kind, phone, worker_id, card_id)' +
-            ' VALUE(?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-            checkDate.outputDate(),
-            req.body.cityId,
-            req.body.streetId,
-            req.body.houseId,
-            req.body.porch,
-            req.body.kind,
-            req.body.phone,
-            workerId,
-            cardId
-          ], function (err, rows) {
-            connection.release();
-            if (err) {
-              res.status(500).send({
-                code: 500,
-                msg: 'Database Error',
-                errorName: err.name,
-                errorMessage: err.message
+
+              db.get().getConnection(function (err, connection) {
+                connection.query('DELETE FROM faults WHERE application_id = ?', [req.body.documentId], function () {
+
+                  connection.release();
+
+                  db.get().getConnection(function (err, connection) {
+                    connection.query(
+                      ' UPDATE applications SET' +
+                      ' create_date = ?,' +
+                      ' city_id = ?,' +
+                      ' street_id = ?,' +
+                      ' house_id = ?,' +
+                      ' porch = ?,' +
+                      ' kind = ?,' +
+                      ' phone = ?,' +
+                      ' worker_id = ?,' +
+                      ' is_done = ?,' +
+                      ' card_id = ?' +
+                      ' WHERE application_id = ?', [
+                      checkDate.outputDate(),
+                      req.body.cityId,
+                      req.body.streetId,
+                      req.body.houseId,
+                      req.body.porch,
+                      req.body.kind,
+                      req.body.phone,
+                      workerId,
+                      isDone,
+                      cardId,
+                      req.body.documentId
+                    ], function (err) {
+                      connection.release();
+                      if (err) {
+                        res.status(500).send(db.showDatabaseError(500, err));
+                      } else {
+                        saveTable(req.body.documentId, tableFaults, function (isAccepted) {
+                          if (isAccepted) {
+                            redirectToAccepted(res, req.body.documentId);
+                          }
+                          else {
+                            res.redirect('/applications');
+                          }
+                        });
+                      }
+                    });
+                  });
+                });
               });
-            } else {
-              saveTable(rows.insertId, tableFaults, function (isAccepted) {
-                if (isAccepted) {
-                  redirectToAccepted(res, rows.insertId);
+            }
+            else {
+              db.get().getConnection(function (err, connection) {
+                connection.query(
+                  ' INSERT INTO applications (create_date, city_id, street_id, house_id, porch, kind, phone, worker_id, card_id)' +
+                  ' VALUE(?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                  checkDate.outputDate(),
+                  req.body.cityId,
+                  req.body.streetId,
+                  req.body.houseId,
+                  req.body.porch,
+                  req.body.kind,
+                  req.body.phone,
+                  workerId,
+                  cardId
+                ], function (err, rows) {
+                  connection.release();
+                  if (err) {
+                    res.status(500).send(db.showDatabaseError(500, err));
+                  } else {
+                    saveTable(rows.insertId, tableFaults, function (isAccepted) {
+                      if (isAccepted) {
+                        redirectToAccepted(res, rows.insertId);
+                      }
+                      else {
+                        res.redirect('/applications');
+                      }
+                    });
+                  }
                 }
-                else {
-                  res.redirect('/applications');
-                }
+                );
               });
             }
           }
-          );
         });
-      }
+      });
     }
   });
 
@@ -1004,12 +1162,7 @@ module.exports = function () {
             connection.release();
 
             if (err) {
-              res.status(500).send({
-                code: 500,
-                msg: 'Database Error',
-                errorName: err.name,
-                errorMessage: err.message
-              });
+              res.status(res.status(500).send(db.showDatabaseError(500, err)));
             } else {
               res.status(200).send(rows);
             }
@@ -1050,11 +1203,7 @@ module.exports = function () {
             connection.release();
 
             if (err) {
-              res.status(500).send({
-                code: 500,
-                msg: 'Database Error',
-                err: JSON.stringify(err)
-              });
+              res.status(res.status(500).send(db.showDatabaseError(500, err)));
             } else {
               res.status(200).send(rows);
             }
@@ -1095,11 +1244,7 @@ module.exports = function () {
             connection.release();
 
             if (err) {
-              res.status(500).send({
-                code: 500,
-                msg: 'Database Error',
-                err: JSON.stringify(err)
-              });
+              res.status(500).send(db.showDatabaseError(500, err));
             } else {
               res.status(200).send(rows);
             }
@@ -1133,11 +1278,7 @@ module.exports = function () {
             connection.release();
 
             if (err) {
-              res.status(500).send({
-                code: 500,
-                msg: 'Database Error',
-                err: JSON.stringify(err)
-              });
+              res.status(500).send(db.showDatabaseError(500, err));
             } else {
               res.status(200).send(rows);
             }
@@ -1172,11 +1313,7 @@ module.exports = function () {
             connection.release();
 
             if (err) {
-              res.status(500).send({
-                code: 500,
-                msg: 'Database Error',
-                err: JSON.stringify(err)
-              });
+              res.status(500).send(db.showDatabaseError(500, err));
             } else {
               res.status(200).send(rows);
             }
@@ -1223,11 +1360,7 @@ module.exports = function () {
               connection.release();
 
               if (err) {
-                res.status(500).send({
-                  code: 500,
-                  msg: 'Database Error',
-                  err: JSON.stringify(err)
-                });
+                res.status(500).send(db.showDatabaseError(500, err));
               } else {
                 if (Array.isArray(rows)) {
                   rows.forEach(function (item) {
@@ -1298,32 +1431,8 @@ module.exports = function () {
   });
 
   router.post('/order_info', function (req, res) {
-    console.log('houseId: ' + req.body.houseId);
-    console.log('porch: ' + req.body.porch);
-    console.log('kind: ' + req.body.kind);
 
-    var queryText;
-    if (+req.body.kind === 0) {
-      queryText = 
-      ' SELECT a.card_id AS cardId, a.contract_number AS contractNumber,' + 
-      ' a.m_contract_number AS mContractNumber,' + 
-      ' a.maintenance_contract AS maintenanceContract FROM cards a' +
-      ' WHERE (a.house_id = ' + req.body.houseId + ')' +
-      ' AND (a.porch = ' + req.body.porch + ')' +
-      ' AND (a.maintenance_contract = 1)' +
-      ' LIMIT 1';
-    }
-    else {
-      queryText = 
-      ' SELECT a.card_id AS cardId, a.contract_number AS contractNumber,' + 
-      ' a.m_contract_number AS mContractNumber,' + 
-      ' a.maintenance_contract AS maintenanceContract FROM cards a' +
-      ' WHERE (a.house_id = ' + req.body.houseId + ')' +
-      ' AND (' + req.body.porch  + ' >= a.m_start_apartment)' +
-      ' AND (' + req.body.porch +  ' <= a.m_end_apartment)' +
-      ' AND (a.maintenance_contract = 1)' +
-      ' LIMIT 1';
-    }
+    var queryText = queryGetCard(+req.body.kind, +req.body.houseId, +req.body.porch);
 
     db.get().getConnection(function (err, connection) {
       connection.query(
@@ -1331,22 +1440,12 @@ module.exports = function () {
           connection.release();
 
           if (err) {
-            res.status(500).send({
-              code: 500,
-              msg: 'Database Error',
-              err: JSON.stringify(err)
-            });
+            res.status(500).send(db.showDatabaseError(500, err));
           } else {
             res.status(200).send(rows);
           }
         });
     });
-
-    // res.status(200).send(
-    //   { 
-    //     msg: 'Operation sucesfull! (Валере)'
-    //   }
-    // );
   });
 
   router.get('/:offset', function (req, res) {
@@ -1354,7 +1453,7 @@ module.exports = function () {
     var pageCount = 0;
     var countRecords = 0;
 
-    var additionalQuery = additionalWhereInQuery(req);
+    var additionalQuery = additionalWhereInQuery(req, false);
 
     var countRecordsQuery =
     ' SELECT COUNT(*) AS count' +
@@ -1401,10 +1500,7 @@ module.exports = function () {
                 connection.release();
 
                 if (err) {
-                  res.status(500).send({
-                    code: 500,
-                    msg: 'Database error'
-                  });
+                  res.status(500).send(db.showDatabaseError(500, err));
                 } else {
                   var currentPage = Math.ceil(offset / visibleRows) + 1;
                   var dataset = rows;
@@ -1434,10 +1530,7 @@ module.exports = function () {
                         connection.release();
 
                         if (err) {
-                          res.status(500).send({
-                            code: 500,
-                            msg: 'Database error'
-                          });
+                          res.status(500).send(db.showDatabaseError(500, err));
                         }
                         else {
                           console.log(rows);
@@ -1476,7 +1569,7 @@ module.exports = function () {
     var pageCount = 0;
     var countRecords = 0;
 
-    var additionalQuery = additionalWhereInQuery(req);
+    var additionalQuery = additionalWhereInQuery(req, true) ;
 
     var countRecordsQuery =
     ' SELECT COUNT(*) AS count' +
@@ -1493,12 +1586,14 @@ module.exports = function () {
     ' WHEN a.kind = 1 THEN CONCAT("кв. ", a.porch)' +
     ' END AS numeration, ' +
     ' a.close_date AS closeDate, ' +
-    ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc ' +
+    ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc,' +
+    ' f.contract_number AS contractNumber, f.m_contract_number AS prolongedContractNumber' +
     ' FROM applications a' +
     ' LEFT JOIN cities b ON b.city_id = a.city_id' +
     ' LEFT JOIN streets c ON c.street_id = a.street_id' +
     ' LEFT JOIN houses d ON d.house_id = a.house_id' +
     ' LEFT JOIN workers e ON e.worker_id = a.worker_id' +
+    ' LEFT JOIN cards f ON f.card_id = a.card_id' +
     ' WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 1)' + 
     ' AND (a.is_deleted = 0)' + additionalQuery.where +
@@ -1523,12 +1618,7 @@ module.exports = function () {
                 connection.release();
 
                 if (err) {
-                  res.status(500).send({
-                    code: 500,
-                    msg: 'Database error',
-                    errorName: err.name,
-                    errorMessage: err.message
-                  });
+                  res.status(500).send(db.showDatabaseError(500, err));
                 } else {
                   var currentPage = Math.ceil(offset / visibleRows) + 1;
                   var dataset = rows;
@@ -1558,12 +1648,7 @@ module.exports = function () {
                         connection.release();
 
                         if (err) {
-                          res.status(500).send({
-                            code: 500,
-                            msg: 'Database error',
-                            errorName: err.name,
-                            errorMessage: err.message
-                          });
+                          res.status(500).send(db.showDatabaseError(500, err));
                         }
                         else {
                           console.log(rows);
@@ -1584,7 +1669,8 @@ module.exports = function () {
                             currentPage: currentPage,
                             visibleRows: visibleRows,
                             countRecords: countRecords,
-                            moment: moment
+                            moment: moment,
+                            filter: additionalQuery.filter
                           });
                         }
                       });
@@ -1605,13 +1691,7 @@ module.exports = function () {
           ' WHERE application_id = ?', [1, +req.body.id], function (err) {
             connection.release();
             if (err) {
-              res.status(500).send(
-                {
-                  code: 500,
-                  msg: 'Database Error',
-                  errorName: err.name,
-                  errorMessage: err.message
-                });
+              res.status(500).send(db.showDatabaseError(500, err));
             } else {
               res.status(200).send(
                 {
