@@ -42,7 +42,8 @@ module.exports = function () {
                     'data': rows,
                     'pageCount': pageCount,
                     'currentPage': currentPage,
-                    'visibleRows': visibleRows
+                    'visibleRows': visibleRows,
+                    user: req.session.userName
                   });
                 }
               });
@@ -81,7 +82,8 @@ module.exports = function () {
           } else {
             res.render('refs/forms/template/edit.ejs', {
               'title': 'Редактировать шаблон',
-              'data': rows[0]
+              'data': rows[0],
+              user: req.session.userName
             });
           }
         });
@@ -128,7 +130,8 @@ module.exports = function () {
                     'data': rows,
                     'pageCount': pageCount,
                     'currentPage': currentPage,
-                    'visibleRows': visibleRows
+                    'visibleRows': visibleRows,
+                    user: req.session.userName
                   });
                 }
               });
@@ -169,7 +172,8 @@ module.exports = function () {
         'title': 'Добавить шаблон',
         'data': {
           name: req.body.name
-        }
+        },
+        user: req.session.userName
       });  
     }
   });
@@ -209,7 +213,8 @@ module.exports = function () {
         'data': {
           'id': req.params.id,
           'name': req.body.name
-        }
+        },
+        user: req.session.userName
       });  
     }
   });

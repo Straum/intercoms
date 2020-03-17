@@ -42,7 +42,8 @@ module.exports = function () {
                     data: rows,
                     pageCount: pageCount,
                     currentPage: currentPage,
-                    visibleRows: visibleRows
+                    visibleRows: visibleRows,
+                    user: req.session.userName
                   });
                 }
               });
@@ -72,7 +73,8 @@ module.exports = function () {
           } else {
             res.render('refs/forms/equipment/edit.ejs', {
               title: 'Редактировать оборудование',
-              data: rows[0]
+              data: rows[0],
+              user: req.session.userName
             });
           }
         });
@@ -84,8 +86,9 @@ module.exports = function () {
       title: 'Добавьте оборудование',
       data: {
         name: '', 
-        guaranteePeriod: 0
-      }
+        guaranteePeriod: 0,
+      },
+      user: req.session.userName
     });
   });
 
@@ -129,7 +132,8 @@ module.exports = function () {
                     data: rows,
                     pageCount: pageCount,
                     currentPage: currentPage,
-                    visibleRows: visibleRows
+                    visibleRows: visibleRows,
+                    user: req.session.userName
                   });
                 }
               });
@@ -173,8 +177,9 @@ module.exports = function () {
         title: 'Добавить оборудование',
         data: {
           name: req.body.name,
-          guaranteePeriod: req.body.years
-        }
+          guaranteePeriod: req.body.years,
+        },
+        user: req.session.userName
       });
     }
   });
@@ -216,8 +221,9 @@ module.exports = function () {
         'data': {
           id: id,
           name: req.body.name,
-          guaranteePeriod: req.body.years
-        }
+          guaranteePeriod: req.body.years,
+        },
+        user: req.session.userName
       });
     }
   });

@@ -3,6 +3,7 @@
 var fs = require('fs');
 
 const express = require('express');
+var user = require('../authorization/login');
 
 module.exports = function () {
   var router = express.Router();
@@ -19,6 +20,18 @@ module.exports = function () {
         console.log(err);
     });
     res.send('OK');
+  });
+
+  router.get('/', function (req, res) {
+    var userId = req.session.userId;
+      if (userId == null) {
+      // res.render('index.ejs');
+      var message = '';
+      res.render('signin', {message: message});
+    }
+    else {
+      res.redirect('home');
+    }
   });
 
   // References
@@ -40,14 +53,15 @@ module.exports = function () {
   // API
   router.use('/api', require('./api/index')());
 
-  // Other
-  router.get('/', function (req, res) {
-    res.render('index.ejs');
-  });
+  router.use('/signup', require('../authorization')());
+  router.use('/login', user.login);
+  router.use('/home', user.home);
+  router.use('/logout', user.logout);
 
   router.use(function (req, res) {
     res.statusCode = 404;
     res.end('404!');
   });
+  
   return router;
 };

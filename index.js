@@ -3,6 +3,7 @@ var path = require('path');
 var logger = require('morgan');
 var http = require('http');
 var db = require('./lib/db');
+
 db.connect();
 
 var app = express();
@@ -52,8 +53,8 @@ app.use(session({
 }));
 app.use(flash());
 
+app.use('/', require('./router/web/index')());
 app.use('/admin', require('./router/admin/index')());
 app.use('/home', require('./router/web/index')());
-app.use('/', require('./router/web/index')());
 
 http.createServer(app).listen(5005);

@@ -224,7 +224,8 @@ module.exports = function () {
                     'pageCount': pageCount,
                     'currentPage': currentPage,
                     'visibleRows': visibleRows,
-                    'moment': moment
+                    'moment': moment,
+                    user: req.session.userName
                   });
                 }
               });
@@ -305,7 +306,8 @@ module.exports = function () {
                         'tableRowsCount': tableRowsCount,
                         'pageCount': pageCount,
                         'currentPage': currentPage,
-                        'visibleRows': visibleRows * 5
+                        'visibleRows': visibleRows * 5,
+                        user: req.session.userName
                       });
                     }
                   });
@@ -322,7 +324,8 @@ module.exports = function () {
 
   router.get('/add', function (req, res) {
     res.render('docs/forms/equipment.ejs', {
-      'title': 'Реестр'
+      'title': 'Реестр',
+      user: req.session.userName
     });
   });
 
@@ -413,7 +416,8 @@ module.exports = function () {
                     'pageCount': pageCount,
                     'currentPage': currentPage,
                     'visibleRows': visibleRows,
-                    'moment': moment
+                    'moment': moment,
+                    user: req.session.userName
                   });
                 }
               });

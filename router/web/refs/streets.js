@@ -7,7 +7,8 @@ module.exports = function () {
 
   router.get('/', function (req, res) {
     res.render('refs/streets.ejs', {
-      'title': 'Улицы'
+      'title': 'Улицы',
+      user: req.session.userName
     });
   });
 

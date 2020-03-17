@@ -641,7 +641,6 @@ var findRecords = function (req, res) {
                         res.status(500).send(db.showDatabaseError(500, err));
                       }
                       else {
-                        console.log(rows);
                         rows.forEach(function (item) {
                           for (var ind = 0; ind < dataset.length; ind++) {
                             if (dataset[ind].documentId === item.documentId) {
@@ -660,7 +659,8 @@ var findRecords = function (req, res) {
                           visibleRows: visibleRows,
                           countRecords: countRecords,
                           moment: moment,
-                          filter: additionalQuery.filter
+                          filter: additionalQuery.filter,
+                          user: req.session.userName
                         });
                       }
                     });
@@ -784,7 +784,8 @@ var findCompletedRecords = function (req, res) {
                           visibleRows: visibleRows,
                           countRecords: countRecords,
                           moment: moment,
-                          filter: additionalQuery.filter
+                          filter: additionalQuery.filter,
+                          user: req.session.userName
                         });
                       }
                     });
@@ -891,9 +892,10 @@ module.exports = function () {
                     }
 
                     res.render('docs/forms/application.ejs', {
-                      'data': data,
-                      'moment': moment,
-                      'errors': {}
+                      data: data,
+                      moment: moment,
+                      errors: {},
+                      user: req.session.userName
                     });
                   }
                 }
@@ -905,7 +907,7 @@ module.exports = function () {
   });
 
   router.get('/edit_done', function (req, res) {
-    res.render('docs/forms/done_application.ejs');
+    res.render('docs/forms/done_application.ejs', {user: req.session.userName});
   });
 
   router.get('/add', function (req, res) {
@@ -917,7 +919,8 @@ module.exports = function () {
           faultsToString: JSON.stringify('')
         },
         moment: moment,
-        errors: {}
+        errors: {},
+        user: req.session.userName
       }
     );
   });
@@ -1019,9 +1022,10 @@ module.exports = function () {
       res.render(
         'docs/forms/application.ejs',
         {
-          'moment': moment,
-          'data': req.body,
-          'errors': errors
+          moment: moment,
+          data: req.body,
+          errors: errors,
+          user: req.session.userName
         }
       );
     }
@@ -1552,7 +1556,8 @@ module.exports = function () {
                             visibleRows: visibleRows,
                             countRecords: countRecords,
                             moment: moment,
-                            filter: additionalQuery.filter
+                            filter: additionalQuery.filter,
+                            user: req.session.userName
                           });
                         }
                       });
@@ -1670,7 +1675,8 @@ module.exports = function () {
                             visibleRows: visibleRows,
                             countRecords: countRecords,
                             moment: moment,
-                            filter: additionalQuery.filter
+                            filter: additionalQuery.filter,
+                            user: req.session.userName
                           });
                         }
                       });

@@ -73,7 +73,8 @@ module.exports = function () {
                     'currentPage': currentPage,
                     'visibleRows': visibleRows,
                     'moment': moment,
-                    'utils': utils
+                    'utils': utils,
+                    user: req.session.userName
                   });
                 }
               });
@@ -137,7 +138,8 @@ module.exports = function () {
                     serviceActualAddress: serviceClientData.actualAddress,
                     servicePhones: serviceData.phones,
 
-                    apartments: apartments
+                    apartments: apartments,
+                    user: req.session.userName
                   });
                 }
               });
@@ -151,6 +153,7 @@ module.exports = function () {
   router.get('/add', function (req, res) {
     res.render('refs/forms/order.ejs', {
       'title': 'Договор',
+      user: req.session.userName
     });
   });
 
@@ -226,7 +229,8 @@ module.exports = function () {
                     'currentPage': currentPage,
                     'visibleRows': visibleRows,
                     'moment': moment,
-                    'utils': utils
+                    'utils': utils,
+                    user: req.session.userName
                   });
                 }
               });

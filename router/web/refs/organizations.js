@@ -42,7 +42,8 @@ module.exports = function () {
                     'data': rows,
                     'pageCount': pageCount,
                     'currentPage': currentPage,
-                    'visibleRows': visibleRows
+                    'visibleRows': visibleRows,
+                    user: req.session.userName
                   });
                 }
               });
@@ -72,7 +73,8 @@ module.exports = function () {
           } else {
             res.render('refs/forms/organization.ejs', {
               'title': 'Организация',
-              'data': rows[0]
+              'data': rows[0],
+              user: req.session.userName
             });
           }
         });
@@ -81,7 +83,8 @@ module.exports = function () {
 
   router.get('/add', function (req, res) {
     res.render('refs/forms/organization.ejs', {
-      'title': 'Организация'
+      'title': 'Организация',
+      user: req.session.userName
     });
   });
 
@@ -125,7 +128,8 @@ module.exports = function () {
                     'data': rows,
                     'pageCount': pageCount,
                     'currentPage': currentPage,
-                    'visibleRows': visibleRows
+                    'visibleRows': visibleRows,
+                    user: req.session.userName
                   });
                 }
               });

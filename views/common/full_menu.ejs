@@ -8,7 +8,7 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="/#home">Домофон-сервис</a>
+            <a class="navbar-brand" href="/home">Домофон-сервис</a>
         </div>
         <div class="collapse navbar-collapse">
             <ul class="nav navbar-nav">
@@ -21,7 +21,7 @@
                         <li><a class="dropdown-item" href="/organizations">Организации</a></li>
                         <li><a class="dropdown-item" href="/cities">Города</a></li>
                         <li><a class="dropdown-item" href="/streets">Улицы</a></li>
-                        <li><a class="dropdown-item" href="/templates">Шаблоны</a></li>
+                        <!-- <li><a class="dropdown-item" href="/templates">Шаблоны</a></li> -->
                     </ul>
                 </li>
                 <li class="dropdown">
@@ -43,6 +43,12 @@
                         <li><a class="dropdown-item" href="#">О программе</a></li>
                     </ul>
                 </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <% if (user != null) { %>
+                    <p class="navbar-text"><strong><%= user %></strong></p>
+                <% } %>
+                <li><a href="/logout">Выход</a></li>
             </ul>
         </div>
     </div>
