@@ -3,9 +3,8 @@ var db = require('../../lib/db');
 
 exports.login = function (req, res) {
   var message = '';
-  // var sess = req.session;
 
-  if (req.method == 'POST') {
+  if (req.method === 'POST') {
     var post = req.body;
     var name = post.userName;
     var pass = post.password;

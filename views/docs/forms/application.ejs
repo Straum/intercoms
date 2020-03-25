@@ -220,7 +220,7 @@
             &nbsp;
             <button class="btn btn-info" id="orderInformation"><span class="glyphicon glyphicon-search"></span>&nbsp;&nbsp;Гарантийный договор</button>
             &nbsp;
-            <a id="linkToOrder" href="/orders/edit/<%= data.cardId %>" class="stretched-link <%= data.cardId > 0 ? 'visible' : 'invisible' %>"><%= data.cardId > 0 ? (data.contractNumber + ((+data.maintenaceContract === 1) ? ' (' + data.mContractNumber + ')' : '' )) : '' %></a>
+            <a id="linkToOrder" href="/orders/edit/<%= data.cardId %>" class="stretched-link <%= data.cardId > 0 ? 'visible' : 'invisible' %>"><%= data.contractNumber + (+data.maintenanceContract >= 1 ? ' (' +  data.mContractNumber + ')' : '') %></a>
           </div>
         </div>
       </div>
@@ -401,7 +401,7 @@
       $('#datetimepicker_create_date').datetimepicker({
         locale: 'ru'
       });
-      
+
       $('#datetimepicker_close_date').datetimepicker({
         locale: 'ru'
       });
@@ -704,10 +704,10 @@
             // '<td class="text-center">' + moment(new Date(obj.completionDT)).format('DD.MM.YYYY') + '</td>' +
             '<td class="text-center">' + obj.completionDT + '</td>' +
             '<td class="text-center"></td>' +
-            '<td class="warning text-center">' + 
+            '<td class="warning text-center">' +
             '<button type="button" class="btn btn-info btn-xs editRow">' +
               '<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>' +
-            '</button>&nbsp;' + 
+            '</button>&nbsp;' +
             '<button type="button" class="btn btn-danger btn-xs deleteRow">' +
               '<span class="glyphicon glyphicon-minus" aria-hidden="true"></span>' +
             '</button>' +
@@ -720,7 +720,7 @@
       }
 
       $('#application_dialog').on('show.bs.modal', function (e) {
-        //          
+        //
       });
 
       $('#application_dialog').on('hidden.bs.modal', function (e) {

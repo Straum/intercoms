@@ -3,9 +3,9 @@
 const MAX_LENGTH = 60;
 const express = require('express');
 var PDFDocument = require('pdfkit');
-var db = require('../../../lib/db.js');
+var db = require('../../../lib/db');
 const visibleRows = require('../../../lib/config').config.visibleRows;
-const rowsLimit = require('../../../lib/config.js').config.rowsLimit;
+const rowsLimit = require('../../../lib/config').config.rowsLimit;
 var moment = require('moment');
 var utils = require('../../../lib/utils');
 var isCheckPerformer = false;
@@ -163,7 +163,7 @@ var saveTable = function (id, table, callback) {
       table[ind].isDone + ', ' +
       // '"' +  checkDate.outputDate() + '"' +
       // typeof myDate === 'string' ? '"' +  myDate + '"' : 'null' +
-      // '"' + myDate + '"' + 
+      // '"' + myDate + '"' +
       saveDate +
 
       ')';
@@ -214,11 +214,11 @@ var additionalWhereInQuery = function (req, usePeriod) {
 
   if (usePeriod) {
     if (req.session.applicationsSettings.filter.period.start === '') {
-      var startDate = moment().startOf('month').toDate();  
+      var startDate = moment().startOf('month').toDate();
       req.session.applicationsSettings.filter.period.start = moment(startDate).format('YYYY-MM-DD HH:mm');
     }
     if (req.session.applicationsSettings.filter.period.end === '') {
-      var endDate = moment().endOf('month').toDate();  
+      var endDate = moment().endOf('month').toDate();
       req.session.applicationsSettings.filter.period.end = moment(endDate).format('YYYY-MM-DD HH:mm');
     }
   }
@@ -533,7 +533,7 @@ var downloadDoneReport = function (req, res) {
         }
       });
   });
-};  
+};
 
 var redirectToAccepted = function (res, uid) {
   db.get().getConnection(function (err, connection) {
@@ -580,6 +580,7 @@ var findRecords = function (req, res) {
     ' WHEN a.kind = 0 THEN CONCAT("под. ", a.porch)' +
     ' WHEN a.kind = 1 THEN CONCAT("кв. ", a.porch)' +
     ' END AS numeration, ' +
+    ' a.close_date AS closeData, ' +
     ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc ' +
     ' FROM applications a' +
     ' LEFT JOIN cities b ON b.city_id = a.city_id' +
@@ -587,7 +588,7 @@ var findRecords = function (req, res) {
     ' LEFT JOIN houses d ON d.house_id = a.house_id' +
     ' LEFT JOIN workers e ON e.worker_id = a.worker_id' +
     ' WHERE (a.application_id > 0)' +
-    ' AND (a.is_done = 0)' + 
+    ' AND (a.is_done = 0)' +
     ' AND (a.is_deleted = 0)' + additionalQuery.where +
     ' ORDER BY a.create_date DESC' +
     ' LIMIT ' + visibleRows;
@@ -678,19 +679,19 @@ var findCompletedRecords = function (req, res) {
     downloadDoneReport(req, res);
     return;
   }
-  
+
   var pageCount = 0;
   var countRecords = 0;
 
   var additionalQuery = additionalWhereInQuery(req, true);
 
-  var countRecordsQuery = 
+  var countRecordsQuery =
     ' SELECT COUNT(*) AS count' +
     ' FROM applications a WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 1)' +
     ' AND (a.is_deleted = 0)' + additionalQuery.where;
 
-  var fullQuery = 
+  var fullQuery =
     ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
     ' b.name AS cityName, c.name AS streetName,' +
     ' d.number AS houseNumber, e.name AS performerName, a.porch, a.kind, ' +
@@ -1044,7 +1045,7 @@ module.exports = function () {
           if (err) {
             res.status(500).send(db.showDatabaseError(500, err));
           } else {
-      
+
             if ((Array.isArray(rows)) && (rows.length === 1)) {
               cardId = rows[0].cardId;
             }
@@ -1329,7 +1330,7 @@ module.exports = function () {
       res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
     }
   });
- 
+
 
   router.post('/address_autocomplete', function (req, res) {
     var data = req.body;
@@ -1481,7 +1482,7 @@ module.exports = function () {
     ' LEFT JOIN houses d ON d.house_id = a.house_id' +
     ' LEFT JOIN workers e ON e.worker_id = a.worker_id' +
     ' WHERE (a.application_id > 0)' +
-    ' AND (a.is_done = 0)' + 
+    ' AND (a.is_done = 0)' +
     ' AND (a.is_deleted = 0)' + additionalQuery.where +
     ' ORDER BY a.create_date DESC' +
     ' LIMIT ' + visibleRows +
@@ -1592,7 +1593,8 @@ module.exports = function () {
     ' END AS numeration, ' +
     ' a.close_date AS closeDate, ' +
     ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc,' +
-    ' f.contract_number AS contractNumber, f.m_contract_number AS prolongedContractNumber' +
+    ' f.contract_number AS contractNumber, f.m_contract_number AS prolongedContractNumber,' +
+    ' f.maintenance_contract AS maintenanceContract' +
     ' FROM applications a' +
     ' LEFT JOIN cities b ON b.city_id = a.city_id' +
     ' LEFT JOIN streets c ON c.street_id = a.street_id' +
@@ -1600,7 +1602,7 @@ module.exports = function () {
     ' LEFT JOIN workers e ON e.worker_id = a.worker_id' +
     ' LEFT JOIN cards f ON f.card_id = a.card_id' +
     ' WHERE (a.application_id > 0)' +
-    ' AND (a.is_done = 1)' + 
+    ' AND (a.is_done = 1)' +
     ' AND (a.is_deleted = 0)' + additionalQuery.where +
     ' ORDER BY a.create_date DESC' +
     ' LIMIT ' + visibleRows +
