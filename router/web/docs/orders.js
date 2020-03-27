@@ -246,70 +246,80 @@ module.exports = function () {
 
   router.get('/edit/:id', function (req, res) {
     var id = req.params.id;
-    var contractClientData = null;
-    var serviceClientData = null;
-    var apartments;
 
-    order.getClientContractData(id, function (contractData) {
-      contractClientData = order.decodeClientData(contractData);
-
-      order.getClientServiceData(id, function (serviceData) {
-        serviceClientData = order.decodeClientData(serviceData);
-
-        order.getApartmentsFromContract(id, function (apartmentsList) {
-          apartments = apartmentsList;
-
-          db.get().getConnection(function (err, connection) {
-            connection.query(
-                queryOrder, [id], function (err, rows) {
-
-                connection.release();
-
-                if (err) {
-                  console.error(err);
-                  res.status(500).send(db.showDatabaseError(500, err));
-                } else {
-
-                  var data = rows[0];
-                  data.address = '';
-                  if (rows[0].cityId > 0) {
-                    data.address = rows[0].cityName.trim();
-                    if (rows[0].streetId > 0) {
-                      data.address += ', ' + rows[0].streetName;
-                      if (rows[0].houseId > 0) {
-                        data.address += ', ' + rows[0].houseNumber;
-                      }
-                    }
-                  }
-
-                  res.render('docs/forms/order.ejs', {
-                    title: 'Договор',
-                    data: data,
-                    moment: moment,
-                    utils: utils,
-                    errors: {},
-
-                    contractPassportData: contractClientData.passport,
-                    contractRegisteredAddress: contractClientData.registeredAddress,
-                    contractActualAddress: contractClientData.actualAddress,
-                    contractPhones: contractData.phones,
-
-                    servicePassportData: serviceClientData.passport,
-                    serviceRegisteredAddress: serviceClientData.registeredAddress,
-                    serviceActualAddress: serviceClientData.actualAddress,
-                    servicePhones: serviceData.phones,
-
-                    apartments: apartments,
-                    user: req.session.userName
-                  });
-                }
-              });
-          });
-        });
-      });
+    res.render('docs/forms/order.ejs', {
+      title: 'Договор',
+      user: req.session.userName
     });
+
   });
 
+  // router.get('/edit/:id', function (req, res) {
+  //   var id = req.params.id;
+  //   var contractClientData = null;
+  //   var serviceClientData = null;
+  //   var apartments;
+
+  //   order.getClientContractData(id, function (contractData) {
+  //     contractClientData = order.decodeClientData(contractData);
+
+  //     order.getClientServiceData(id, function (serviceData) {
+  //       serviceClientData = order.decodeClientData(serviceData);
+
+  //       order.getApartmentsFromContract(id, function (apartmentsList) {
+  //         apartments = apartmentsList;
+
+  //         db.get().getConnection(function (err, connection) {
+  //           connection.query(
+  //               queryOrder, [id], function (err, rows) {
+
+  //               connection.release();
+
+  //               if (err) {
+  //                 console.error(err);
+  //                 res.status(500).send(db.showDatabaseError(500, err));
+  //               } else {
+
+  //                 var data = rows[0];
+  //                 data.address = '';
+  //                 if (rows[0].cityId > 0) {
+  //                   data.address = rows[0].cityName.trim();
+  //                   if (rows[0].streetId > 0) {
+  //                     data.address += ', ' + rows[0].streetName;
+  //                     if (rows[0].houseId > 0) {
+  //                       data.address += ', ' + rows[0].houseNumber;
+  //                     }
+  //                   }
+  //                 }
+
+  //                 // res.render('docs/forms/order.ejs', {
+  //                 res.render('docs/forms/order.ejs', {
+  //                   title: 'Договор',
+  //                   data: data,
+  //                   moment: moment,
+  //                   utils: utils,
+  //                   errors: {},
+
+  //                   contractPassportData: contractClientData.passport,
+  //                   contractRegisteredAddress: contractClientData.registeredAddress,
+  //                   contractActualAddress: contractClientData.actualAddress,
+  //                   contractPhones: contractData.phones,
+
+  //                   servicePassportData: serviceClientData.passport,
+  //                   serviceRegisteredAddress: serviceClientData.registeredAddress,
+  //                   serviceActualAddress: serviceClientData.actualAddress,
+  //                   servicePhones: serviceData.phones,
+
+  //                   apartments: apartments,
+  //                   user: req.session.userName
+  //                 });
+  //               }
+  //             });
+  //         });
+  //       });
+  //     });
+  //   });
+  // });
 
   router.get('/add', function (req, res) {
     res.render('refs/forms/order.ejs', {
@@ -409,6 +419,63 @@ module.exports = function () {
           });
         });
     });
+  });
+
+  router.get('/load_order/:id', function (req, res) {
+    var id = Number(req.params.id);
+    if (typeof id === 'number') {
+
+      var contractClientData = null;
+      var serviceClientData = null;
+      var apartments = [];
+
+        order.getClientContractData(id, function (contractData) {
+        contractClientData = order.decodeClientData(contractData);
+
+        order.getClientServiceData(id, function (serviceData) {
+          serviceClientData = order.decodeClientData(serviceData);
+
+          order.getApartmentsFromContract(id, function (apartmentsList) {
+            apartments = apartmentsList;
+
+            db.get().getConnection(function (err, connection) {
+              connection.query(
+                  queryOrder, [id], function (err, rows) {
+
+                  connection.release();
+
+                  if (err) {
+                    console.error(err);
+                    res.status(500).send(db.showDatabaseError(500, err));
+                  }
+                  else {
+                    var data = rows[0];
+                    data.address = '';
+                    if (rows[0].cityId > 0) {
+                      data.address = rows[0].cityName.trim();
+                      if (rows[0].streetId > 0) {
+                        data.address += ', ' + rows[0].streetName;
+                        if (rows[0].houseId > 0) {
+                          data.address += ', ' + rows[0].houseNumber;
+                        }
+                      }
+                    }
+
+                    data.contractClientData = contractClientData;
+                    data.serviceClientData = serviceClientData;
+                    data.apartments = apartments;
+
+                    res.status(200).send({ order: data });
+                  }
+                });
+            });
+          });
+        });
+      });
+    }
+    else {
+      res.status(400);
+    }
   });
 
   router.post('/save', function (req, res) {
