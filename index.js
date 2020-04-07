@@ -43,13 +43,13 @@ app.use(methodOverride(function (req, res) {
 var flash = require('express-flash');
 var cookieParser = require('cookie-parser');
 var session = require('express-session');
- 
+
 app.use(cookieParser('keyboard cat'));
-app.use(session({ 
+app.use(session({
     secret: 'keyboard cat',
     resave: false,
     saveUninitialized: true,
-    cookie: { maxAge: 86400000 }
+    cookie: { maxAge: 60000 * 60 * 24 * 30 } // 30 days
 }));
 app.use(flash());
 

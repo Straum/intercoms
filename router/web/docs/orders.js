@@ -129,10 +129,10 @@ var filterBuilder = function (req) {
     // Final
     if (cloneFilters.conditions.onlyMaintenanceService) {
       where += ' AND (maintenance_contract >= 1)';
-      where += ' AND (a.start_service >= ' + '"' + cloneFilters.conditions.period.start + '")';
-      where += ' AND (a.start_service <= ' + '"' + cloneFilters.conditions.period.end + '")';
+      where += ' AND (a.end_service >= ' + '"' + cloneFilters.conditions.period.start + '")';
+      where += ' AND (a.end_service <= ' + '"' + cloneFilters.conditions.period.end + '")';
 
-      cloneFilters.orderBy = ' ORDER BY a.start_service DESC, a.contract_number DESC';
+      cloneFilters.orderBy = ' ORDER BY a.end_service DESC, a.contract_number DESC';
     }
     else {
       where += ' AND (a.create_date >= ' + '"' + cloneFilters.conditions.period.start + '")';
