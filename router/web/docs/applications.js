@@ -10,6 +10,7 @@ var moment = require('moment');
 var utils = require('../../../lib/utils');
 var isCheckPerformer = false;
 var queryGetCard = require('../../../queries/applications').getCard;
+var common = require('../../common/typeheads');
 
 var generateReport = function (req, res) {
 
@@ -172,7 +173,7 @@ var saveTable = function (id, table, callback) {
     }
   }
 
-  console.log('s = ' + s);
+  // console.log('s = ' + s);
 
   db.get().getConnection(function (err, connection) {
     connection.query(s, [], function () {
@@ -190,121 +191,382 @@ var saveTable = function (id, table, callback) {
   });
 };
 
-var additionalWhereInQuery = function (req, usePeriod) {
-
-  var obj = {};
-  var settings = {
-    filter: {
-      city: { id: 0, value: '' },
-      street: { id: 0, value: '' },
-      house: { id: 0, value: '' },
-      performer: { id: 0, value: '' },
-      period: {
-        start: '',
-        end: ''
-      }
+var Filters = function() {
+  this.conditions = {
+    period: {
+      start: '',
+      end: ''
     },
-    where: ''
+    city: { id: 0, name: '' },
+    street: { id: 0, name: '', cityId: 0},
+    house: { id: 0, number: '', streetId: 0},
+    performer: { id: 0, name: ''}
   };
-  var where = '';
-
-  if (! ('applicationsSettings' in req.session)) {
-    req.session.applicationsSettings = settings;
-  }
-
-  if (usePeriod) {
-    if (req.session.applicationsSettings.filter.period.start === '') {
-      var startDate = moment().startOf('month').toDate();
-      req.session.applicationsSettings.filter.period.start = moment(startDate).format('YYYY-MM-DD HH:mm');
-    }
-    if (req.session.applicationsSettings.filter.period.end === '') {
-      var endDate = moment().endOf('month').toDate();
-      req.session.applicationsSettings.filter.period.end = moment(endDate).format('YYYY-MM-DD HH:mm');
-    }
-  }
-
-  try {
-    if (req.query) {
-      if ('cityId' in req.query) {
-        obj = JSON.parse(req.query.cityId);
-        if (+ obj.id > 0) {
-          where += ' AND (a.city_id = ' + obj.id + ')';
-          req.session.applicationsSettings.filter.city = {
-            id: obj.id,
-            value: obj.value
-          };
-        }
-      }
-
-      // if (('streetId' in req.query) && (req.query.streetId.trim() !== '')) {
-      //   result.where += ' AND (a.street_id = ' + req.query.streetId + ')';
-      // }
-      if ('streetId' in req.query) {
-        obj = JSON.parse(req.query.streetId);
-        if (+ obj.id > 0) {
-          where += ' AND (a.street_id = ' + obj.id + ')';
-          req.session.applicationsSettings.filter.street = {
-            id: obj.id,
-            value: obj.value
-          };
-        }
-      }
-
-      if ('houseId' in req.query) {
-        obj = JSON.parse(req.query.houseId);
-        if (+ obj.id > 0) {
-          where += ' AND (a.house_id = ' + obj.id + ')';
-          req.session.applicationsSettings.filter.house = {
-            id: obj.id,
-            value: obj.value
-          };
-        }
-      }
-
-      // if (('houseId' in req.query) && (req.query.houseId.trim() !== '')) {
-      //   result.where += ' AND (a.house_id = ' + req.query.houseId + ')';
-      // }
-
-      if ('performerId' in req.query) {
-        obj = JSON.parse(req.query.performerId);
-        if (+ obj.id > 0) { // + add "No data"
-        where += ' AND (a.worker_id = ' + obj.id + ')';
-        req.session.applicationsSettings.filter.performer = {
-            id: obj.id,
-            value: obj.value
-          };
-        }
-      }
-
-      if (usePeriod) {
-        if ('startDate' in req.query) {
-          var start = req.query.startDate;
-          if ((typeof start  === 'string') && (start.length > 0)) {
-            req.session.applicationsSettings.filter.period.start = moment(start, 'DD.MM.YYYY HH:mm').format('YYYY-MM-DD HH:mm');
-          }
-        }
-        where += ' AND (a.close_date >= ' + '"' + req.session.applicationsSettings.filter.period.start + '")';
-
-        if ('endDate' in req.query) {
-          var end = req.query.endDate;
-          if ((typeof end  === 'string') && (end.length > 0)) {
-            req.session.applicationsSettings.filter.period.end = moment(end, 'DD.MM.YYYY HH:mm').format('YYYY-MM-DD HH:mm');
-          }
-        }
-        where += ' AND (a.close_date <= ' + '"' + req.session.applicationsSettings.filter.period.end + '")';
-      }
-
-    }
-    req.session.applicationsSettings.where = where;
-  }
-  catch (err) {
-    throw (err);
-  }
-  return req.session.applicationsSettings;
+  this.whereSQL = '';
+  this.orderBy = '';
 };
 
+var filterBuilder = function (req, usePeriod) {
+
+  var obj = {};
+  var filters = new Filters();
+  var cloneFilters = new Filters();
+  var where = '';
+
+  var startDate = moment().startOf('month').toDate();
+  var endDate = moment().endOf('month').toDate();
+
+  if (usePeriod) {
+    if (! ('filtersDoneApplications' in req.session)) {
+      req.session.filtersDoneApplications = filters;
+    }
+    cloneFilters = req.session.filtersDoneApplications;
+
+    if (cloneFilters.conditions.period.start === '') {
+      cloneFilters.conditions.period.start = moment(startDate).format('YYYY-MM-DD HH:mm');
+    }
+    if (cloneFilters.conditions.period.end === '') {
+      cloneFilters.conditions.period.end = moment(endDate).format('YYYY-MM-DD HH:mm');
+    }
+
+    try {
+      if (req.query) {
+        if ('filters' in req.query) {
+          obj = JSON.parse(req.query.filters);
+
+          if (+obj.city.id > 0) {
+            where += ' AND (a.city_id = ' + obj.city.id + ')';
+          }
+          cloneFilters.conditions.city = {
+            id: obj.city.id,
+            name: obj.city.name
+          };
+
+          if (+obj.street.id > 0) {
+            where += ' AND (a.street_id = ' + obj.street.id + ')';
+          }
+          cloneFilters.conditions.street = {
+            id: obj.street.id,
+            name: obj.street.name,
+            cityId: obj.street.cityId
+          };
+
+          if (+obj.house.id > 0) {
+            where += ' AND (a.house_id = ' + obj.house.id + ')';
+          }
+          cloneFilters.conditions.house = {
+            id: obj.house.id,
+            number: obj.house.number,
+            streetId: obj.house.streetId
+          };
+
+          if (+obj.performer.id > 0) {
+            where += ' AND (a.worker_id = ' + obj.performer.id + ')';
+          }
+          cloneFilters.conditions.performer = {
+            id: obj.performer.id,
+            name: obj.performer.name,
+          };
+
+          var _start = obj.period.start; // YYYY-MM-DD HH:mm
+          if (typeof _start  === 'string') {
+            if (_start.length > 0) {
+              cloneFilters.conditions.period.start = _start;
+            }
+            else {
+              cloneFilters.conditions.period.start = moment(startDate).format('YYYY-MM-DD HH:mm');
+            }
+          }
+
+          var _end = obj.period.end; // YYYY-MM-DD HH:mm
+          if (typeof _end  === 'string') {
+            if (_end.length > 0) {
+              cloneFilters.conditions.period.end = _end;
+            }
+            else {
+              cloneFilters.conditions.period.end = endDate;
+            }
+          }
+
+          where += ' AND (a.close_date >= ' + '"' + cloneFilters.conditions.period.start  + '")';
+          where += ' AND (a.close_date <= ' + '"' + cloneFilters.conditions.period.end  + '")';
+
+          cloneFilters.whereSQL = where;
+        }
+      }
+
+      req.session.filtersDoneApplications = cloneFilters;
+
+    }
+    catch (err) {
+      throw (err);
+    }
+
+  }
+  else {
+    if (! ('filtersApplications' in req.session)) {
+      req.session.filtersApplications = filters;
+    }
+    cloneFilters = req.session.filtersApplications;
+
+    try {
+      if (req.query) {
+        if ('filters' in req.query) {
+          obj = JSON.parse(req.query.filters);
+
+          if (+obj.city.id > 0) {
+            where += ' AND (a.city_id = ' + obj.city.id + ')';
+          }
+          cloneFilters.conditions.city = {
+            id: obj.city.id,
+            name: obj.city.name
+          };
+
+          if (+obj.street.id > 0) {
+            where += ' AND (a.street_id = ' + obj.street.id + ')';
+          }
+          cloneFilters.conditions.street = {
+            id: obj.street.id,
+            name: obj.street.name,
+            cityId: obj.street.cityId
+          };
+
+          if (+obj.house.id > 0) {
+            where += ' AND (a.house_id = ' + obj.house.id + ')';
+          }
+          cloneFilters.conditions.house = {
+            id: obj.house.id,
+            number: obj.house.number,
+            streetId: obj.house.streetId
+          };
+
+          if (+obj.performer.id > 0) {
+            where += ' AND (a.worker_id = ' + obj.performer.id + ')';
+          }
+          cloneFilters.conditions.performer = {
+            id: obj.performer.id,
+            name: obj.performer.name,
+          };
+
+          cloneFilters.whereSQL = where;
+        }
+      }
+
+      req.session.filtersApplications = cloneFilters;
+
+    }
+    catch (err) {
+      throw (err);
+    }
+
+  }
+
+  // if (! ('filtersApplications' in req.session)) {
+  //   req.session.filtersApplications = filters;
+  // }
+  // cloneFilters = req.session.filtersApplications;
+
+  // if (usePeriod) {
+  //   if (cloneFilters.conditions.period.start === '') {
+  //     cloneFilters.conditions.period.start = moment(startDate).format('YYYY-MM-DD HH:mm');
+  //   }
+  //   if (cloneFilters.conditions.period.end === '') {
+  //     cloneFilters.conditions.period.end = moment(endDate).format('YYYY-MM-DD HH:mm');
+  //   }
+  // }
+
+  // try {
+  //   if (req.query) {
+  //     if ('filters' in req.query) {
+  //       obj = JSON.parse(req.query.filters);
+
+  //       if (+obj.city.id > 0) {
+  //         where += ' AND (a.city_id = ' + obj.city.id + ')';
+  //       }
+  //       cloneFilters.conditions.city = {
+  //         id: obj.city.id,
+  //         name: obj.city.name
+  //       };
+
+  //       if (+obj.street.id > 0) {
+  //         where += ' AND (a.street_id = ' + obj.street.id + ')';
+  //       }
+  //       cloneFilters.conditions.street = {
+  //         id: obj.street.id,
+  //         name: obj.street.name,
+  //         cityId: obj.street.cityId
+  //       };
+
+  //       if (+obj.house.id > 0) {
+  //         where += ' AND (a.house_id = ' + obj.house.id + ')';
+  //       }
+  //       cloneFilters.conditions.house = {
+  //         id: obj.house.id,
+  //         number: obj.house.number,
+  //         streetId: obj.house.streetId
+  //       };
+
+  //       if (+obj.performer.id > 0) {
+  //         where += ' AND (a.worker_id = ' + obj.performer.id + ')';
+  //       }
+  //       cloneFilters.conditions.performer = {
+  //         id: obj.performer.id,
+  //         name: obj.performer.name,
+  //       };
+
+  //       if (usePeriod) {
+  //         var _start = obj.period.start; // YYYY-MM-DD HH:mm
+  //         if (typeof _start  === 'string') {
+  //           if (_start.length > 0) {
+  //             cloneFilters.conditions.period.start = _start;
+  //           }
+  //           else {
+  //             cloneFilters.conditions.period.start = moment(startDate).format('YYYY-MM-DD HH:mm');
+  //           }
+  //         }
+
+  //         var _end = obj.period.end; // YYYY-MM-DD HH:mm
+  //         if (typeof _end  === 'string') {
+  //           if (_end.length > 0) {
+  //             cloneFilters.conditions.period.end = _end;
+  //           }
+  //           else {
+  //             cloneFilters.conditions.period.end = endDate;
+  //           }
+  //         }
+
+  //         where += ' AND (a.close_date >= ' + '"' + cloneFilters.conditions.period.start  + '")';
+  //         where += ' AND (a.close_date <= ' + '"' + cloneFilters.conditions.period.end  + '")';
+  //       }
+
+  //       cloneFilters.whereSQL = where;
+  //     }
+  //   }
+
+  //   req.session.filtersApplications = cloneFilters;
+
+  // }
+  // catch (err) {
+  //   throw (err);
+  // }
+  return cloneFilters;
+};
+
+// var additionalWhereInQuery = function (req, usePeriod) {
+
+//   var obj = {};
+//   var settings = {
+//     filter: {
+//       city: { id: 0, value: '' },
+//       street: { id: 0, value: '' },
+//       house: { id: 0, value: '' },
+//       performer: { id: 0, value: '' },
+//       period: {
+//         start: '',
+//         end: ''
+//       }
+//     },
+//     where: ''
+//   };
+//   var where = '';
+
+//   if (! ('applicationsSettings' in req.session)) {
+//     req.session.applicationsSettings = settings;
+//   }
+
+//   if (usePeriod) {
+//     if (req.session.applicationsSettings.filter.period.start === '') {
+//       var startDate = moment().startOf('month').toDate();
+//       req.session.applicationsSettings.filter.period.start = moment(startDate).format('YYYY-MM-DD HH:mm');
+//     }
+//     if (req.session.applicationsSettings.filter.period.end === '') {
+//       var endDate = moment().endOf('month').toDate();
+//       req.session.applicationsSettings.filter.period.end = moment(endDate).format('YYYY-MM-DD HH:mm');
+//     }
+//   }
+
+//   try {
+//     if (req.query) {
+//       if ('cityId' in req.query) {
+//         obj = JSON.parse(req.query.cityId);
+//         if (+ obj.id > 0) {
+//           where += ' AND (a.city_id = ' + obj.id + ')';
+//           req.session.applicationsSettings.filter.city = {
+//             id: obj.id,
+//             value: obj.value
+//           };
+//         }
+//       }
+
+//       // if (('streetId' in req.query) && (req.query.streetId.trim() !== '')) {
+//       //   result.where += ' AND (a.street_id = ' + req.query.streetId + ')';
+//       // }
+//       if ('streetId' in req.query) {
+//         obj = JSON.parse(req.query.streetId);
+//         if (+ obj.id > 0) {
+//           where += ' AND (a.street_id = ' + obj.id + ')';
+//           req.session.applicationsSettings.filter.street = {
+//             id: obj.id,
+//             value: obj.value
+//           };
+//         }
+//       }
+
+//       if ('houseId' in req.query) {
+//         obj = JSON.parse(req.query.houseId);
+//         if (+ obj.id > 0) {
+//           where += ' AND (a.house_id = ' + obj.id + ')';
+//           req.session.applicationsSettings.filter.house = {
+//             id: obj.id,
+//             value: obj.value
+//           };
+//         }
+//       }
+
+//       // if (('houseId' in req.query) && (req.query.houseId.trim() !== '')) {
+//       //   result.where += ' AND (a.house_id = ' + req.query.houseId + ')';
+//       // }
+
+//       if ('performerId' in req.query) {
+//         obj = JSON.parse(req.query.performerId);
+//         if (+ obj.id > 0) { // + add "No data"
+//         where += ' AND (a.worker_id = ' + obj.id + ')';
+//         req.session.applicationsSettings.filter.performer = {
+//             id: obj.id,
+//             value: obj.value
+//           };
+//         }
+//       }
+
+//       if (usePeriod) {
+//         if ('startDate' in req.query) {
+//           var start = req.query.startDate;
+//           if ((typeof start  === 'string') && (start.length > 0)) {
+//             req.session.applicationsSettings.filter.period.start = moment(start, 'DD.MM.YYYY HH:mm').format('YYYY-MM-DD HH:mm');
+//           }
+//         }
+//         where += ' AND (a.close_date >= ' + '"' + req.session.applicationsSettings.filter.period.start + '")';
+
+//         if ('endDate' in req.query) {
+//           var end = req.query.endDate;
+//           if ((typeof end  === 'string') && (end.length > 0)) {
+//             req.session.applicationsSettings.filter.period.end = moment(end, 'DD.MM.YYYY HH:mm').format('YYYY-MM-DD HH:mm');
+//           }
+//         }
+//         where += ' AND (a.close_date <= ' + '"' + req.session.applicationsSettings.filter.period.end + '")';
+//       }
+
+//     }
+//     req.session.applicationsSettings.where = where;
+//   }
+//   catch (err) {
+//     throw (err);
+//   }
+//   return req.session.applicationsSettings;
+// };
+
 var downloadReport = function (req, res) {
-  var additionalWhere = additionalWhereInQuery(req, false);
+  var add = filterBuilder(req, false);
 
   var fullQuery =
     ' SELECT a.application_id AS documentId, DATE_FORMAT(a.create_date, "%d.%m.%Y %H:%i") AS createDate,' +
@@ -320,7 +582,7 @@ var downloadReport = function (req, res) {
     ' LEFT JOIN workers f ON f.worker_id = a.worker_id' +
     ' WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 0)' +
-    ' AND (a.is_deleted = 0)' +  additionalWhere.where +
+    ' AND (a.is_deleted = 0)' +  add.whereSQL +
     ' ORDER BY f.name , a.create_date ASC';
 
   var doc = new PDFDocument();
@@ -420,7 +682,7 @@ var downloadReport = function (req, res) {
 };
 
 var downloadDoneReport = function (req, res) {
-  var additionalWhere = additionalWhereInQuery(req, true);
+  var add = filterBuilder(req, true);
 
   var fullQuery =
     ' SELECT a.application_id AS documentId, DATE_FORMAT(a.create_date, "%d.%m.%Y %H:%i") AS createDate,' +
@@ -437,7 +699,7 @@ var downloadDoneReport = function (req, res) {
     ' LEFT JOIN workers f ON f.worker_id = a.worker_id' +
     ' WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 1)' +
-    ' AND (a.is_deleted = 0)' +  additionalWhere.where +
+    ' AND (a.is_deleted = 0)' +  add.whereSQL +
     ' ORDER BY f.name , a.create_date ASC';
 
   var doc = new PDFDocument();
@@ -564,13 +826,13 @@ var findRecords = function (req, res) {
   var pageCount = 0;
   var countRecords = 0;
 
-  var additionalQuery = additionalWhereInQuery(req, false);
+  var add = filterBuilder(req, false);
 
   var countRecordsQuery =
     ' SELECT COUNT(*) AS count' +
     ' FROM applications a WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 0)' +
-    ' AND (a.is_deleted = 0)' + additionalQuery.where;
+    ' AND (a.is_deleted = 0)' + add.whereSQL;
 
   var fullQuery =
     ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
@@ -589,7 +851,7 @@ var findRecords = function (req, res) {
     ' LEFT JOIN workers e ON e.worker_id = a.worker_id' +
     ' WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 0)' +
-    ' AND (a.is_deleted = 0)' + additionalQuery.where +
+    ' AND (a.is_deleted = 0)' + add.whereSQL +
     ' ORDER BY a.create_date DESC' +
     ' LIMIT ' + visibleRows;
 
@@ -660,7 +922,7 @@ var findRecords = function (req, res) {
                           visibleRows: visibleRows,
                           countRecords: countRecords,
                           moment: moment,
-                          filter: additionalQuery.filter,
+                          filters: add.conditions,
                           user: req.session.userName
                         });
                       }
@@ -683,13 +945,13 @@ var findCompletedRecords = function (req, res) {
   var pageCount = 0;
   var countRecords = 0;
 
-  var additionalQuery = additionalWhereInQuery(req, true);
+  var add = filterBuilder(req, true);
 
   var countRecordsQuery =
     ' SELECT COUNT(*) AS count' +
     ' FROM applications a WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 1)' +
-    ' AND (a.is_deleted = 0)' + additionalQuery.where;
+    ' AND (a.is_deleted = 0)' + add.whereSQL;
 
   var fullQuery =
     ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
@@ -711,7 +973,7 @@ var findCompletedRecords = function (req, res) {
     ' LEFT JOIN cards f ON f.card_id = a.card_id' +
     ' WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 1)' +
-    ' AND (a.is_deleted = 0)' + additionalQuery.where +
+    ' AND (a.is_deleted = 0)' + add.whereSQL +
     ' ORDER BY a.create_date DESC' +
     ' LIMIT ' + visibleRows;
 
@@ -785,7 +1047,7 @@ var findCompletedRecords = function (req, res) {
                           visibleRows: visibleRows,
                           countRecords: countRecords,
                           moment: moment,
-                          filter: additionalQuery.filter,
+                          filters: add.conditions,
                           user: req.session.userName
                         });
                       }
@@ -973,7 +1235,7 @@ module.exports = function () {
     // Verify create datetime
     var checkDate = new utils.convertDateToMySQLDate(req.body.createDate, false);
     if (checkDate.isValid()) {
-      console.log('outputDate: ' + checkDate.outputDate());
+      // console.log('outputDate: ' + checkDate.outputDate());
     }
     else {
       errors.createDate = createDate;
@@ -1146,33 +1408,16 @@ module.exports = function () {
     }
   });
 
-  router.post('/search_city', function (req, res) {
+  router.post('/find_city', function (req, res) {
     var data = req.body;
-    var suggestion = '';
-    if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
-      suggestion = data.suggestion.trim();
-
-      var queryText =
-        ' SELECT a.city_id AS id, a.name AS value' +
-        ' FROM cities a';
-      if (suggestion.length > 0) {
-        queryText += ' WHERE a.name LIKE ' + `'` + suggestion + '%' + `'`;
-      }
-      queryText += ' ORDER BY a.name ASC';
-      queryText += ' LIMIT ' + ('limit' in data ? data.limit : rowsLimit);
-
-      db.get().getConnection(function (err, connection) {
-        connection.query(
-          queryText, [], function (err, rows) {
-            connection.release();
-
-            if (err) {
-              res.status(res.status(500).send(db.showDatabaseError(500, err)));
-            } else {
-              res.status(200).send(rows);
-            }
-          }
-        );
+    if ((data) && (typeof(data) === 'object') && ('cityName' in data)) {
+      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      var params = {
+        cityName: data.cityName,
+        rowsCount: rowsCount
+      };
+      common.filterCities(params, function (err, rows) {
+        res.status(200).send(rows);
       });
     }
     else {
@@ -1180,40 +1425,17 @@ module.exports = function () {
     }
   });
 
-  router.post('/search_street', function (req, res) {
-    var isWhere = false;
+  router.post('/find_street', function (req, res) {
     var data = req.body;
-    var suggestion = '';
-    if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
-      suggestion = data.suggestion.trim();
-
-      var queryText =
-        ' SELECT a.street_id AS id, a.name AS value' +
-        ' FROM streets a';
-
-      if ('cityId' in data) {
-        isWhere = true;
-        queryText += ' WHERE (a.city_id = ' + data.cityId + ')';
-      }
-      if (suggestion.length > 0) {
-        queryText += isWhere ? ' AND ' : ' WHERE';
-        queryText += ' (a.name LIKE ' + `'` + suggestion + '%' + `'` + ')';
-      }
-      queryText += ' ORDER BY a.name ASC';
-      queryText += ' LIMIT ' + ('limit' in data ? data.limit : rowsLimit);
-
-      db.get().getConnection(function (err, connection) {
-        connection.query(
-          queryText, [], function (err, rows) {
-            connection.release();
-
-            if (err) {
-              res.status(res.status(500).send(db.showDatabaseError(500, err)));
-            } else {
-              res.status(200).send(rows);
-            }
-          }
-        );
+    if ((data) && (typeof(data) === 'object') && ('streetName' in data) && ('cityId' in data)) {
+      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      var params = {
+        cityId: data.cityId,
+        streetName: data.streetName,
+        rowsCount: rowsCount
+      };
+      common.filterStreets(params, function (err, rows) {
+        res.status(200).send(rows);
       });
     }
     else {
@@ -1221,40 +1443,17 @@ module.exports = function () {
     }
   });
 
-  router.post('/search_house', function (req, res) {
-    var isWhere = false;
+  router.post('/find_house', function (req, res) {
     var data = req.body;
-    var suggestion = '';
-    if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
-      suggestion = data.suggestion.trim();
-
-      var queryText =
-        ' SELECT a.house_id AS id, a.number AS value' +
-        ' FROM houses a';
-
-      if ('streetId' in data) {
-        isWhere = true;
-        queryText += ' WHERE (a.street_id = ' + data.streetId + ')';
-      }
-      if (suggestion.length > 0) {
-        queryText += isWhere ? ' AND ' : ' WHERE';
-        queryText += ' (a.number LIKE ' + `'` + suggestion + '%' + `'` + ')';
-      }
-      queryText += ' ORDER BY a.number ASC';
-      queryText += ' LIMIT ' + ('limit' in data ? data.limit : rowsLimit);
-
-      db.get().getConnection(function (err, connection) {
-        connection.query(
-          queryText, [], function (err, rows) {
-            connection.release();
-
-            if (err) {
-              res.status(500).send(db.showDatabaseError(500, err));
-            } else {
-              res.status(200).send(rows);
-            }
-          }
-        );
+    if ((data) && (typeof(data) === 'object') && ('houseNumber' in data) && ('streetId' in data)) {
+      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      var params = {
+        streetId: data.streetId,
+        houseNumber: data.houseNumber,
+        rowsCount: rowsCount
+      };
+      common.filterHouses(params, function (err, rows) {
+        res.status(200).send(rows);
       });
     }
     else {
@@ -1262,39 +1461,191 @@ module.exports = function () {
     }
   });
 
-  router.post('/search_performer', function (req, res) {
+  router.post('/find_porch', function (req, res) {
     var data = req.body;
-    var suggestion = '';
-    if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
-      suggestion = data.suggestion.trim();
-
-      var queryText =
-        ' SELECT a.worker_id AS id, a.name AS value' +
-        ' FROM workers a';
-      if (suggestion.length > 0) {
-        queryText += ' WHERE a.name LIKE ' + `'` + suggestion + '%' + `'`;
-      }
-      queryText += ' ORDER BY a.name ASC';
-      queryText += ' LIMIT ' + ('limit' in data ? data.limit : rowsLimit);
-
-      db.get().getConnection(function (err, connection) {
-        connection.query(
-          queryText, [], function (err, rows) {
-            connection.release();
-
-            if (err) {
-              res.status(500).send(db.showDatabaseError(500, err));
-            } else {
-              res.status(200).send(rows);
-            }
-          }
-        );
+    if ((data) && (typeof(data) === 'object') && ('porch' in data) && ('houseId' in data)) {
+      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      var params = {
+        houseId: data.houseId,
+        porch: data.porch,
+        rowsCount: rowsCount
+      };
+      common.filterPorches(params, function (err, rows) {
+        res.status(200).send(rows);
       });
     }
     else {
       res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
     }
   });
+
+  router.post('/find_performer', function (req, res) {
+    var data = req.body;
+    if ((data) && (typeof(data) === 'object') && ('performerName' in data)) {
+      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      var params = {
+        performerName: data.performerName,
+        rowsCount: rowsCount
+      };
+      common.filterPerformers(params, function (err, rows) {
+        res.status(200).send(rows);
+      });
+    }
+    else {
+      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    }
+  });
+
+  // router.post('/search_city', function (req, res) {
+  //   var data = req.body;
+  //   var suggestion = '';
+  //   if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
+    //     suggestion = data.suggestion.trim();
+
+  //     var queryText =
+  //       ' SELECT a.city_id AS id, a.name AS value' +
+  //       ' FROM cities a';
+  //     if (suggestion.length > 0) {
+  //       queryText += ' WHERE a.name LIKE ' + `'` + suggestion + '%' + `'`;
+  //     }
+  //     queryText += ' ORDER BY a.name ASC';
+  //     queryText += ' LIMIT ' + ('limit' in data ? data.limit : rowsLimit);
+
+  //     db.get().getConnection(function (err, connection) {
+  //       connection.query(
+  //         queryText, [], function (err, rows) {
+  //           connection.release();
+
+  //           if (err) {
+  //             res.status(res.status(500).send(db.showDatabaseError(500, err)));
+  //           } else {
+  //             res.status(200).send(rows);
+  //           }
+  //         }
+  //       );
+  //     });
+  //   }
+  //   else {
+  //     res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+  //   }
+  // });
+
+  // router.post('/search_street', function (req, res) {
+  //   var isWhere = false;
+  //   var data = req.body;
+  //   var suggestion = '';
+  //   if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
+  //     suggestion = data.suggestion.trim();
+
+  //     var queryText =
+  //       ' SELECT a.street_id AS id, a.name AS value' +
+  //       ' FROM streets a';
+
+  //     if ('cityId' in data) {
+  //       isWhere = true;
+  //       queryText += ' WHERE (a.city_id = ' + data.cityId + ')';
+  //     }
+  //     if (suggestion.length > 0) {
+  //       queryText += isWhere ? ' AND ' : ' WHERE';
+  //       queryText += ' (a.name LIKE ' + `'` + suggestion + '%' + `'` + ')';
+  //     }
+  //     queryText += ' ORDER BY a.name ASC';
+  //     queryText += ' LIMIT ' + ('limit' in data ? data.limit : rowsLimit);
+
+  //     db.get().getConnection(function (err, connection) {
+  //       connection.query(
+  //         queryText, [], function (err, rows) {
+  //           connection.release();
+
+  //           if (err) {
+  //             res.status(res.status(500).send(db.showDatabaseError(500, err)));
+  //           } else {
+  //             res.status(200).send(rows);
+  //           }
+  //         }
+  //       );
+  //     });
+  //   }
+  //   else {
+  //     res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+  //   }
+  // });
+
+  // router.post('/search_house', function (req, res) {
+  //   var isWhere = false;
+  //   var data = req.body;
+  //   var suggestion = '';
+  //   if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
+  //     suggestion = data.suggestion.trim();
+
+  //     var queryText =
+  //       ' SELECT a.house_id AS id, a.number AS value' +
+  //       ' FROM houses a';
+
+  //     if ('streetId' in data) {
+  //       isWhere = true;
+  //       queryText += ' WHERE (a.street_id = ' + data.streetId + ')';
+  //     }
+  //     if (suggestion.length > 0) {
+  //       queryText += isWhere ? ' AND ' : ' WHERE';
+  //       queryText += ' (a.number LIKE ' + `'` + suggestion + '%' + `'` + ')';
+  //     }
+  //     queryText += ' ORDER BY a.number ASC';
+  //     queryText += ' LIMIT ' + ('limit' in data ? data.limit : rowsLimit);
+
+  //     db.get().getConnection(function (err, connection) {
+  //       connection.query(
+  //         queryText, [], function (err, rows) {
+  //           connection.release();
+
+  //           if (err) {
+  //             res.status(500).send(db.showDatabaseError(500, err));
+  //           } else {
+  //             res.status(200).send(rows);
+  //           }
+  //         }
+  //       );
+  //     });
+  //   }
+  //   else {
+  //     res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+  //   }
+  // });
+
+
+  // router.post('/search_performer', function (req, res) {
+  //   var data = req.body;
+  //   var suggestion = '';
+  //   if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
+  //     suggestion = data.suggestion.trim();
+
+  //     var queryText =
+  //       ' SELECT a.worker_id AS id, a.name AS value' +
+  //       ' FROM workers a';
+  //     if (suggestion.length > 0) {
+  //       queryText += ' WHERE a.name LIKE ' + `'` + suggestion + '%' + `'`;
+  //     }
+  //     queryText += ' ORDER BY a.name ASC';
+  //     queryText += ' LIMIT ' + ('limit' in data ? data.limit : rowsLimit);
+
+  //     db.get().getConnection(function (err, connection) {
+  //       connection.query(
+  //         queryText, [], function (err, rows) {
+  //           connection.release();
+
+  //           if (err) {
+  //             res.status(500).send(db.showDatabaseError(500, err));
+  //           } else {
+  //             res.status(200).send(rows);
+  //           }
+  //         }
+  //       );
+  //     });
+  //   }
+  //   else {
+  //     res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+  //   }
+  // });
 
   router.post('/find_fault', function (req, res) {
     var data = req.body;
@@ -1458,13 +1809,13 @@ module.exports = function () {
     var pageCount = 0;
     var countRecords = 0;
 
-    var additionalQuery = additionalWhereInQuery(req, false);
+    var add = filterBuilder(req, false);
 
     var countRecordsQuery =
     ' SELECT COUNT(*) AS count' +
     ' FROM applications a WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 0)' +
-    ' AND (a.is_deleted = 0)' + additionalQuery.where;
+    ' AND (a.is_deleted = 0)' + add.whereSQL;
 
     var fullQuery =
     ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
@@ -1483,7 +1834,7 @@ module.exports = function () {
     ' LEFT JOIN workers e ON e.worker_id = a.worker_id' +
     ' WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 0)' +
-    ' AND (a.is_deleted = 0)' + additionalQuery.where +
+    ' AND (a.is_deleted = 0)' + add.whereSQL +
     ' ORDER BY a.create_date DESC' +
     ' LIMIT ' + visibleRows +
     ' OFFSET ' + offset;
@@ -1557,7 +1908,7 @@ module.exports = function () {
                             visibleRows: visibleRows,
                             countRecords: countRecords,
                             moment: moment,
-                            filter: additionalQuery.filter,
+                            filters: add.conditions,
                             user: req.session.userName
                           });
                         }
@@ -1575,13 +1926,13 @@ module.exports = function () {
     var pageCount = 0;
     var countRecords = 0;
 
-    var additionalQuery = additionalWhereInQuery(req, true) ;
+    var add = filterBuilder(req, true) ;
 
     var countRecordsQuery =
     ' SELECT COUNT(*) AS count' +
     ' FROM applications a WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 1)' +
-    ' AND (a.is_deleted = 0)' + additionalQuery.where;
+    ' AND (a.is_deleted = 0)' + add.whereSQL;
 
     var fullQuery =
     ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
@@ -1603,7 +1954,7 @@ module.exports = function () {
     ' LEFT JOIN cards f ON f.card_id = a.card_id' +
     ' WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 1)' +
-    ' AND (a.is_deleted = 0)' + additionalQuery.where +
+    ' AND (a.is_deleted = 0)' + add.whereSQL +
     ' ORDER BY a.create_date DESC' +
     ' LIMIT ' + visibleRows +
     ' OFFSET ' + offset;
@@ -1677,7 +2028,7 @@ module.exports = function () {
                             visibleRows: visibleRows,
                             countRecords: countRecords,
                             moment: moment,
-                            filter: additionalQuery.filter,
+                            filters: add.conditions,
                             user: req.session.userName
                           });
                         }

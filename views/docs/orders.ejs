@@ -33,13 +33,13 @@
       <a href="/orders/add" class="btn btn-default" data-toggle="tooltip" data-placement="top"
         title="Новый договор"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
       <div class="input-group date my-tooltip" id="startDate" data-toggle="tooltip" data-placement="top" title="Начальная дата конца ТО">
-        <input type="text" class="form-control" name="startDate" value="<%= moment(filters.period.start).format( 'DD.MM.YYYY HH:mm' )  %>" />
+        <input type="text" class="form-control" name="startDate" value="<%= moment(filters.period.start).format( 'DD.MM.YYYY HH:mm' ) %>" />
         <span class="input-group-addon">
             <span class="glyphicon glyphicon-calendar"></span>
         </span>
       </div>
       <div class="input-group date my-tooltip" id="endDate" data-toggle="tooltip" data-placement="top" title="Конечная дата конца ТО">
-        <input type="text" class="form-control" name="endDate" value="<%= moment(filters.period.end).format( 'DD.MM.YYYY HH:mm' )  %>" />
+        <input type="text" class="form-control" name="endDate" value="<%= moment(filters.period.end).format( 'DD.MM.YYYY HH:mm' ) %>" />
         <span class="input-group-addon">
             <span class="glyphicon glyphicon-calendar"></span>
         </span>
@@ -330,26 +330,20 @@
         $('#findProlongedOrder').val('');
       }
 
-      function clearPorch() {
-        $('#findPorch').val('');
-      }
-
-      function clearHouse() {
-        $('#findHouse').val('');
-        clearPorch()
+      function clearCity() {
+        $('#findCity').val('');
       }
 
       function clearStreet() {
         $('#findStreet').val('');
-        clearHouse();
-        clearPorch()
       }
 
-      function clearCity() {
-        $('#findCity').val('');
-        clearStreet();
-        clearHouse();
-        clearPorch()
+      function clearHouse() {
+        $('#findHouse').val('');
+      }
+
+      function clearPorch() {
+        $('#findPorch').val('');
       }
 
       // Typeaheads
@@ -606,20 +600,28 @@
 
       // Clear values
       $('#clearCity').click(function () {
-        clearCity();
         var data = $('#filters').val();
         try {
           var filters = JSON.parse(data);
           filters.city.id = 0;
           filters.city.name = '';
-          filters.street.id = 0; // street
+
+          filters.street.id = 0;
           filters.street.name = '';
           filters.street.cityId = 0;
-          filters.house.id = 0; // house
+
+          filters.house.id = 0;
           filters.house.number = '';
           filters.house.streetId = 0;
-          filters.porch.number = 0; // porch
+
+          filters.porch.number = 0;
+
           $('#filters').val(JSON.stringify(filters));
+
+          clearCity();
+          clearStreet();
+          clearPorch()
+          $('#findCity').focus();
         }
         catch (e) {
           console.log(e.message);
@@ -627,18 +629,24 @@
       });
 
       $('#clearStreet').click(function () {
-        clearStreet();
         var data = $('#filters').val();
         try {
           var filters = JSON.parse(data);
-          filters.street.id = 0; // street
+          filters.street.id = 0;
           filters.street.name = '';
           filters.street.cityId = 0;
-          filters.house.id = 0; // house
+
+          filters.house.id = 0;
           filters.house.number = '';
           filters.house.streetId = 0;
-          filters.porch.number = 0; // porch
+
+          filters.porch.number = 0;
+
           $('#filters').val(JSON.stringify(filters));
+
+          clearStreet();
+          clearPorch();
+          $('#findStreet').focus();
         }
         catch (e) {
           console.log(e.message);
@@ -646,15 +654,19 @@
       });
 
       $('#clearHouse').click(function () {
-        clearHouse();
         var data = $('#filters').val();
         try {
           var filters = JSON.parse(data);
-          filters.house.id = 0; // house
+          filters.house.id = 0;
           filters.house.number = '';
           filters.house.streetId = 0;
-          filters.porch.number = 0; // porch
+
+          filters.porch.number = 0;
+
           $('#filters').val(JSON.stringify(filters));
+
+          clearHouse();
+          $('#findHouse').focus();
         }
         catch (e) {
           console.log(e.message);
@@ -662,12 +674,15 @@
       });
 
       $('#clearPorch').click(function () {
-        clearPorch();
         var data = $('#filters').val();
         try {
           var filters = JSON.parse(data);
-          filters.porch.number = 0; // porch
+          filters.porch.number = 0;
+
           $('#filters').val(JSON.stringify(filters));
+
+          clearPorch();
+          $('#findPerformer').focus();
         }
         catch (e) {
           console.log(e.message);
@@ -675,12 +690,15 @@
       });
 
       $('#clearOrder').click(function () {
-        clearOrder();
         var data = $('#filters').val();
         try {
           var filters = JSON.parse(data);
           filters.number.order = 0;
+
           $('#filters').val(JSON.stringify(filters));
+
+          clearOrder();
+          $('#findOrder').focus();
         }
         catch (e) {
           console.log(e.message);
@@ -688,12 +706,15 @@
       });
 
       $('#clearProlongedOrder').click(function () {
-        clearProlongedOrder();
         var data = $('#filters').val();
         try {
           var filters = JSON.parse(data);
           filters.number.prolongedOrder = 0;
+
           $('#filters').val(JSON.stringify(filters));
+
+          clearProlongedOrder();
+          $('#findProlongedOrder').focus();
         }
         catch (e) {
           console.log(e.message);

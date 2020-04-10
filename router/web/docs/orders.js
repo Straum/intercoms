@@ -123,27 +123,26 @@ var filterBuilder = function (req) {
             cloneFilters.conditions.period.end = endDate;
           }
         }
+
+        if (cloneFilters.conditions.onlyMaintenanceService) {
+          where += ' AND (maintenance_contract >= 1)';
+          where += ' AND (a.end_service >= ' + '"' + cloneFilters.conditions.period.start + '")';
+          where += ' AND (a.end_service <= ' + '"' + cloneFilters.conditions.period.end + '")';
+
+          cloneFilters.orderBy = ' ORDER BY a.end_service DESC, a.contract_number DESC';
+        }
+        else {
+          where += ' AND (a.create_date >= ' + '"' + cloneFilters.conditions.period.start + '")';
+          where += ' AND (a.create_date <= ' + '"' + cloneFilters.conditions.period.end + '")';
+
+          cloneFilters.orderBy = ' ORDER BY a.create_date DESC, a.contract_number DESC';
+        }
+
+        cloneFilters.whereSQL = where;
       }
     }
 
-    // Final
-    if (cloneFilters.conditions.onlyMaintenanceService) {
-      where += ' AND (maintenance_contract >= 1)';
-      where += ' AND (a.end_service >= ' + '"' + cloneFilters.conditions.period.start + '")';
-      where += ' AND (a.end_service <= ' + '"' + cloneFilters.conditions.period.end + '")';
-
-      cloneFilters.orderBy = ' ORDER BY a.end_service DESC, a.contract_number DESC';
-    }
-    else {
-      where += ' AND (a.create_date >= ' + '"' + cloneFilters.conditions.period.start + '")';
-      where += ' AND (a.create_date <= ' + '"' + cloneFilters.conditions.period.end + '")';
-
-      cloneFilters.orderBy = ' ORDER BY a.create_date DESC, a.contract_number DESC';
-    }
-
-    cloneFilters.whereSQL = where;
     req.session.filtersOrders = cloneFilters;
-    // req.session.filtersOrders = cloneFilters.conditions;
 
   }
   catch (err) {

@@ -497,26 +497,81 @@
         }
       });
 
+      // $('#performer').typeahead({
+      //   items: 15,
+      //   source: function (query, process) {
+      //     var results = [];
+      //     map = {};
+      //     $.ajax({
+      //       'url': '/applications/search_performer',
+      //       'type': 'POST',
+      //       'contentType': 'application/json',
+      //       'data': JSON.stringify({
+      //         'suggestion': query,
+      //         'limit': 15
+      //       }),
+      //       success: function (datas) {
+      //         $.each(datas, function (i, result) {
+      //           map[result.value] = result;
+      //           results.push(result.value);
+      //         });
+      //         process(results);
+      //       }
+      //     });
+      //   },
+      //   updater: function (element) {
+      //     $('#performerId').val(map[element].id);
+      //     return element;
+      //   }
+      // });
+
+      // $('#dlgWorker').typeahead({
+      //   items: 15,
+      //   source: function (query, process) {
+      //     var results = [];
+      //     map = {};
+      //     $.ajax({
+      //       'url': '/applications/search_performer',
+      //       'type': 'POST',
+      //       'contentType': 'application/json',
+      //       'data': JSON.stringify({
+      //         'suggestion': query,
+      //         'limit': 15
+      //       }),
+      //       success: function (datas) {
+      //         $.each(datas, function (i, result) {
+      //           map[result.value] = result;
+      //           results.push(result.value);
+      //         });
+      //         process(results);
+      //       }
+      //     });
+      //   },
+      //   updater: function (element) {
+      //     $('#dlgWorkerId').val(map[element].id);
+      //     return element;
+      //   }
+      // });
+
       $('#performer').typeahead({
         items: 15,
         source: function (query, process) {
           var results = [];
           map = {};
-          $.ajax({
-            'url': '/applications/search_performer',
-            'type': 'POST',
-            'contentType': 'application/json',
-            'data': JSON.stringify({
-              'suggestion': query,
-              'limit': 15
-            }),
-            success: function (datas) {
-              $.each(datas, function (i, result) {
-                map[result.value] = result;
-                results.push(result.value);
+
+          axios.post('/applications/find_performer', {
+            performerName: query,
+            limit: 15
+          }
+          ).then(function (response) {
+              var data = response.data;
+              data.forEach( function (item) {
+                map[item.value] = item;
+                results.push(item.value);
               });
               process(results);
-            }
+          }).catch(function (error) {
+            console.log(error);
           });
         },
         updater: function (element) {
@@ -530,21 +585,20 @@
         source: function (query, process) {
           var results = [];
           map = {};
-          $.ajax({
-            'url': '/applications/search_performer',
-            'type': 'POST',
-            'contentType': 'application/json',
-            'data': JSON.stringify({
-              'suggestion': query,
-              'limit': 15
-            }),
-            success: function (datas) {
-              $.each(datas, function (i, result) {
-                map[result.value] = result;
-                results.push(result.value);
+
+          axios.post('/applications/find_performer', {
+            performerName: query,
+            limit: 15
+          }
+          ).then(function (response) {
+              var data = response.data;
+              data.forEach( function (item) {
+                map[item.value] = item;
+                results.push(item.value);
               });
               process(results);
-            }
+          }).catch(function (error) {
+            console.log(error);
           });
         },
         updater: function (element) {

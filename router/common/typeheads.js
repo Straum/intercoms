@@ -192,3 +192,35 @@ module.exports.filterProlongedOrders = function (orderNumber, rowsCount, callbac
     );
   });
 };
+
+module.exports.filterPerformers = function (params, callback) {
+
+  var queryText =
+    ' SELECT a.worker_id AS id, a.name AS `value`' +
+    ' FROM workers a' +
+    ' WHERE (a.is_work = 0)';
+
+  if (params.performerName.length > 0) {
+    queryText += ' AND a.name LIKE ' + `'` + params.performerName.trim() + '%' + `'`;
+  }
+
+  queryText += ' ORDER BY a.name ASC';
+  queryText += ' LIMIT ' + params.rowsCount;
+
+
+  db.get().getConnection(function (err, connection) {
+    connection.query(
+      queryText, [], function (err, rows) {
+        connection.release();
+
+        if (err) {
+          throw err;
+        }
+
+        if (typeof callback === 'function') {
+          callback(null, rows);
+        }
+      }
+    );
+  });
+};

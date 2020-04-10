@@ -33,10 +33,7 @@
       </div>
     </div>
     <form class="form-inline" role="form" method="get" action="/applications/filter">
-      <input type="text" hidden id="cityId" name="cityId" value="<%= JSON.stringify(filter.city) %>">
-      <input type="text" hidden id="streetId" name="streetId" value="<%= JSON.stringify(filter.street) %>">
-      <input type="text" hidden id="houseId" name="houseId" value="<%= JSON.stringify(filter.house) %>">
-      <input type="text" hidden id="performerId" name="performerId" value="<%= JSON.stringify(filter.performer) %>">
+      <input type="text" hidden id="filters" name="filters" value="<%= JSON.stringify(filters) %>">
       <a href="/applications/add" class="btn btn-default" data-toggle="tooltip" data-placement="top"
         title="Новая заявка"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
       <button type="submit" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Скачать отчет"
@@ -65,8 +62,8 @@
                     <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                   </button>
                 </span>
-                <input type="text" class="form-control" placeholder="Город" name="filterCities" id="filterCities"
-                  value="<%= filter.city.value %>">
+                <input type="text" class="form-control" placeholder="Город" name="findCity" id="findCity"
+                  value="<%= +filters.city.id === 0 ? '' : filters.city.name %>">
               </div>
             </td>
             <td>
@@ -76,8 +73,8 @@
                     <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                   </button>
                 </span>
-                <input type="text" class="form-control" placeholder="Улица" name="filterStreets" id="filterStreets"
-                  value="<%= filter.street.value %>">
+                <input type="text" class="form-control" placeholder="Улица" name="findStreet" id="findStreet"
+                  value="<%= +filters.street.id === 0 ? '' : filters.street.name %>">
               </div>
             </td>
             <td>
@@ -87,8 +84,8 @@
                     <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                   </button>
                 </span>
-                <input type="text" class="form-control" placeholder="Дом" name="filterHouses" id="filterHouses"
-                  value="<%= filter.house.value %>">
+                <input type="text" class="form-control" placeholder="Дом" name="findHouse" id="findHouse"
+                  value="<%= +filters.house.id === 0 ? '' : filters.house.number %>">
               </div>
             </td>
             <td>
@@ -98,8 +95,8 @@
                     <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                   </button>
                 </span>
-                <input type="text" class="form-control" placeholder="Исполнитель" name="filterPerformers"
-                  id="filterPerformers" value="<%= filter.performer.value %>">
+                <input type="text" class="form-control" placeholder="Исполнитель" name="findPerformer"
+                  id="findPerformer" value="<%= +filters.performer.id === 0 ? '' : filters.performer.name %>">
               </div>
             </td>
           </tr>
@@ -231,6 +228,7 @@
   <script src="/bower_components/bootstrap/js/transition.js"></script>
   <script src="/bower_components/bootstrap/js/collapse.js"></script>
   <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
+  <script src="/bower_components/axios/dist/axios.min.js"></script>
   <script>
     function confirmDelete(id) {
       $('#deletedUID').val(id);
@@ -238,23 +236,19 @@
     }
 
     function clearCity() {
-      $('#cityId').val(JSON.stringify({ id: 0, value: '' }));
-      $('#filterCities').val('');
+      $('#findCity').val('');
     }
 
     function clearStreet() {
-      $('#streetId').val(JSON.stringify({ id: 0, value: '' }));
-      $('#filterStreets').val('');
+      $('#findStreet').val('');
     }
 
     function clearHouse() {
-      $('#houseId').val(JSON.stringify({ id: 0, value: '' }));
-      $('#filterHouses').val('');
+      $('#findHouse').val('');
     }
 
     function clearPerformer() {
-      $('#performerId').val(JSON.stringify({ id: 0, value: '' }));
-      $('#filterPerformers').val('');
+      $('#findPerformer').val('');
     }
 
     $(document).ready(function () {
@@ -289,143 +283,253 @@
         }
       });
 
-      $('body').on('click', '#clearCity', function () {
-        clearHouse();
-        clearStreet();
+      // Clear values
+      $('#clearCity').click(function () {
         clearCity();
-        $('#filterCities').focus();
-      });
-
-      $('body').on('click', '#clearStreet', function () {
         clearStreet();
-        $('#filterStreets').focus();
+        clearHouse();
+        var data = $('#filters').val();
+        try {
+          var filters = JSON.parse(data);
+          filters.city.id = 0;
+          filters.city.name = '';
+
+          filters.street.id = 0; // street
+          filters.street.name = '';
+          filters.street.cityId = 0;
+
+          filters.house.id = 0; // house
+          filters.house.number = '';
+          filters.house.streetId = 0;
+
+          $('#filters').val(JSON.stringify(filters));
+          $('#findCity').focus();
+        }
+        catch (e) {
+          console.log(e.message);
+        }
       });
 
-      $('body').on('click', '#clearHouse', function () {
-        clearHouse()
-        $('#filterHouses').focus();
+      $('#clearStreet').click(function () {
+        clearStreet();
+        clearHouse();
+        var data = $('#filters').val();
+        try {
+          var filters = JSON.parse(data);
+          filters.street.id = 0; // street
+          filters.street.name = '';
+          filters.street.cityId = 0;
+
+          filters.house.id = 0; // house
+          filters.house.number = '';
+          filters.house.streetId = 0;
+
+          $('#filters').val(JSON.stringify(filters));
+          $('#findStreet').focus();
+        }
+        catch (e) {
+          console.log(e.message);
+        }
       });
 
-      $('body').on('click', '#clearPerformer', function () {
-        clearPerformer()
-        $('#filterPerformers').focus();
+      $('#clearHouse').click(function () {
+        clearHouse();
+        var data = $('#filters').val();
+        try {
+          var filters = JSON.parse(data);
+          filters.house.id = 0; // house
+          filters.house.number = '';
+          filters.house.streetId = 0;
+
+          $('#filters').val(JSON.stringify(filters));
+          $('#findHouse').focus();
+        }
+        catch (e) {
+          console.log(e.message);
+        }
       });
+
+      $('#clearPerformer').click(function () {
+        clearPerformer();
+        var data = $('#filters').val();
+        try {
+          var filters = JSON.parse(data);
+          filters.performer.id = 0;
+          filters.performer.name = '';
+
+          $('#filters').val(JSON.stringify(filters));
+          $('#findPerformer').focus();
+        }
+        catch (e) {
+          console.log(e.message);
+        }
+      });
+
 
       // Typeaheads
 
-      $('#filterCities').typeahead({
+      $('#findCity').typeahead({
         items: 15,
         source: function (query, process) {
           var results = [];
           map = {};
-          $.ajax({
-            'url': '/applications/search_city',
-            'type': 'POST',
-            'contentType': 'application/json',
-            'data': JSON.stringify({
-              'suggestion': query,
-              'limit': 15
-            }),
-            success: function (datas) {
-              $.each(datas, function (i, result) {
-                map[result.value] = result;
-                results.push(result.value);
+
+          axios.post('/applications/find_city', {
+            cityName: query,
+            limit: 15
+          }
+          ).then(function (response) {
+              var data = response.data;
+              data.forEach( function (item) {
+                map[item.value] = item;
+                results.push(item.value);
               });
               process(results);
-            }
+          }).catch(function (error) {
+            console.log(error);
           });
         },
         updater: function (element) {
-          $('#cityId').val(JSON.stringify({ id: map[element].id, value: map[element].value }));
+          var data = $('#filters').val();
+          try {
+            var filters = JSON.parse(data);
+            filters.city.id = map[element].id;
+            filters.city.name = map[element].value;
+            $('#filters').val(JSON.stringify(filters));
+          }
+          catch (e) {
+            console.log(e.message);
+          }
           return element;
         }
       });
 
-      $('#filterStreets').typeahead({
+      $('#findStreet').typeahead({
         items: 15,
         source: function (query, process) {
-          var obj = JSON.parse($('#cityId').val());
           var results = [];
           map = {};
-          $.ajax({
-            'url': '/applications/search_street',
-            'type': 'POST',
-            'contentType': 'application/json',
-            'data': JSON.stringify({
-              'cityId': obj.id,
-              'suggestion': query,
-              'limit': 15
-            }),
-            success: function (datas) {
-              $.each(datas, function (i, result) {
-                map[result.value] = result;
-                results.push(result.value);
+          var cityId = 0;
+          var data = $('#filters').val();
+          try {
+            var filters = JSON.parse(data);
+            cityId = filters.city.id;
+          }
+          catch (e) {
+            console.log(e.message);
+          }
+
+          axios.post('/applications/find_street', {
+            streetName: query,
+            cityId: cityId,
+            limit: 15
+          }
+          ).then(function (response) {
+              var data = response.data;
+              data.forEach( function (item) {
+                map[item.value] = item;
+                results.push(item.value);
               });
               process(results);
-            }
+          }).catch(function (error) {
+            console.log(error);
           });
         },
         updater: function (element) {
-          $('#streetId').val(JSON.stringify({ id: map[element].id, value: map[element].value }));
+          var data = $('#filters').val();
+          try {
+            var filters = JSON.parse(data);
+            filters.street.id = map[element].id;
+            filters.street.name = map[element].value;
+            filters.street.cityId = map[element].cityId;
+            $('#filters').val(JSON.stringify(filters));
+          }
+          catch (e) {
+            console.log(e.message);
+          }
           return element;
         }
       });
 
-      $('#filterHouses').typeahead({
+      $('#findHouse').typeahead({
         items: 15,
         source: function (query, process) {
-          var obj = JSON.parse($('#streetId').val());
           var results = [];
           map = {};
-          $.ajax({
-            'url': '/applications/search_house',
-            'type': 'POST',
-            'contentType': 'application/json',
-            'data': JSON.stringify({
-              'streetId': obj.id,
-              'suggestion': query,
-              'limit': 15
-            }),
-            success: function (datas) {
-              $.each(datas, function (i, result) {
-                map[result.value] = result;
-                results.push(result.value);
+          var streetId = 0;
+          var data = $('#filters').val();
+          try {
+            var filters = JSON.parse(data);
+            streetId = filters.street.id;
+          }
+          catch (e) {
+            console.log(e.message);
+          }
+
+          axios.post('/applications/find_house', {
+            houseNumber: query,
+            streetId: streetId,
+            limit: 15
+          }
+          ).then(function (response) {
+              var data = response.data;
+              data.forEach( function (item) {
+                map[item.value] = item;
+                results.push(item.value);
               });
               process(results);
-            }
+          }).catch(function (error) {
+            console.log(error);
           });
         },
         updater: function (element) {
-          // $('#houseId').val(map[element].id);
-          $('#houseId').val(JSON.stringify({ id: map[element].id, value: map[element].value }));
+          var data = $('#filters').val();
+          try {
+            var filters = JSON.parse(data);
+            filters.house.id = map[element].id;
+            filters.house.number = map[element].value;
+            filters.house.streetId = map[element].streetId;
+            $('#filters').val(JSON.stringify(filters));
+          }
+          catch (e) {
+            console.log(e.message);
+          }
           return element;
         }
       });
 
-      $('#filterPerformers').typeahead({
+      $('#findPerformer').typeahead({
         items: 15,
         source: function (query, process) {
           var results = [];
           map = {};
-          $.ajax({
-            'url': '/applications/search_performer',
-            'type': 'POST',
-            'contentType': 'application/json',
-            'data': JSON.stringify({
-              'suggestion': query,
-              'limit': 15
-            }),
-            success: function (datas) {
-              $.each(datas, function (i, result) {
-                map[result.value] = result;
-                results.push(result.value);
+
+          axios.post('/applications/find_performer', {
+            performerName: query,
+            limit: 15
+          }
+          ).then(function (response) {
+              var data = response.data;
+              data.forEach( function (item) {
+                map[item.value] = item;
+                results.push(item.value);
               });
               process(results);
-            }
+          }).catch(function (error) {
+            console.log(error);
           });
         },
         updater: function (element) {
-          $('#performerId').val(JSON.stringify({ id: map[element].id, value: map[element].value }));
+          var data = $('#filters').val();
+          try {
+            var filters = JSON.parse(data);
+            filters.performer.id = map[element].id;
+            filters.performer.name = map[element].value;
+            $('#filters').val(JSON.stringify(filters));
+          }
+          catch (e) {
+            console.log(e.message);
+          }
           return element;
         }
       });
