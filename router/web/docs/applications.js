@@ -69,7 +69,12 @@ var getCity = function (cityName, callback) {
         connection.release();
 
         if (typeof callback === 'function') {
-          callback(rows[0].cityId);
+          if (rows.length === 1) {
+            callback(rows[0].cityId);
+          }
+          else {
+            callback(null);
+          }
         }
       }
     );
@@ -195,7 +200,8 @@ var Filters = function() {
   this.conditions = {
     period: {
       start: '',
-      end: ''
+      end: '',
+      sortBy: 'DESC'
     },
     city: { id: 0, name: '' },
     street: { id: 0, name: '', cityId: 0},
@@ -267,6 +273,8 @@ var filterBuilder = function (req, usePeriod) {
             id: obj.performer.id,
             name: obj.performer.name,
           };
+
+          cloneFilters.conditions.period.sortBy = obj.period.sortBy;
 
           var _start = obj.period.start; // YYYY-MM-DD HH:mm
           if (typeof _start  === 'string') {
@@ -347,6 +355,8 @@ var filterBuilder = function (req, usePeriod) {
             id: obj.performer.id,
             name: obj.performer.name,
           };
+
+          cloneFilters.conditions.period.sortBy = obj.period.sortBy;
 
           cloneFilters.whereSQL = where;
         }
@@ -811,7 +821,8 @@ var redirectToAccepted = function (res, uid) {
           res.status(500).send(db.showDatabaseError(500, err));
         }
 
-        res.redirect('/applications/completed');
+        // res.redirect('/applications/completed');
+        res.redirect('/applications');
 
       });
   });
@@ -825,11 +836,13 @@ var findRecords = function (req, res) {
 
   var pageCount = 0;
   var countRecords = 0;
+  var unReleasedData = 0;
 
   var add = filterBuilder(req, false);
 
   var countRecordsQuery =
-    ' SELECT COUNT(*) AS count' +
+    ' SELECT COUNT(*) AS count, ' +
+    ' COUNT(CASE WHEN a.worker_id = 0 THEN 1 END) AS unReleasedData' +
     ' FROM applications a WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 0)' +
     ' AND (a.is_deleted = 0)' + add.whereSQL;
@@ -837,7 +850,7 @@ var findRecords = function (req, res) {
   var fullQuery =
     ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
     ' b.name AS cityName, c.name AS streetName,' +
-    ' d.number AS houseNumber, e.name AS performerName,' +
+    ' d.number AS houseNumber, e.name AS performerName, e.worker_id AS performerId, ' +
     ' CASE ' +
     ' WHEN a.kind = 0 THEN CONCAT("под. ", a.porch)' +
     ' WHEN a.kind = 1 THEN CONCAT("кв. ", a.porch)' +
@@ -852,7 +865,7 @@ var findRecords = function (req, res) {
     ' WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 0)' +
     ' AND (a.is_deleted = 0)' + add.whereSQL +
-    ' ORDER BY a.create_date DESC' +
+    ' ORDER BY a.create_date ' + add.conditions.period.sortBy +
     ' LIMIT ' + visibleRows;
 
 
@@ -861,6 +874,7 @@ var findRecords = function (req, res) {
       countRecordsQuery, [], function (err, rows) {
         connection.release();
         countRecords = rows[0].count;
+        unReleasedData = rows[0].unReleasedData;
         pageCount =
           (countRecords / visibleRows) < 1 ? 0 : Math.ceil(countRecords / visibleRows);
 
@@ -921,6 +935,7 @@ var findRecords = function (req, res) {
                           currentPage: currentPage,
                           visibleRows: visibleRows,
                           countRecords: countRecords,
+                          unReleasedData: unReleasedData,
                           moment: moment,
                           filters: add.conditions,
                           user: req.session.userName
@@ -1738,6 +1753,16 @@ module.exports = function () {
       else if (words.length >= 2) {
         var cityId = 0;
         getCity(words[0].trim(), function (id) {
+          if (id === null) {
+            items.push({
+              cityId: 0,
+              cityName: 'Нет данных'
+            });
+            outputData.level = 0;
+            outputData.items = items;
+            res.status(200).send(outputData);
+            return;
+          }
           cityId = id;
           getStreets(cityId, words[1], rowsLimit, function (streets) {
             if (words.length === 2) {
@@ -1808,11 +1833,13 @@ module.exports = function () {
     var offset = +req.params.offset;
     var pageCount = 0;
     var countRecords = 0;
+    var unReleasedData = 0;
 
     var add = filterBuilder(req, false);
 
     var countRecordsQuery =
-    ' SELECT COUNT(*) AS count' +
+    ' SELECT COUNT(*) AS count, ' +
+    ' COUNT(CASE WHEN a.worker_id = 0 THEN 1 END) AS unReleasedData' +
     ' FROM applications a WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 0)' +
     ' AND (a.is_deleted = 0)' + add.whereSQL;
@@ -1820,7 +1847,7 @@ module.exports = function () {
     var fullQuery =
     ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
     ' b.name AS cityName, c.name AS streetName,' +
-    ' d.number AS houseNumber, e.name AS performerName,' +
+    ' d.number AS houseNumber, e.name AS performerName,  e.worker_id AS performerId, ' +
     ' CASE ' +
     ' WHEN a.kind = 0 THEN CONCAT("под. ", a.porch)' +
     ' WHEN a.kind = 1 THEN CONCAT("кв. ", a.porch)' +
@@ -1835,7 +1862,7 @@ module.exports = function () {
     ' WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 0)' +
     ' AND (a.is_deleted = 0)' + add.whereSQL +
-    ' ORDER BY a.create_date DESC' +
+    ' ORDER BY a.create_date ' + add.conditions.period.sortBy +
     ' LIMIT ' + visibleRows +
     ' OFFSET ' + offset;
 
@@ -1844,6 +1871,7 @@ module.exports = function () {
         countRecordsQuery, [], function (err, rows) {
           connection.release();
           countRecords = rows[0].count;
+          unReleasedData = rows[0].unReleasedData;
           pageCount =
             (countRecords / visibleRows) < 1 ? 0 : Math.ceil(countRecords / visibleRows);
           if ((offset > pageCount * visibleRows)) {
@@ -1907,6 +1935,7 @@ module.exports = function () {
                             currentPage: currentPage,
                             visibleRows: visibleRows,
                             countRecords: countRecords,
+                            unReleasedData: unReleasedData,
                             moment: moment,
                             filters: add.conditions,
                             user: req.session.userName

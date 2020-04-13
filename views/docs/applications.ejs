@@ -32,7 +32,7 @@
         </ul>
       </div>
     </div>
-    <form class="form-inline" role="form" method="get" action="/applications/filter">
+    <form class="form-inline" role="form" method="get" action="/applications/filter" id="applicationsForm">
       <input type="text" hidden id="filters" name="filters" value="<%= JSON.stringify(filters) %>">
       <a href="/applications/add" class="btn btn-default" data-toggle="tooltip" data-placement="top"
         title="Новая заявка"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
@@ -44,7 +44,7 @@
       <table class="table table-bordered table-condensed table-hover">
         <thead>
           <tr class="active">
-            <th style="width: 10%; vertical-align: middle" rowspan="2" class="text-center">Дата</th>
+            <th style="width: 10%; vertical-align: middle" rowspan="2" class="text-center" onclick="sortBy()"><span>Дата</span>&nbsp;<span class="glyphicon <%= filters.period.sortBy == 'ASC' ? 'glyphicon-arrow-up' : 'glyphicon-arrow-down' %>"></span></th>
             <th style="width: 15%;" class="text-center align-middle">Город</th>
             <th style="width: 15%;" class="text-center align-middle">Улица</th>
             <th style="width: 6%;" class="text-center align-middle">Дом</th>
@@ -103,7 +103,11 @@
         </thead>
         <tbody>
           <% for (var ind = 0, max = data.length; ind < max; ind++) {%>
-          <tr>
+          <% if (+data[ind].performerId === 0) { %>
+            <tr class="warning">
+          <% } else { %>
+            <tr>
+          <% } %>
             <td class="text-center align-middle">
               <%= moment(data[ind].createDate).format( 'DD.MM.YYYY HH:mm') %>
             </td>
@@ -194,7 +198,7 @@
       <% } %>
       <div class="row">
         <div class="col-xs-12">
-          <div class="alert alert-info">Записей: <strong><%= countRecords %></strong></div>
+          <div class="alert alert-info">Записей: <strong><%= countRecords %></strong>, из них неотданных: <strong><%= unReleasedData %></strong></div>
         </div>
       </div>
   </div>
@@ -250,6 +254,21 @@
     function clearPerformer() {
       $('#findPerformer').val('');
     }
+
+    function sortBy() {
+      var data = $('#filters').val();
+        try {
+          var filters = JSON.parse(data);
+          var sortBy = filters.period.sortBy;
+          filters.period.sortBy = (sortBy == 'ASC' ? 'DESC' : 'ASC');
+          $('#filters').val(JSON.stringify(filters));
+
+          document.getElementById("applicationsForm").submit();
+        }
+        catch (e) {
+          console.log(e.message);
+        }
+      }
 
     $(document).ready(function () {
 
@@ -533,7 +552,6 @@
           return element;
         }
       });
-
     });
   </script>
 </body>
