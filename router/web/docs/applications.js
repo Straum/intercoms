@@ -3,6 +3,7 @@
 const MAX_LENGTH = 60;
 const express = require('express');
 var PDFDocument = require('pdfkit');
+var PDFDoc = require('pdfmake');
 var db = require('../../../lib/db');
 const visibleRows = require('../../../lib/config').config.visibleRows;
 const rowsLimit = require('../../../lib/config').config.rowsLimit;
@@ -201,18 +202,19 @@ var Filters = function() {
     period: {
       start: '',
       end: '',
-      sortBy: 'DESC'
+      sortBy: 'DESC',
+      allRecords: true
     },
     city: { id: 0, name: '' },
     street: { id: 0, name: '', cityId: 0},
     house: { id: 0, number: '', streetId: 0},
-    performer: { id: 0, name: ''}
+    performer: { id: 0, name: ''},
   };
   this.whereSQL = '';
   this.orderBy = '';
 };
 
-var filterBuilder = function (req, usePeriod) {
+var filterBuilder = function (req, isDone) {
 
   var obj = {};
   var filters = new Filters();
@@ -221,8 +223,11 @@ var filterBuilder = function (req, usePeriod) {
 
   var startDate = moment().startOf('month').toDate();
   var endDate = moment().endOf('month').toDate();
+  // var endDate = moment().endOf('month').endOf('day').toDate();
+  var _start = '';
+  var _end = '';
 
-  if (usePeriod) {
+  if (isDone) {
     if (! ('filtersDoneApplications' in req.session)) {
       req.session.filtersDoneApplications = filters;
     }
@@ -276,7 +281,7 @@ var filterBuilder = function (req, usePeriod) {
 
           cloneFilters.conditions.period.sortBy = obj.period.sortBy;
 
-          var _start = obj.period.start; // YYYY-MM-DD HH:mm
+          _start = obj.period.start; // YYYY-MM-DD HH:mm
           if (typeof _start  === 'string') {
             if (_start.length > 0) {
               cloneFilters.conditions.period.start = _start;
@@ -286,7 +291,7 @@ var filterBuilder = function (req, usePeriod) {
             }
           }
 
-          var _end = obj.period.end; // YYYY-MM-DD HH:mm
+          _end = obj.period.end; // YYYY-MM-DD HH:mm
           if (typeof _end  === 'string') {
             if (_end.length > 0) {
               cloneFilters.conditions.period.end = _end;
@@ -316,6 +321,13 @@ var filterBuilder = function (req, usePeriod) {
       req.session.filtersApplications = filters;
     }
     cloneFilters = req.session.filtersApplications;
+
+    if (cloneFilters.conditions.period.start === '') {
+      cloneFilters.conditions.period.start = moment(startDate).format('YYYY-MM-DD HH:mm');
+    }
+    if (cloneFilters.conditions.period.end === '') {
+      cloneFilters.conditions.period.end = moment(endDate).format('YYYY-MM-DD HH:mm');
+    }
 
     try {
       if (req.query) {
@@ -357,6 +369,32 @@ var filterBuilder = function (req, usePeriod) {
           };
 
           cloneFilters.conditions.period.sortBy = obj.period.sortBy;
+          cloneFilters.conditions.period.allRecords = obj.period.allRecords;
+
+          _start = obj.period.start; // YYYY-MM-DD HH:mm
+          if (typeof _start  === 'string') {
+            if (_start.length > 0) {
+              cloneFilters.conditions.period.start = _start;
+            }
+            else {
+              cloneFilters.conditions.period.start = moment(startDate).format('YYYY-MM-DD HH:mm');
+            }
+          }
+
+          _end = obj.period.end; // YYYY-MM-DD HH:mm
+          if (typeof _end  === 'string') {
+            if (_end.length > 0) {
+              cloneFilters.conditions.period.end = _end;
+            }
+            else {
+              cloneFilters.conditions.period.end = endDate;
+            }
+          }
+
+          if (! cloneFilters.conditions.period.allRecords) {
+            where += ' AND (a.create_date >= ' + '"' + cloneFilters.conditions.period.start  + '")';
+            where += ' AND (a.create_date <= ' + '"' + cloneFilters.conditions.period.end  + '")';
+          }
 
           cloneFilters.whereSQL = where;
         }
@@ -807,6 +845,262 @@ var downloadDoneReport = function (req, res) {
   });
 };
 
+var applicationsReport = function (req, res) {
+
+  var add = filterBuilder(req, false);
+
+  var fullQuery =
+    ' SELECT a.application_id AS documentId, DATE_FORMAT(a.create_date, "%d.%m.%Y %H:%i") AS createDate,' +
+    ' b.name AS cityName, c.name AS streetName,' +
+    ' d.number AS houseNumber, a.porch, a.kind, ' +
+    ' a.phone, ' +
+    ' f.name AS performerName,' +
+    ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc' +
+    ' FROM applications a' +
+    ' LEFT JOIN cities b ON b.city_id = a.city_id' +
+    ' LEFT JOIN streets c ON c.street_id = a.street_id' +
+    ' LEFT JOIN houses d ON d.house_id = a.house_id' +
+    ' LEFT JOIN workers f ON f.worker_id = a.worker_id' +
+    ' WHERE (a.application_id > 0)' +
+    ' AND (a.is_done = 0)' +
+    ' AND (a.is_deleted = 0)' +  add.whereSQL +
+    ' ORDER BY b.name, c.name, d.number ASC';
+    // ' ORDER BY f.name , a.create_date ASC';
+
+  var filename = 'applications.pdf';
+  res.setHeader('Content-disposition', 'attachment; filename="' + filename + '"');
+  res.setHeader('Content-type', 'applications/pdf');
+
+
+  // doc.registerFont('DejaVuSans', 'fonts//DejaVuSans.ttf');
+  // doc.font('DejaVuSans');
+
+  var fonts = {
+    Roboto: {
+      normal: 'fonts//DejaVuSans.ttf',
+      bold: 'fonts/DejaVuSans-Bold.ttf',
+      italics: 'fonts/DejaVuSans-BoldOblique.ttf',
+      bolditalics: 'fonts/DejaVuSans-BoldOblique.ttf'
+    }
+  };
+
+  // var fonts = {
+  //   DejaVuSans: {
+  //     normal: 'fonts/DejaVuSans.ttf',
+  //     bold: 'fonts/DejaVuSans.ttf',
+  //     italics: 'fonts/DejaVuSans.ttf',
+  //     bolditalics: 'fonts/DejaVuSans.ttf'
+  //   }
+  // };
+
+  // var fonts = {
+  //   Roboto: {
+  //     normal: 'Courier',
+  //     bold: 'Courier-Bold',
+  //     italics: 'Courier-Oblique',
+  //     bolditalics: 'Courier-BoldOblique'
+  //   },
+  //   Courier: {
+  //     normal: 'Courier',
+  //     bold: 'Courier-Bold',
+  //     italics: 'Courier-Oblique',
+  //     bolditalics: 'Courier-BoldOblique'
+  //   },
+  //   Helvetica: {
+  //     normal: 'Helvetica',
+  //     bold: 'Helvetica-Bold',
+  //     italics: 'Helvetica-Oblique',
+  //     bolditalics: 'Helvetica-BoldOblique'
+  //   },
+  //   Times: {
+  //     normal: 'Times-Roman',
+  //     bold: 'Times-Bold',
+  //     italics: 'Times-Italic',
+  //     bolditalics: 'Times-BoldItalic'
+  //   },
+  //   Symbol: {
+  //     normal: 'Symbol'
+  //   },
+  //   ZapfDingbats: {
+  //     normal: 'ZapfDingbats'
+  //   }
+  // };
+
+  var PdfPrinter = require('pdfmake/src/printer');
+  var printer = new PdfPrinter(fonts);
+
+  db.get().getConnection(function (err, connection) {
+    connection.query(
+      fullQuery, function (err, rows) {
+        if (err) {
+          throw err;
+        }
+        connection.release();
+
+        if (err) {
+          console.error(err);
+          res.status(500).send(db.showDatabaseError(500, err));
+        } else {
+
+          var dataset = rows;
+
+          var parameters = '';
+          if (Array.isArray(rows) && (rows.length > 0)) {
+            for (var ind = 0; ind < rows.length; ind++) {
+              parameters += rows[ind].documentId + (ind < rows.length - 1 ? ', ' : '');
+            }
+            parameters = '(' + parameters + ')';
+          }
+
+          db.get().getConnection(function (err, connection) {
+            var stringSQL =
+              ' SELECT a.application_id AS documentId, a.name AS problemDescription' +
+              ' FROM faults a' +
+              ' WHERE a.application_id IN ';
+            if (parameters.trim().length === 0) {
+              parameters = '(-1)';
+            }
+            stringSQL += parameters;
+
+            connection.query(
+              stringSQL, [], function (err, rows) {
+                connection.release();
+
+                if (err) {
+                  res.status(500).send(db.showDatabaseError(500, err));
+                }
+                else {
+
+                  var header = 'Отчет по всем заявкам';
+                  if (! add.conditions.period.allRecords) {
+                    header = 'Отчет по заявкам с ' + moment(add.conditions.period.start).format( 'DD.MM.YYYY') + ' по ' + moment(add.conditions.period.end).format( 'DD.MM.YYYY');
+                  }
+                  var tableData = [];
+                  tableData.push(
+                    [
+                      {text: '№', bold: true},
+                      {text: 'Город и улица', bold: true},
+                      {text: 'Дом', bold: true},
+                      {text: 'Номера', bold:true},
+                      {text: 'Телефон', bold: true},
+                      {text: 'Проблемы', bold: true},
+                      {text: 'Примечание', bold: true}
+                    ]);
+
+                  dataset.forEach(function (item, index) {
+
+                    var problem = '';
+                    rows.forEach(function (fault) {
+                      if (+item.documentId === +fault.documentId) {
+                        problem += (problem.length > 0 ? ', ' : '') + fault.problemDescription;
+                      }
+                    });
+
+                    tableData.push([
+                      {text: index + 1, style: 'normalText'},
+                      {text: item.cityName + ', ' + item.streetName, style: 'normalText'},
+                      {text: item.houseNumber, style: 'normalText'},
+                      {text: (+item.kind === 0 ? 'под. ' : 'кв. ') + item.porch, style: 'normalText'},
+                      {text: item.phone, style: 'normalText'},
+                      {text: problem, style: 'normalText'},
+                      ''
+                    ]);
+                  });
+
+                  var dd = {
+                    pageSize: 'A4',
+                    pageOrientation: 'landscape',
+                    pageMargins: [ 40, 60, 40, 60 ],
+                    content: [
+                      {
+                        alignment: 'justify',
+                        layout: 'lightHorizontalLines', // optional
+                        columns: [
+                          {
+                             text: header
+                          },
+                          {
+                            text: 'Дата печати: ' + moment(new Date()).format( 'DD.MM.YYYY'), alignment: 'right'
+                          }
+                        ],
+                      },
+                      {
+                        text: '\n\n'
+                      },
+                      {
+                        table: {
+                          headerRows: 1,
+                          widths: [ 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', '*' ],
+                          body: tableData
+                        }
+                      }
+                    ],
+                    defaultStyle: {
+                      font: 'Roboto'
+                    },
+                    styles: {
+                      header: {
+                        fontSize: 18,
+                        bold: true
+                      },
+                      normalText: {
+                        fontSize: 11
+                      }
+                    }
+                  };
+
+                  var pdfDoc = printer.createPdfKitDocument(dd);
+                  pdfDoc.pipe(res);
+                  pdfDoc.end();
+
+
+
+                  // doc.x = 50;
+
+                  // doc.fontSize(14);
+                  // doc.text('Текущие заявки', { align: 'center' });
+                  // doc.moveDown();
+                  // doc.moveDown();
+
+                  // dataset.forEach(function (item) {
+                  //   var list = [];
+
+                  //   rows.forEach(function (fault) {
+                  //     // FIXME: filter!!!!!
+                  //     if (+item.documentId === +fault.documentId) {
+                  //       list.push(fault.problemDescription);
+                  //     }
+                  //   });
+
+                  //   doc.fontSize(14);
+                  //   doc.text('Заявка от ' + item.createDate, { align: 'center' });
+                  //   doc.moveDown();
+
+                  //   doc.fontSize(12);
+                  //   doc
+                  //     .text('Адрес: ' + item.cityName + ',' + item.streetName + ', ' + item.houseNumber + (+item.kind === 0 ? ', подъезд ' : ', квартира ') + item.porch)
+                  //     .text('Телефон: ' + item.phone)
+
+                  //     .moveDown()
+                  //     .text('Список неисправностей', { underline: true })
+                  //     .list(list)
+                  //     // .text('Всего неисправностей: ' + list.length)
+                  //     // .moveDown()
+                  //     // .text('Исполнитель: ' + item.performerName)
+                  //     .moveDown()
+                  //     .moveDown();
+                  // });
+                  // doc.pipe(res);
+                  // doc.end();
+                }
+              });
+          });
+        }
+      });
+  });
+
+};
+
 var redirectToAccepted = function (res, uid) {
   db.get().getConnection(function (err, connection) {
     connection.query(
@@ -830,7 +1124,8 @@ var redirectToAccepted = function (res, uid) {
 
 var findRecords = function (req, res) {
   if ('downloadReport' in req.query) {
-    downloadReport(req, res);
+    // downloadReport(req, res);
+    applicationsReport(req, res);
     return;
   }
 

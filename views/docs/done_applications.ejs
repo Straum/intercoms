@@ -35,6 +35,7 @@
       </div>
     </div>
     <form class="form-inline" role="form" method="get" action="/applications/done_filter">
+      <input type="text" hidden id="filters" name="filters" value="<%= JSON.stringify(filters) %>">
       <div class="input-group date my-tooltip" id="startDate" data-toggle="tooltip" data-placement="top" title="Начальная дата">
         <input type="text" class="form-control" name="startDate" value="<%= moment(filters.period.start).format( 'DD.MM.YYYY HH:mm' ) %>" />
         <span class="input-group-addon">
@@ -47,10 +48,9 @@
             <span class="glyphicon glyphicon-calendar"></span>
         </span>
       </div>
-      <input type="text" hidden id="filters" name="filters" value="<%= JSON.stringify(filters) %>">
+      <button type="submit" class="btn btn-success" name="applyFilter">&nbsp;Применить фильтр&nbsp;</button>
       <button type="submit" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Скачать отчет"
         name="downloadDoneReport"><span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span></button>
-      <button type="submit" class="btn btn-success" name="applyFilter">&nbsp;Применить фильтр&nbsp;</button>
     </form>
     <p>
       <table class="table table-bordered table-condensed">
