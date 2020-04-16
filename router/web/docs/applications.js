@@ -1160,7 +1160,7 @@ var findRecords = function (req, res) {
     ' WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 0)' +
     ' AND (a.is_deleted = 0)' + add.whereSQL +
-    ' ORDER BY a.create_date ' + add.conditions.period.sortBy +
+    ' ORDER BY a.weight ASC, a.create_date ' + add.conditions.period.sortBy +
     ' LIMIT ' + visibleRows;
 
 
@@ -1608,6 +1608,10 @@ module.exports = function () {
       if (workerId.trim() === '') {
         workerId = 0;
       }
+      var weight = 0;
+      if (workerId > 0) {
+        weight = 2;
+      }
 
       var cardId = +req.body.cardId;
 
@@ -1648,7 +1652,8 @@ module.exports = function () {
                       ' phone = ?,' +
                       ' worker_id = ?,' +
                       ' is_done = ?,' +
-                      ' card_id = ?' +
+                      ' card_id = ?,' +
+                      ' weight = ?' +
                       ' WHERE application_id = ?', [
                       checkDate.outputDate(),
                       req.body.cityId,
@@ -1660,6 +1665,7 @@ module.exports = function () {
                       workerId,
                       isDone,
                       cardId,
+                      weight,
                       req.body.documentId
                     ], function (err) {
                       connection.release();
@@ -1683,8 +1689,8 @@ module.exports = function () {
             else {
               db.get().getConnection(function (err, connection) {
                 connection.query(
-                  ' INSERT INTO applications (create_date, city_id, street_id, house_id, porch, kind, phone, worker_id, card_id)' +
-                  ' VALUE(?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                  ' INSERT INTO applications (create_date, city_id, street_id, house_id, porch, kind, phone, worker_id, card_id, weight)' +
+                  ' VALUE(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
                   checkDate.outputDate(),
                   req.body.cityId,
                   req.body.streetId,
@@ -1693,7 +1699,8 @@ module.exports = function () {
                   req.body.kind,
                   req.body.phone,
                   workerId,
-                  cardId
+                  cardId,
+                  weight
                 ], function (err, rows) {
                   connection.release();
                   if (err) {
@@ -2157,7 +2164,7 @@ module.exports = function () {
     ' WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 0)' +
     ' AND (a.is_deleted = 0)' + add.whereSQL +
-    ' ORDER BY a.create_date ' + add.conditions.period.sortBy +
+    ' ORDER BY a.weight ASC, a.create_date ' + add.conditions.period.sortBy +
     ' LIMIT ' + visibleRows +
     ' OFFSET ' + offset;
 
