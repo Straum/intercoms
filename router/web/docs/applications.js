@@ -1399,6 +1399,9 @@ module.exports = function () {
 
             if ((rows !== undefined) && (rows.length > 0)) {
               data.faults = rows;
+              data.faults.forEach(function (item) {
+                item.faultName = item.faultName.replace(/\"/g, '\\\"');
+              });
             }
             else {
               data.faults = '';

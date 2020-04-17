@@ -147,7 +147,7 @@
                 <% if (table.length > 0) { %>
                 <% for (var ind = 0, max = table.length; ind < max; ind++) { %>
                 <tr class="warning">
-                  <td><%= table[ind].faultName %></td>
+                  <td><%= table[ind].faultName.replace(/\\\"/g, '\"'); %></td>
                   <td><%= table[ind].decision %></td>
                   <td><%= table[ind].workerId > 0 ? table[ind].workerName : '' %></td>
                   <td class="text-center"><%= table[ind].completionDT !== null ? moment(table[ind].completionDT).format( 'DD.MM.YYYY' ) : '' %></td>
@@ -642,7 +642,7 @@
           var tr = $(this).closest('tr');
           var rowIndex = tr.index();
 
-          $('#dlgFaultName').val(dataTable[rowIndex].faultName);
+          $('#dlgFaultName').val(dataTable[rowIndex].faultName.replace(/\\\"/g, '\"'));
           $('#dlgDecision').val(dataTable[rowIndex].decision);
           $('#dlgWorkerId').val(dataTable[rowIndex].workerId);
           $('#dlgWorker').val(dataTable[rowIndex].workerId > 0 ? dataTable[rowIndex].workerName : '');
@@ -722,14 +722,15 @@
         if (typeof dataTable == 'string') {
           dataTable = [];
         }
-
         var uid = --appData.generateUID;
 
         if ((typeof item === 'string') && (item.trim().length > 0)) {
 
+          var test = item.replace(/\"/g, '\\\"');
+
           var obj = {
             id: uid,
-            faultName: item,
+            faultName: test, // item,
             decision: '',
             workerId: 0,
             isDone: 0,
@@ -787,7 +788,7 @@
         var uid = $('#idTable').val();
         var dataTable = JSON.parse($('#faults').val());
 
-        dataTable[uid].faultName = $('#dlgFaultName').val();
+        dataTable[uid].faultName = $('#dlgFaultName').val().replace(/\"/g, '\\\"');
         dataTable[uid].decision = $('#dlgDecision').val();
         dataTable[uid].workerId = $('#dlgWorkerId').val();
         dataTable[uid].workerName = ((+dataTable[uid].workerId) > 0) ? $('#dlgWorker').val() : '';
