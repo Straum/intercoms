@@ -51,19 +51,11 @@
 
         <div class="form-group">
           <div class="row">
-            <div class="col-md-12">
-              <button type="submit" class="btn btn-default my-tooltip" name="generateReport" id="generateReport" value="generateReport" data-toggle="tooltip" data-placement="top" title="Сформировать отчет"><span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span></button>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <div class="row">
             <div class="col-md-3 <%= errors.createDate ? 'has-error' : '' %>">
-              <label for="create_date" class="control-label">Создано</label>
+              <label for="createDate" class="control-label">Создано</label>
               <div class="input-group date" id='datetimepicker_create_date'>
                 <input type="text" class="form-control" name="createDate" id="createDate"
-                  value="<%= typeof data !== 'undefined' ? moment(data.createDate).format( 'DD.MM.YYYY HH:mm' ) : moment(new Date()).format( 'DD.MM.YYYY HH:mm' )  %>">
+                  value="<%= typeof data !== 'undefined' ? moment(data.createDate).format( 'DD.MM.YYYY HH:mm' ) : moment(new Date()).format( 'DD.MM.YYYY HH:mm' )  %>" readonly>
                 <span class="input-group-addon">
                   <span class="glyphicon glyphicon-calendar"></span>
                 </span>
@@ -72,20 +64,31 @@
               <span class="help-block"><%= errors.createDate.msg  %></span>
               <% } %>
             </div>
+            <div class="col-md-3">
+              <label for="completionDate" class="control-label">Выполнение</label>
+              <div class="input-group date" id='datetimepicker_completion_date'>
+                <input type="text" class="form-control" name="completionDate" id="completionDate"
+                  value="<%= data.completionDate ? moment(data.completionDate).format( 'DD.MM.YYYY HH:mm' ) : '' %>">
+                <span class="input-group-addon">
+                  <span class="glyphicon glyphicon-calendar"></span>
+                </span>
+              </div>
+            </div>
           </div>
         </div>
+
         <div class="row">
           <div class="col-md-6 <%= errors.address ? 'has-error' : '' %>">
             <div class="form-group">
               <label class="control-label" for="address">Адрес</label>
               <div class="input-group">
-                <input type="text" class="form-control" id="address" name="address" placeholder=""
-                  value="<%= typeof data !== 'undefined' ? data.address : '' %>">
                 <span class="input-group-btn">
                   <button class="btn btn-default" type="button" id="clearAddress">
                     <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                   </button>
                 </span>
+                <input type="text" class="form-control" id="address" name="address" placeholder=""
+                  value="<%= typeof data !== 'undefined' ? data.address : '' %>">
               </div>
               <% if (errors.address) { %>
               <span class="help-block"><%= errors.address.msg  %></span>
@@ -147,7 +150,7 @@
                 <% if (table.length > 0) { %>
                 <% for (var ind = 0, max = table.length; ind < max; ind++) { %>
                 <tr class="warning">
-                  <td><%= table[ind].faultName.replace(/\\\"/g, '\"'); %></td>
+                  <td><%= table[ind].faultName %></td>
                   <td><%= table[ind].decision %></td>
                   <td><%= table[ind].workerId > 0 ? table[ind].workerName : '' %></td>
                   <td class="text-center"><%= table[ind].completionDT !== null ? moment(table[ind].completionDT).format( 'DD.MM.YYYY' ) : '' %></td>
@@ -180,13 +183,13 @@
             <div class="col-md-12 <%= errors.performer ? 'has-error' : '' %>">
               <label class="control-label" for="performer">Исполнитель</label>
               <div class="input-group">
-                <input type="text" class="form-control select-all" id="performer" name="performer" placeholder="Фамилия исполнителя"
-                  value="<%= typeof data !== 'undefined' ? (+data.performerId > 0 ? data.performer : '') : '' %>">
                 <span class="input-group-btn">
                   <button class="btn btn-default" type="button" id="clearPerformer">
                     <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                   </button>
                 </span>
+                <input type="text" class="form-control select-all" id="performer" name="performer" placeholder="Фамилия исполнителя"
+                  value="<%= typeof data !== 'undefined' ? (+data.performerId > 0 ? data.performer : '') : '' %>">
               </div>
               <% if (errors.performer) { %>
               <span class="help-block"><%= errors.performer.msg %></span>
@@ -350,56 +353,17 @@
 
     var appData = new applicationData();
 
-    // function editRecord(uid) {
-    //   var result = {
-    //     isFound: false,
-    //     index: 0
-    //   };
-
-    //   var dataTable = JSON.parse($('#faults').val());
-    //   for (var i = 0; i < dataTable.length; i++) {
-    //     if (+dataTable[i].id == +uid) {
-    //       result.isFound  = true;
-    //       result.index = i;
-    //       break;
-    //     }
-    //   }
-
-    //   if (result.isFound) {
-    //     $('#dlgFaultName').val(dataTable[result.index].faultName);
-    //     $('#dlgDecision').val(dataTable[result.index].decision);
-    //     $('#dlgWorkerId').val(dataTable[result.index].workerId);
-    //     $('#dlgWorker').val(dataTable[result.index].workerId > 0 ? dataTable[result.index].workerName : '');
-    //     $('#dlgCompletionDT').val(moment(new Date(dataTable[result.index].completionDT)).format( 'DD.MM.YYYY' ));
-    //     $('#dlgIsDone').prop('checked', dataTable[result.index].isDone > 0);
-
-    //     $('#idTable').val(uid);
-
-    //     appData.currentFocus = document.activeElement;
-    //     $('#application_dialog').modal();
-    //     $('#dlgFaultName').focus();
-    //   }
-
-      // var tr = $(this).closest('tr');
-      // var rowIndex = tr.index() + 1;
-
-      // if ((rowIndex >= 0) && (rowIndex <= dataTable.length - 1))  {
-      //   $('#dlgFaultName').val(dataTable[rowIndex].faultName);
-      // }
-
-      // // tr.remove();
-      // // dataTable.splice(rowIndex, 1);
-      // // $('#faults').val(JSON.stringify(dataTable));
-
-      // $('#application_dialog').modal();
-    // }
-
     $(document).ready(function () {
 
       $('[data-toggle="tooltip"]').tooltip();
 
       $('#datetimepicker_create_date').datetimepicker({
         locale: 'ru'
+      });
+
+      $('#datetimepicker_completion_date').datetimepicker({
+        locale: 'ru',
+        format: 'L'
       });
 
       $('#datetimepicker_close_date').datetimepicker({
@@ -496,62 +460,6 @@
           }
         }
       });
-
-      // $('#performer').typeahead({
-      //   items: 15,
-      //   source: function (query, process) {
-      //     var results = [];
-      //     map = {};
-      //     $.ajax({
-      //       'url': '/applications/search_performer',
-      //       'type': 'POST',
-      //       'contentType': 'application/json',
-      //       'data': JSON.stringify({
-      //         'suggestion': query,
-      //         'limit': 15
-      //       }),
-      //       success: function (datas) {
-      //         $.each(datas, function (i, result) {
-      //           map[result.value] = result;
-      //           results.push(result.value);
-      //         });
-      //         process(results);
-      //       }
-      //     });
-      //   },
-      //   updater: function (element) {
-      //     $('#performerId').val(map[element].id);
-      //     return element;
-      //   }
-      // });
-
-      // $('#dlgWorker').typeahead({
-      //   items: 15,
-      //   source: function (query, process) {
-      //     var results = [];
-      //     map = {};
-      //     $.ajax({
-      //       'url': '/applications/search_performer',
-      //       'type': 'POST',
-      //       'contentType': 'application/json',
-      //       'data': JSON.stringify({
-      //         'suggestion': query,
-      //         'limit': 15
-      //       }),
-      //       success: function (datas) {
-      //         $.each(datas, function (i, result) {
-      //           map[result.value] = result;
-      //           results.push(result.value);
-      //         });
-      //         process(results);
-      //       }
-      //     });
-      //   },
-      //   updater: function (element) {
-      //     $('#dlgWorkerId').val(map[element].id);
-      //     return element;
-      //   }
-      // });
 
       $('#performer').typeahead({
         items: 15,

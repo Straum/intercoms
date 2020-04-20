@@ -121,7 +121,10 @@
         </thead>
         <tbody>
           <% for (var ind = 0, max = data.length; ind < max; ind++) {%>
-          <% if (+data[ind].performerId === 0) { %>
+
+          <% if (+data[ind].weight === -1) { %>
+            <tr class="danger">
+          <% } else if (+data[ind].weight === 0) { %>
             <tr class="warning">
           <% } else { %>
             <tr>

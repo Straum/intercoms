@@ -1143,7 +1143,7 @@ var findRecords = function (req, res) {
     ' AND (a.is_deleted = 0)' + add.whereSQL;
 
   var fullQuery =
-    ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
+    ' SELECT a.application_id AS documentId, a.create_date AS createDate, a.weight, ' +
     ' b.name AS cityName, c.name AS streetName,' +
     ' d.number AS houseNumber, e.name AS performerName, e.worker_id AS performerId, ' +
     ' CASE ' +
@@ -1264,7 +1264,7 @@ var findCompletedRecords = function (req, res) {
     ' AND (a.is_deleted = 0)' + add.whereSQL;
 
   var fullQuery =
-    ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
+    ' SELECT a.application_id AS documentId, a.create_date AS createDate, a.weight, ' +
     ' b.name AS cityName, c.name AS streetName,' +
     ' d.number AS houseNumber, e.name AS performerName, a.porch, a.kind, ' +
     ' CASE ' +
@@ -1413,7 +1413,7 @@ module.exports = function () {
             db.get().getConnection(function (err, connection) {
               connection.query(
                 ' SELECT a.application_id AS documentId, a.is_done AS isDone, a.create_date AS createDate,' +
-                ' b.name AS cityName, c.name AS streetName,' +
+                ' a.completion_date AS completionDate, b.name AS cityName, c.name AS streetName,' +
                 ' d.number AS houseNumber, a.porch, a.kind, a.phone,' +
                 ' e.name AS performer,' +
                 ' b.city_id AS cityId, c.street_id AS streetId, d.house_id AS houseId,' +
@@ -1444,6 +1444,7 @@ module.exports = function () {
                     data.performerId = rows[0].performerId;
 
                     data.createDate = rows[0].createDate;
+                    data.completionDate = rows[0].completionDate;
                     data.porch = rows[0].porch;
                     data.kind = rows[0].kind;
                     data.phone = rows[0].phone;
@@ -1520,7 +1521,6 @@ module.exports = function () {
       return;
     }
 
-
     if ('move' in req.body) {
       res.redirect('/applications');
       return;
@@ -1528,7 +1528,7 @@ module.exports = function () {
 
     var errors = {};
     var createDate = {
-      'msg': 'Дата и время создания неверна'
+      'msg': 'Дата создания неверна'
     };
     var address = {
       'msg': 'Заполните адрес'
@@ -1552,6 +1552,14 @@ module.exports = function () {
     }
     else {
       errors.createDate = createDate;
+    }
+
+    var checkCompletionDate = new utils.convertDateToMySQLDate(req.body.completionDate, false);
+    if (checkCompletionDate.isValid()) {
+      // console.log('outputDate: ' + checkDate.outputDate());
+    }
+    else {
+      // errors.createDate = createCompletionDate;
     }
 
     // Verify address
@@ -1615,6 +1623,14 @@ module.exports = function () {
       if (workerId > 0) {
         weight = 2;
       }
+      if (checkCompletionDate.outputDate().length > 0) {
+        var dt = moment(checkCompletionDate.outputDate()).startOf('day');
+        var now = moment(new Date()).startOf('day');
+        var offset = dt - now;
+        if (offset <= 0) {
+          weight = -1;
+        }
+      }
 
       var cardId = +req.body.cardId;
 
@@ -1647,6 +1663,7 @@ module.exports = function () {
                     connection.query(
                       ' UPDATE applications SET' +
                       ' create_date = ?,' +
+                      ' completion_date = ?,' +
                       ' city_id = ?,' +
                       ' street_id = ?,' +
                       ' house_id = ?,' +
@@ -1659,6 +1676,7 @@ module.exports = function () {
                       ' weight = ?' +
                       ' WHERE application_id = ?', [
                       checkDate.outputDate(),
+                      checkCompletionDate.outputDate() === '' ? null : checkCompletionDate.outputDate(),
                       req.body.cityId,
                       req.body.streetId,
                       req.body.houseId,
@@ -1692,9 +1710,10 @@ module.exports = function () {
             else {
               db.get().getConnection(function (err, connection) {
                 connection.query(
-                  ' INSERT INTO applications (create_date, city_id, street_id, house_id, porch, kind, phone, worker_id, card_id, weight)' +
-                  ' VALUE(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                  ' INSERT INTO applications (create_date, completion_date, city_id, street_id, house_id, porch, kind, phone, worker_id, card_id, weight)' +
+                  ' VALUE(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
                   checkDate.outputDate(),
+                  checkCompletionDate.outputDate() === '' ? null : checkCompletionDate.outputDate(),
                   req.body.cityId,
                   req.body.streetId,
                   req.body.houseId,
@@ -2150,7 +2169,7 @@ module.exports = function () {
     ' AND (a.is_deleted = 0)' + add.whereSQL;
 
     var fullQuery =
-    ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
+    ' SELECT a.application_id AS documentId, a.create_date AS createDate, a.weight, ' +
     ' b.name AS cityName, c.name AS streetName,' +
     ' d.number AS houseNumber, e.name AS performerName,  e.worker_id AS performerId, ' +
     ' CASE ' +
@@ -2269,7 +2288,7 @@ module.exports = function () {
     ' AND (a.is_deleted = 0)' + add.whereSQL;
 
     var fullQuery =
-    ' SELECT a.application_id AS documentId, a.create_date AS createDate,' +
+    ' SELECT a.application_id AS documentId, a.create_date AS createDate, a.weight, ' +
     ' b.name AS cityName, c.name AS streetName,' +
     ' d.number AS houseNumber, e.name AS performerName,' +
     ' CASE ' +
