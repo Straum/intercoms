@@ -9,6 +9,7 @@ var utils = require('../../../lib/utils');
 var order = require('../../../lib/order_service');
 const queryOrder = require('../../../queries/orders').getOrder;
 var common = require('../../common/typeheads');
+var OrderModel = require('../../models/order').OrderModel;
 
 var Filters = function() {
   this.conditions = {
@@ -243,82 +244,134 @@ module.exports = function () {
     filterRecords(req, res);
   });
 
-  router.get('/edit/:id', function (req, res) {
-    var id = req.params.id;
-
-    res.render('docs/forms/order.ejs', {
-      title: 'Договор',
-      user: req.session.userName
-    });
-
-  });
-
   // router.get('/edit/:id', function (req, res) {
   //   var id = req.params.id;
-  //   var contractClientData = null;
-  //   var serviceClientData = null;
-  //   var apartments;
 
-  //   order.getClientContractData(id, function (contractData) {
-  //     contractClientData = order.decodeClientData(contractData);
-
-  //     order.getClientServiceData(id, function (serviceData) {
-  //       serviceClientData = order.decodeClientData(serviceData);
-
-  //       order.getApartmentsFromContract(id, function (apartmentsList) {
-  //         apartments = apartmentsList;
-
-  //         db.get().getConnection(function (err, connection) {
-  //           connection.query(
-  //               queryOrder, [id], function (err, rows) {
-
-  //               connection.release();
-
-  //               if (err) {
-  //                 console.error(err);
-  //                 res.status(500).send(db.showDatabaseError(500, err));
-  //               } else {
-
-  //                 var data = rows[0];
-  //                 data.address = '';
-  //                 if (rows[0].cityId > 0) {
-  //                   data.address = rows[0].cityName.trim();
-  //                   if (rows[0].streetId > 0) {
-  //                     data.address += ', ' + rows[0].streetName;
-  //                     if (rows[0].houseId > 0) {
-  //                       data.address += ', ' + rows[0].houseNumber;
-  //                     }
-  //                   }
-  //                 }
-
-  //                 // res.render('docs/forms/order.ejs', {
-  //                 res.render('docs/forms/order.ejs', {
-  //                   title: 'Договор',
-  //                   data: data,
-  //                   moment: moment,
-  //                   utils: utils,
-  //                   errors: {},
-
-  //                   contractPassportData: contractClientData.passport,
-  //                   contractRegisteredAddress: contractClientData.registeredAddress,
-  //                   contractActualAddress: contractClientData.actualAddress,
-  //                   contractPhones: contractData.phones,
-
-  //                   servicePassportData: serviceClientData.passport,
-  //                   serviceRegisteredAddress: serviceClientData.registeredAddress,
-  //                   serviceActualAddress: serviceClientData.actualAddress,
-  //                   servicePhones: serviceData.phones,
-
-  //                   apartments: apartments,
-  //                   user: req.session.userName
-  //                 });
-  //               }
-  //             });
-  //         });
-  //       });
-  //     });
+  //   res.render('docs/forms/order.ejs', {
+  //     title: 'Договор',
+  //     user: req.session.userName,
   //   });
+
   // });
+
+  router.get('/edit/:id', function (req, res) {
+    var id = req.params.id;
+    var contractClientData = null;
+    var serviceClientData = null;
+    var apartments;
+
+    order.getClientContractData(id, function (contractData) {
+      contractClientData = order.decodeClientData(contractData);
+
+      order.getClientServiceData(id, function (serviceData) {
+        serviceClientData = order.decodeClientData(serviceData);
+
+        order.getApartmentsFromContract(id, function (apartmentsList) {
+          apartments = apartmentsList;
+
+          db.get().getConnection(function (err, connection) {
+            connection.query(
+                queryOrder, [id], function (err, rows) {
+
+                connection.release();
+
+                if (err) {
+                  console.error(err);
+                  res.status(500).send(db.showDatabaseError(500, err));
+                } else {
+
+                  var data = rows[0];
+                  var orderModel = new OrderModel();
+                  orderModel.id = data.id;
+                  orderModel.contractNumber = data.contractNumber;
+                  orderModel.createDate = data.createDate;
+                  orderModel.endContract = data.endContract;
+                  orderModel.creditTo = data.creditTo;
+                  orderModel.repaid = data.repaid;
+
+                  orderModel.equipment.key = data.equipmentId;
+                  orderModel.equipment.value = data.equipmentName;
+
+                  orderModel.city.key = data.cityId;
+                  orderModel.city.value = data.cityName;
+
+                  orderModel.street.key = data.streetId;
+                  orderModel.street.value = data.streetName;
+                  orderModel.street.cityId = data.cityId;
+
+                  orderModel.house.key = data.houseId;
+                  orderModel.house.value = data.houseNumber;
+                  orderModel.house.streetId = data.streetId;
+
+                  orderModel.porch = data.porch;
+                  orderModel.numeration = data.numeration;
+
+                  orderModel.address = '';
+                  if (data.cityId > 0) {
+                    orderModel.address = data.cityName.trim();
+                    if (data.streetId > 0) {
+                      orderModel.address += ', ' + data.streetName;
+                      if (data.houseId > 0) {
+                        orderModel.address += ', ' + data.houseNumber;
+                      }
+                    }
+                  }
+
+                  orderModel.client.contract = {
+                    key: data.clientId,
+                    value: data.clientName,
+                    phones: data.phones
+                  };
+                  orderModel.client.service = {
+                    key: data.clientServiceId,
+                    value: data.clientServiceName,
+                    phones: data.clientServicePhones
+                  };
+                  orderModel.client.onePerson = data.onePerson;
+
+                  orderModel.serviceNumber = data.serviceNumber;
+                  orderModel.startService = data.startService;
+                  orderModel.endService = data.endService;
+                  orderModel.maintenanceContract = data.maintenanceContract;
+                  orderModel.startApartment = data.startApartment;
+                  orderModel.endApartment = data.endApartment;
+                  orderModel.normalPayment = data.normalPayment;
+                  orderModel.privilegePayment = data.privilegePayment;
+                  orderModel.receiptPrinting = data.receiptPrinting;
+
+                  orderModel.contractInfo = data.contractInfo;
+                  orderModel.serviceInfo = data.serviceInfo;
+
+
+                  // res.render('docs/forms/order.ejs', {
+                  res.render('docs/forms/order2.ejs', {
+                    title: 'Договор',
+
+                    data: orderModel,
+                    moment: moment,
+                    utils: utils,
+                    errors: {},
+
+                    contractPassportData: contractClientData.passport,
+                    contractRegisteredAddress: contractClientData.registeredAddress,
+                    contractActualAddress: contractClientData.actualAddress,
+                    contractPhones: contractData.phones,
+
+                    servicePassportData: serviceClientData.passport,
+                    serviceRegisteredAddress: serviceClientData.registeredAddress,
+                    serviceActualAddress: serviceClientData.actualAddress,
+                    servicePhones: serviceData.phones,
+
+                    apartments: apartments,
+                    user: req.session.userName
+                  });
+                }
+              });
+          });
+        });
+      });
+    });
+  });
 
   router.get('/add', function (req, res) {
     res.render('refs/forms/order.ejs', {

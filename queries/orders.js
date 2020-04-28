@@ -8,7 +8,7 @@ exports.getOrder = `
     a.end_contract AS endContract,
     a.credit_to AS creditTo,
     a.repaid,
-    a.maintenance_contract,
+    a.maintenance_contract AS maintenanceContract,
     a.attention,
     b.city_id AS cityId,
     b.name AS cityName,
@@ -19,30 +19,30 @@ exports.getOrder = `
     a.porch,
     a.numeration,
 
-    a.client_id,
-    f.name AS client_name,
+    a.client_id AS clientId,
+    f.name AS clientName,
     h.phones,
 
     a.m_repaid,
-    a.m_contract_number,
-    a.start_service,
-    a.end_service,
+    a.m_contract_number AS serviceNumber,
+    a.start_service AS startService,
+    a.end_service AS endService,
     a.m_prolongation,
     a.m_payment,
     a.m_payment_type_id,
-    a.m_start_apartment,
-    a.m_end_apartment,
-    a.normal_payment,
-    a.privilege_payment,
-    a.receipt_printing,
+    a.m_start_apartment AS startApartment,
+    a.m_end_apartment AS endApartment,
+    a.normal_payment AS normalPayment,
+    a.privilege_payment AS privilegePayment,
+    a.receipt_printing AS receiptPrinting,
 
-    a.m_client_id,
-    g.name AS m_client_name,
-    i.phones AS m_phones,
-    a.is_one_person,
+    a.m_client_id AS clientServiceId,
+    g.name AS clientServiceName,
+    i.phones AS clientServicePhones,
+    a.is_one_person AS onePerson,
 
-    a.contract_info,
-    a.service_info
+    a.contract_info AS contractInfo,
+    a.service_info AS serviceInfo
   FROM
     cards a
   LEFT JOIN cities b ON a.city_id = b.city_id

@@ -1144,7 +1144,7 @@ var findRecords = function (req, res) {
 
   var fullQuery =
     ' SELECT a.application_id AS documentId, a.create_date AS createDate, a.weight, ' +
-    ' b.name AS cityName, c.name AS streetName,' +
+    ' a.completion_date AS completionDate, b.name AS cityName, c.name AS streetName,' +
     ' d.number AS houseNumber, e.name AS performerName, e.worker_id AS performerId, ' +
     ' CASE ' +
     ' WHEN a.kind = 0 THEN CONCAT("под. ", a.porch)' +
@@ -2170,7 +2170,7 @@ module.exports = function () {
 
     var fullQuery =
     ' SELECT a.application_id AS documentId, a.create_date AS createDate, a.weight, ' +
-    ' b.name AS cityName, c.name AS streetName,' +
+    ' a.completion_date AS completionDate, b.name AS cityName, c.name AS streetName,' +
     ' d.number AS houseNumber, e.name AS performerName,  e.worker_id AS performerId, ' +
     ' CASE ' +
     ' WHEN a.kind = 0 THEN CONCAT("под. ", a.porch)' +
