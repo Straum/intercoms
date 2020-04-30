@@ -12,7 +12,8 @@
     <% include ../../common/bootstrap_css.ejs %>
     <link href="/theme.css" rel="stylesheet">
     <link href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
-    <link href="/scroll_table_double_rows.css" rel="stylesheet">
+    <!-- <link href="/scroll_table.css" rel="stylesheet"> -->
+    <!-- <link href="/scroll_table_double_rows.css" rel="stylesheet"> -->
 </head>
 
 <body>
@@ -123,7 +124,7 @@
                                             <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                                         </button>
                                     </span>
-                                    <input type="text" class="form-control" id="address" name="address" placeholder=""
+                                    <input type="text" class="form-control" id="address" name="address"
                                       value="<%= data.address %>">
                                 </div>
                                 <% if (errors.address) { %>
@@ -134,7 +135,7 @@
                             <div class="col-md-1 <%= errors.porch ? 'has-error' : '' %>">
                               <div class="form-group">
                                 <label class="control-label" for="porch">Подъезд</label>
-                                <input type="text" class="form-control" id="porch" name="porch" placeholder=""
+                                <input type="text" class="form-control" id="porch" name="porch"
                                   value="<%= data.porch ? data.porch : '' %>">
                                 <% if (errors.porch) { %>
                                 <span class="help-block"><%= errors.porch.msg  %></span>
@@ -144,7 +145,7 @@
                             <div class="col-md-2 <%= errors.numeration ? 'has-error' : '' %>">
                               <div class="form-group">
                                 <label class="control-label" for="numeration">Нумерация</label>
-                                <input type="text" class="form-control" id="numeration" name="numeration" placeholder=""
+                                <input type="text" class="form-control" id="numeration" name="numeration"
                                   value="<%= data.numeration ? data.numeration : '' %>">
                                 <% if (errors.numeration) { %>
                                 <span class="help-block"><%= errors.numeration.msg  %></span>
@@ -217,7 +218,7 @@
                             <div class="col-md-2">
                                 <div class="form-group">
                                     <label for="serviceNumber">Номер</label>
-                                    <input type="text" class="form-control" id="serviceNumber" name="serviceNumber" placeholder="" autofocus="autofocus" value="<%= data.serviceNumber %>">
+                                    <input type="text" class="form-control" id="serviceNumber" name="serviceNumber" autofocus="autofocus" value="<%= data.serviceNumber %>">
                                 </div>
                             </div>
                             <div class="col-md-2">
@@ -312,72 +313,84 @@
                             <p>
                         <!-- </div> -->
                         <div class="row">
-                            <div class="col-md-12">
-                            <table class="table table-hover table-condensed table-sm">
-                                <thead>
-                                    <tr class="active">
-                                        <th scope="col" style="width: 16%;" class="text-center align-middle">Кв-ра</th>
-                                        <th scope="col" style="width: 16%;" class="text-center align-middle">Опл-но <span class="badge">1</span></th>
-                                        <th scope="col" style="width: 16%;" class="text-center align-middle">Льготник <span class="badge">2</span></th>
-                                        <th scope="col" style="width: 16%;" class="text-center align-middle">Освоб. <span class="badge">3</span></th>
-                                        <th scope="col" style="width: 16%;" class="text-center align-middle">Забл-ван <span class="badge">4</span></th>
-                                        <th scope="col" style="width: 20%;" class="text-center align-middle">Дата</th>
-                                    </tr>
-                                </thead>
-                                <!-- <tbody> -->
-                                <tbody style="background-color: white;">
-                                <% var _class %>
-                                <% for (var cnt = 0, max = apartments.length; cnt < max; cnt++) {%>
+                            <div class="col-md-12" style="height: 295px; overflow-y: scroll;">
+                            <!-- <div class="col-md-12" style="height: 295px; overflow-y: scroll; padding: 0px 0px;"> -->
+                            <!-- <table class="table table-bordered table-hover table-condensed table-sm"> -->
 
-                                    <% _class = '' %>
-                                    <% if ((+apartments[cnt].paid == 1) && (+apartments[cnt].half_paid == 2)) { %>
-                                    <% _class = 'primary' %>
-                                    <% } %>
+                                <div id="dsTable" style="padding: 0px 0px;">
 
-                                    <% if ((+apartments[cnt].paid == 1) && (+apartments[cnt].half_paid == 1)) { %>
-                                    <% _class = 'warning' %>
-                                    <% } %>
+                                    <table class="table table-bordered table-hover table-condensed" style="background-color: white;">
+                                        <thead>
+                                            <tr class="active">
+                                                <th class="col-xs-2 text-center">Кв-ра</th>
+                                                <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Опл-но <span class="badge">1</span></th>
+                                                <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Льготник <span class="badge">2</span></th>
+                                                <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Освоб. <span class="badge">3</span></th>
+                                                <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Забл-ван <span class="badge">4</span></th>
+                                                <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Дата</th>
+                                            </tr>
+                                            <tr class="active">
+                                                <th>
+                                                    <div class="input-group">
+                                                        <span class="input-group-btn">
+                                                        <button class="btn btn-default" type="button" id="clearCity">
+                                                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                                                        </button>
+                                                        </span>
+                                                        <input type="text" class="form-control" name="findCity" id="findCity"
+                                                        value="">
+                                                </div>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        <% var _class %>
+                                        <% for (var cnt = 0, max = apartments.length; cnt < max; cnt++) {%>
 
-                                    <% if ((+apartments[cnt].paid == 1) && (+apartments[cnt].half_paid == 0)) { %>
-                                    <% _class = 'success' %>
-                                    <% } %>
+                                            <% _class = '' %>
+                                            <% if ((+apartments[cnt].paid == 1) && (+apartments[cnt].half_paid == 2)) { %>
+                                            <% _class = 'primary' %>
+                                            <% } %>
 
-                                    <% if (+apartments[cnt].exempt == 1) { %>
-                                    <% _class = 'danger' %>
-                                    <% } %>
+                                            <% if ((+apartments[cnt].paid == 1) && (+apartments[cnt].half_paid == 1)) { %>
+                                            <% _class = 'warning' %>
+                                            <% } %>
 
-                                    <tr class="<%= _class %>" >
-                                        <td class="text-center align-middle">
-                                            <%= apartments[cnt].number %>
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            <span><input type="checkbox" class="styled" <%= apartments[cnt].paid == 1 ? ' checked' : '' %>></span>
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            <input type="checkbox" class="styled" <%= apartments[cnt].privilege == 1 ? ' checked' : '' %>>
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            <input type="checkbox" class="styled" <%= apartments[cnt].exempt == 1 ? ' checked' : '' %>>
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            <input type="checkbox" class="styled" <%= apartments[cnt].locked == 1 ? ' checked' : '' %>>
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            <%= apartments[cnt].paid_dt ? moment(apartments[cnt].paid_dt).format( 'DD.MM.YYYY HH:mm:ss') : '' %>
-                                        </td>
-                                    </tr>
-                                <%}%>
-                                </tbody>
-                            </table>
-                            </div>
-                        </div>
-                        <!-- <div class="row">
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <textarea class="form-control" id="contract_info" rows="3" placeholder="Примечание" readonly></textarea>
+                                            <% if ((+apartments[cnt].paid == 1) && (+apartments[cnt].half_paid == 0)) { %>
+                                            <% _class = 'success' %>
+                                            <% } %>
+
+                                            <% if (+apartments[cnt].exempt == 1) { %>
+                                            <% _class = 'danger' %>
+                                            <% } %>
+
+                                            <tr class="<%= _class %>" >
+                                                <td class="col-xs-2 text-center align-middle">
+                                                    <%= apartments[cnt].number %>
+                                                </td>
+                                                <td class="col-xs-2 text-center align-middle">
+                                                    <!-- <input type="checkbox" class="styled" <%= apartments[cnt].paid == 1 ? ' checked' : '' %>> -->
+                                                    1234
+                                                </td>
+                                                <td class="col-xs-2 text-center align-middle">
+                                                    <input type="checkbox" class="styled" <%= apartments[cnt].privilege == 1 ? ' checked' : '' %>>
+                                                </td>
+                                                <td class="col-xs-2 text-center align-middle">
+                                                    <input type="checkbox" class="styled" <%= apartments[cnt].exempt == 1 ? ' checked' : '' %>>
+                                                </td>
+                                                <td class="col-xs-2 text-center align-middle">
+                                                    <input type="checkbox" class="styled" <%= apartments[cnt].locked == 1 ? ' checked' : '' %>>
+                                                </td>
+                                                <td class="col-xs-2 text-center align-middle">
+                                                    <%= apartments[cnt].paid_dt ? moment(apartments[cnt].paid_dt).format( 'DD.MM.YYYY HH:mm:ss') : '\u00A0' %>
+                                                </td>
+                                            </tr>
+                                        <%}%>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
-                        </div> -->
+                        </div>
                         <p>
                     </div>
 
@@ -396,7 +409,7 @@
                 </div>
                 <div class="col-12">
                     <button type="button" class="btn btn-success" id="save">Записать</button>
-                    <div class="btn-group">
+                    <div class="btn-group dropup">
                         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
                           Действия <span class="caret"></span>
                         </button>
@@ -404,8 +417,8 @@
                           <li><a href="#">Сформировать договор на установку</a></li>
                           <li><a href="#">Сформировать договор на обслуживание</a></li>
                           <li class="divider"></li>
-                          <li><a href="#">Печать договора на установку</a></li>
-                          <li><a href="#">Печать договора на обслуживание</a></li>
+                          <li><a href="#">Открыть договор на установку</a></li>
+                          <li><a href="#">Открыть договор на обслуживание</a></li>
                         </ul>
                       </div>
                       <button type="button" class="btn btn-info" id="save">Печать квитанций</button>
