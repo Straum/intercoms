@@ -2,45 +2,307 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
-    <!-- <link rel="icon" href="../../../../favicon.ico"> -->
-    <title>Home page - <%= title %></title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <!-- <link rel="icon" href="../../../../favicon.ico"> -->
+  <title>Home page - <%= title %></title>
 
-    <% include ../../common/bootstrap_css.ejs %>
-    <link href="/theme.css" rel="stylesheet">
+  <% include ../../common/bootstrap_css.ejs %>
+  <link href="/theme.css" rel="stylesheet">
+  <link href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css"
+    rel="stylesheet">
 </head>
 
 <body>
-    
-    <% include ../../common/full_menu.ejs %>
 
-    <div class="container">
-        <div class="form-header">
-            <h3><%= title %></h3>
-        </div>
-        <form method="post" action="/clients/save" novalidate>
-            <div class="well">
-                <div class="card-body">
-                    <input type="text" hidden id="id" name="id" value="<%= typeof data != 'undefined' ? data.id : ''  %>">
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="form-group">
-                                <label for="name">ФИО клиента</label>
-                                <input type="text" class="form-control" id="name" name="name" placeholder="" autofocus="autofocus" value="<%= typeof data != 'undefined' ? data.name : ''  %>">
-                            </div>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-success" id="save">Записать</button>
-                </div>
-            </div>
-        </form>
+  <% include ../../common/full_menu.ejs %>
+
+  <div class="container">
+    <div class="form-header">
+      <h3><%= title %></h3>
     </div>
+    <form method="post" action="/clients/save" novalidate>
+    <!-- <form> -->
+      <div class="well">
+        <div class="card-body">
+          <input type="text" hidden id="id" name="id" value="<%= data.id %>">
+          <input type="text" hidden id="regAddress" name="regAddress" value="<%= JSON.stringify(data.registeredAddress) %>">
+          <input type="text" hidden id="actAddress" name="actAddress" value="<%= JSON.stringify(data.actualAddress) %>">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="lastName">ФИО клиента</label>
+                <input type="text" class="form-control" id="lastName" name="lastName" placeholder="" autofocus="autofocus"
+                  value="<%= data.lastName  %>">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="certificate">Документ</label>
+                <select class="form-control" id="certificate" name="certificate">
+                  <% certificates.forEach(function(element) { %>
+                  <option value="<%= element.id %>" <%= element.id == data.certificate.typeId ? ' selected' : '' %>>
+                    <%= element.value %></option>
+                  <% }); %>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="form-group">
+                <label for="certificateSeries">Серия</label>
+                <input type="text" class="form-control" id="certificateSeries" name="certificateSeries"
+                  value="<%= data.certificate.series %>">
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="form-group">
+                <label for="certificateNumber">Номер</label>
+                <input type="text" class="form-control" id="certificateNumber" name="certificateNumber"
+                  value="<%= data.certificate.number %>">
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="form-group">
+                <label for="issued" class="control-label">Выдано</label>
+                <div class="input-group date" id="dtIssued">
+                  <input type="text" class="form-control" name="issued" id="issued"
+                    value="<%= data ? moment(data.certificate.issued).format( 'DD.MM.YYYY' ) : '' %>">
+                  <span class="input-group-addon">
+                    <span class="glyphicon glyphicon-calendar"></span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label for="department">Кем</label>
+                <input type="text" class="form-control" id="department" name="department"
+                  value="<%= data.certificate.department %>">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-8">
+              <div class="form-group">
+                <label for="registeredAddress">Адрес прописки</label>
+                <div class="input-group">
+                  <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" id="clearClientContract">
+                      <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                    </button>
+                  </span>
+                  <input type="text" class="form-control select-all full-address" id="registeredAddress" name="registeredAddress"
+                    value="<%= data.registeredAddress.fullAddress %>">
+                </div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="form-group">
+                <label for="registeredApartment">Квартира</label>
+                <input type="text" class="form-control" id="registeredApartment" name="registeredApartment"
+                  value="<%= data.registeredAddress.apartment %>">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-8">
+              <div class="form-group">
+                <label for="actualAddress">Фактический адрес</label>
+                <div class="input-group">
+                  <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" id="clearClientContract">
+                      <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                    </button>
+                  </span>
+                  <input type="text" class="form-control select-all full-address" id="actualAddress" name="actualAddress"
+                    value="<%= data.actualAddress.fullAddress %>">
+                </div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="form-group">
+                <label for="actualApartment">Квартира</label>
+                <input type="text" class="form-control" id="actualApartment" name="actualApartment"
+                  value="<%= data.actualAddress.apartment %>">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label for="phones">Телефоны</label>
+                <input type="text" class="form-control" id="phones" name="phones"
+                  value="<%= data.certificate.phones %>">
+              </div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-success" id="save">Записать</button>
+        </div>
+      </div>
+    </form>
+  </div>
 
-    <script src="/bower_components/jquery/dist/jquery.min.js"></script>
-    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="/bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="/bower_components/moment/min/moment-with-locales.min.js"></script>
+  <script src="/bower_components/bootstrap/js/transition.js"></script>
+  <script src="/bower_components/bootstrap/js/collapse.js"></script>
+  <script src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
+  <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
+  <script src="/bower_components/axios/dist/axios.min.js"></script>
+  <script>
+
+    function saveFullAddress(data, index) {
+      var fieldName = ((index == 0) ? '#regAddress' : '#actAddress');
+      var rawData = $(fieldName).val();
+        try {
+
+          var storage = JSON.parse(rawData);
+
+          switch (data.level) {
+            case 0:
+              storage.city.key = data.cityId;
+              storage.city.value = data.cityName;
+              storage.street.key = 0;
+              storage.street.value = '';
+              storage.house.key = 0;
+              storage.house.value = '';
+              break;
+            case 1:
+              storage.city.key = data.cityId;
+              storage.city.value = data.cityName;
+              storage.street.key = data.streetId;
+              storage.street.value = data.streetName;
+              storage.house.key = 0;
+              storage.house.value = '';
+              break;
+            case 2:
+              storage.city.key = data.cityId;
+              storage.city.value = data.cityName;
+              storage.street.key = data.streetId;
+              storage.street.value = data.streetName;
+              storage.house.key = data.houseId;
+              storage.house.value = data.houseNumber;
+              break;
+          }
+          $(fieldName).val(JSON.stringify(storage));
+        }
+        catch (e) {
+          console.log(e.message);
+        }
+    }
+
+    $('#dtIssued').datetimepicker({
+      locale: 'ru',
+      format: 'L'
+    });
+
+    $('.select-all').on('focus', function (e) {
+      $(this)
+        .one('mouseup', function () {
+          $(this).select();
+          return false;
+        })
+        .select();
+    });
+
+    $('.full-address').typeahead({
+        items: 15,
+        source: function (query, process) {
+          var results = [];
+          map = {};
+
+          axios.post('/clients/find_full_address', {
+            suggestion: query,
+            rowsCount: 15
+          })
+          .then(function (response) {
+            var datas = response.data;
+            if ((typeof datas == 'object') && ('items' in datas) && ('level' in datas)) {
+                var level = datas.level;
+                var data = datas.items;
+                var text;
+                if (Array.isArray(data)) {
+                  data.forEach(function (item, index) {
+                    item.level = level;
+                    switch (level) {
+                      case 0:
+                        text = item.cityName;
+                        map[text] = item;
+                        results.push(text);
+                        break;
+                      case 1:
+                        text = item.cityName + ', ' + item.streetName;
+                        if (item.streetName.trim() !== '') {
+                          map[text] = item;
+                          results.push(text);
+                        }
+                        break;
+                      case 2:
+                        text = item.cityName + ', ' + item.streetName + ', ' + item.houseNumber;
+                        if (item.houseNumber.trim() !== '') {
+                          map[text] = item;
+                          results.push(text);
+                        }
+                        break;
+                      default:
+                    }
+                  });
+                }
+              }
+              process(results);
+          })
+            .catch(function (error) {
+            console.log(error);
+          });
+          },
+        updater: function (element) {
+          var fieldNumber = this.$element[0].id == 'registeredAddress' ? 0 : 1;
+          var selectedElement = map[element];
+          switch (selectedElement.level) {
+            case 0:
+              // appData.address.cityId = selectedElement.cityId;
+              // appData.address.cityName = selectedElement.cityName;
+              // appData.setCityId(selectedElement.cityId);
+              // appData.clearStreet();
+              saveFullAddress(selectedElement, fieldNumber);
+              return selectedElement.cityName + ', ';
+            case 1:
+              // appData.address.cityId = selectedElement.cityId;
+              // appData.address.cityName = selectedElement.cityName;
+              // appData.address.streetId = selectedElement.streetId;
+              // appData.address.streetName = selectedElement.streetName;
+              // appData.setCityId(selectedElement.cityId);
+              // appData.setStreetId(selectedElement.streetId);
+              // appData.clearHouse();
+              saveFullAddress(selectedElement, fieldNumber);
+              return selectedElement.cityName + ', ' + selectedElement.streetName + ', ';
+            case 2:
+              // appData.address.cityId = selectedElement.cityId;
+              // appData.address.cityName = selectedElement.cityName;
+              // appData.address.streetId = selectedElement.streetId;
+              // appData.address.streetName = selectedElement.streetName;
+              // appData.address.houseId = selectedElement.houseId;
+              // appData.address.houseNumber = selectedElement.houseNumber;
+              // appData.setCityId(selectedElement.cityId);
+              // appData.setStreetId(selectedElement.streetId);
+              // appData.setHouseId(selectedElement.houseId);
+              saveFullAddress(selectedElement, fieldNumber);
+              return selectedElement.cityName + ', ' + selectedElement.streetName + ', ' + selectedElement.houseNumber;
+            default:
+              saveFullAddress(selectedElement, fieldNumber);
+              return selectedElement.cityName;
+          }
+        }
+      });
+
+  </script>
 </body>
 
 </html>

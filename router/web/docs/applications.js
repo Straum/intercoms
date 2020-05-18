@@ -1129,8 +1129,8 @@ var findRecords = function (req, res) {
     return;
   }
 
-  var pageCount = 0;
   var countRecords = 0;
+  var pageCount = 0;
   var unReleasedData = 0;
 
   var add = filterBuilder(req, false);
@@ -1170,8 +1170,7 @@ var findRecords = function (req, res) {
         connection.release();
         countRecords = rows[0].count;
         unReleasedData = rows[0].unReleasedData;
-        pageCount =
-          (countRecords / visibleRows) < 1 ? 0 : Math.ceil(countRecords / visibleRows);
+        pageCount = (countRecords / visibleRows) < 1 ? 0 : Math.ceil(countRecords / visibleRows);
 
         db.get().getConnection(function (err, connection) {
           connection.query(
@@ -2155,8 +2154,8 @@ module.exports = function () {
 
   router.get('/:offset', function (req, res) {
     var offset = +req.params.offset;
-    var pageCount = 0;
     var countRecords = 0;
+    var pageCount = 0;
     var unReleasedData = 0;
 
     var add = filterBuilder(req, false);

@@ -297,18 +297,18 @@
     });
 
     $('#allRecords').on('click', function (e) {
-        var data = $('#filters').val();
-        try {
-          var filters = JSON.parse(data);
-          filters.period.allRecords = e.currentTarget.checked;
-          $('[name="startDate"]').prop("readonly", e.currentTarget.checked);
-          $('[name="endDate"]').prop("readonly", e.currentTarget.checked);
-          $('#filters').val(JSON.stringify(filters));
-        }
-        catch (e) {
-          console.log(e.message);
-        }
-      });
+      var data = $('#filters').val();
+      try {
+        var filters = JSON.parse(data);
+        filters.period.allRecords = e.currentTarget.checked;
+        $('[name="startDate"]').prop("readonly", e.currentTarget.checked);
+        $('[name="endDate"]').prop("readonly", e.currentTarget.checked);
+        $('#filters').val(JSON.stringify(filters));
+      }
+      catch (e) {
+        console.log(e.message);
+      }
+    });
 
     function confirmDelete(id) {
       $('#deletedUID').val(id);

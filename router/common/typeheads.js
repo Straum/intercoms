@@ -2,6 +2,83 @@
 
 var db = require('../../lib/db');
 
+
+var getCity = function (cityName, callback) {
+  db.get().getConnection(function (err, connection) {
+    connection.query(
+      ' SELECT a.city_id AS cityId' +
+      ' FROM cities a' +
+      ' WHERE a.name = ?' +
+      ' LIMIT 1', [cityName], function (err, rows) {
+        connection.release();
+
+        if (typeof callback === 'function') {
+          if (rows.length === 1) {
+            callback(rows[0].cityId);
+          }
+          else {
+            callback(null);
+          }
+        }
+      }
+    );
+  });
+};
+
+var getStreets = function (cityId, streetName, rowsLimit, callback) {
+  var queryText = ' SELECT a.street_id AS streetId, a.name AS streetName' +
+    ' FROM streets a' +
+    ' WHERE (a.city_id = ' + cityId + ')';
+
+  if ((typeof streetName === 'string') && (streetName.trim() !== '')) {
+    queryText += ' AND (a.name LIKE ' + `'` + streetName.trim() + '%' + `'` + ')';
+  }
+
+  queryText += ' LIMIT ' + rowsLimit;
+
+  db.get().getConnection(function (err, connection) {
+    connection.query(
+      queryText, [], function (err, rows) {
+        connection.release();
+
+        if (typeof callback === 'function') {
+          callback(rows);
+        }
+      }
+    );
+  });
+};
+
+var getHouses = function (cityId, streetName, houseNumber, rowsLimit, callback) {
+  getStreets(cityId, streetName, 1, function (streets) {
+    if ((Array.isArray(streets)) && (streets.length === 1)) {
+      var streetId = streets[0].streetId;
+
+      var queryText = ' SELECT a.house_id, a.number AS house_number, a.street_id' +
+        ' FROM houses a' +
+        ' WHERE (a.street_id = ' + streetId + ')';
+
+      if ((typeof houseNumber === 'string') && (houseNumber.trim().length > 0)) {
+        queryText += ' AND (a.number LIKE ' + `'` + houseNumber.trim() + '%' + `'` + ')';
+      }
+
+      queryText += ' LIMIT ' + rowsLimit;
+
+      db.get().getConnection(function (err, connection) {
+        connection.query(
+          queryText, [], function (err, rows) {
+            connection.release();
+
+            if (typeof callback === 'function') {
+              callback(rows);
+            }
+          }
+        );
+      });
+    }
+  });
+};
+
 module.exports.filterCities = function (params, callback) {
 
   var queryText =
@@ -223,4 +300,140 @@ module.exports.filterPerformers = function (params, callback) {
       }
     );
   });
+};
+
+module.exports.filterClients = function (params, callback) {
+
+  var queryText =
+    ' SELECT a.client_id AS id, a.name AS `value`' +
+    ' FROM clients a' +
+    ' WHERE (a.is_deleted = 0)';
+
+  if (params.clientName.length > 0) {
+    queryText += ' AND a.name LIKE ' + `'` + params.clientName.trim() + '%' + `'`;
+  }
+
+  queryText += ' ORDER BY a.name ASC';
+  queryText += ' LIMIT ' + params.rowsCount;
+
+
+  db.get().getConnection(function (err, connection) {
+    connection.query(
+      queryText, [], function (err, rows) {
+        connection.release();
+
+        if (err) {
+          throw err;
+        }
+
+        if (typeof callback === 'function') {
+          callback(null, rows);
+        }
+      }
+    );
+  });
+};
+
+module.exports.outFullAddress = function (params, callback) {
+  var words = params.suggestion.split(', ');
+  if (!Array.isArray(words)) {
+    return;
+  }
+
+  var outputData = {};
+  var queryText = '';
+  var items = [];
+
+  if (words.length === 1) {
+    queryText =
+      ' SELECT a.city_id, a.name AS city_name' +
+      ' FROM cities a';
+
+    if (words[0].trim().length > 0) {
+      queryText += ' WHERE a.name LIKE ' + `'` + words[0].trim() + '%' + `'`;
+    }
+    queryText += ' ORDER BY a.name ASC';
+    queryText += ' LIMIT ' + params.rowsCount;
+
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        queryText, [], function (err, rows) {
+          connection.release();
+
+          if (err) {
+            throw(err);
+          }
+
+          if (Array.isArray(rows)) {
+            rows.forEach(function (item) {
+              items.push({
+                cityId: item.city_id,
+                cityName: item.city_name
+              });
+            });
+          }
+
+            outputData.level = 0;
+            outputData.items = items;
+            callback(null, outputData);
+            return;
+        }
+      );
+    });
+  }
+  else if (words.length >= 2) {
+    var cityId = 0;
+    getCity(words[0].trim(), function (id) {
+      if (id === null) {
+        items.push({
+          cityId: 0,
+          cityName: 'Нет данных'
+        });
+        outputData.level = 0;
+        outputData.items = items;
+        callback(null, outputData);
+        return;
+      }
+      cityId = id;
+      getStreets(cityId, words[1], params.rowsCount, function (streets) {
+        if (words.length === 2) {
+          if (Array.isArray(streets)) {
+            streets.forEach(function (item) {
+              items.push({
+                cityId: cityId,
+                cityName: words[0].trim(),
+                streetId: item.streetId,
+                streetName: item.streetName
+              });
+            });
+          }
+
+          outputData.level = 1;
+          outputData.items = items;
+          callback(null, outputData);
+          return;
+        }
+        if (words.length === 3) {
+          getHouses(cityId, words[1], words[2], params.rowsCount, function (houses) {
+            if (Array.isArray(houses)) {
+              houses.forEach(function (item) {
+                items.push({
+                  cityId: cityId,
+                  cityName: words[0].trim(),
+                  streetId: item.street_id,
+                  streetName: words[1].trim(),
+                  houseId: item.house_id,
+                  houseNumber: item.house_number
+                });
+              });
+            }
+
+            outputData.level = 2;
+            outputData.items = items;
+            callback(null, outputData);
+          });
+        }
+      });
+    });
+  }
 };

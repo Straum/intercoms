@@ -2,390 +2,422 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
-    <!-- <link rel="icon" href="../../../../favicon.ico"> -->
-    <title>Home page - <%= title %></title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <!-- <link rel="icon" href="../../../../favicon.ico"> -->
+  <title>Home page - <%= title %></title>
 
-    <% include ../../common/bootstrap_css.ejs %>
-    <link href="/theme.css" rel="stylesheet">
-    <link href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
-    <!-- <link href="/scroll_table.css" rel="stylesheet"> -->
-    <!-- <link href="/scroll_table_double_rows.css" rel="stylesheet"> -->
+  <% include ../../common/bootstrap_css.ejs %>
+  <link href="/theme.css" rel="stylesheet">
+  <link href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css"
+    rel="stylesheet">
+  <!-- <link href="/scroll_table.css" rel="stylesheet"> -->
+  <!-- <link href="/scroll_table_double_rows.css" rel="stylesheet"> -->
 </head>
 
 <body>
 
-    <% include ../../common/full_menu.ejs %>
+  <% include ../../common/full_menu.ejs %>
 
-    <div class="container">
-        <div class="form-header">
-            <h3><%= title %></h3>
+  <div class="container">
+    <div class="form-header">
+      <h3><%= title %></h3>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div class="col-xs-12">
+          <ul class="nav nav-pills">
+            <li class="active"><a data-toggle="tab" href="#core">Основное</a></li>
+            <li><a data-toggle="tab" href="#maintenance">Техобслуживание</a></li>
+            <li><a data-toggle="tab" href="#additionally">Дополнительно</a></li>
+          </ul>
         </div>
-
-        <div class="card">
-            <div class="row">
-                <div class="col-xs-12">
-                    <ul class="nav nav-pills">
-                        <li class="active"><a data-toggle="tab" href="#core">Основное</a></li>
-                        <li><a data-toggle="tab" href="#maintenance">Техобслуживание</a></li>
-                        <li><a data-toggle="tab" href="#additionally">Дополнительно</a></li>
-                    </ul>
-                </div>
-            </div>
-            <!-- <form action="/payments/save" method="post"> -->
-            <form>
-                <div class="well">
-                <div class="card-body">
-                <div class="tab-content">
-                    <div role="tabpanel" class="tab-pane in active" id="core">
-                        <input type="text" hidden id="id" name="id" value="<%= data.id %>">
-                        <div class="row">
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label for="contractNumber">Номер</label>
-                                    <input type="text" class="form-control" id="contractNumber" name="contractNumber" autofocus="autofocus" value="<%= data.contractNumber ? data.contractNumber : '' %>">
-                                </div>
-                            </div>
-                            <div class="col-md-2 <%= errors.createDate ? 'has-error' : '' %>">
-                                <div class="form-group">
-                                    <label for="createDate" class="control-label">Создано</label>
-                                    <div class="input-group date" id="dtCreateDate">
-                                        <input type="text" class="form-control" name="createDate" id="createDate"
-                                        value="<%= data.createDate ? moment(data.createDate).format( 'DD.MM.YYYY' ) : moment(new Date()).format( 'DD.MM.YYYY' )  %>">
-                                        <span class="input-group-addon">
-                                        <span class="glyphicon glyphicon-calendar"></span>
-                                        </span>
-                                    </div>
-                                    <% if (errors.createDate) { %>
-                                    <span class="help-block"><%= errors.createDate.msg  %></span>
-                                    <% } %>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="equipment_name">Оборудование</label>
-                                    <input type="text" class="form-control" id="equipment_name" name="equipment_name" placeholder="Выберите оборудование" value="<%= data.equipment ? data.equipment.value : '' %>">
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label for="endContract" class="control-label">Окончание договора</label>
-                                    <div class="input-group date" id="dtEndContract">
-                                        <input type="text" class="form-control" name="endContract" id="endContract"
-                                        value="<%= data.endContract ? moment(data.endContract).format( 'DD.MM.YYYY' ) : '' %>">
-                                        <span class="input-group-addon">
-                                        <span class="glyphicon glyphicon-calendar"></span>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                        <label>&nbsp;</label>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="repaid" <%= data.repaid ? (+data.repaid === 1 ? ' checked' : '') : '' %>>
-                                        <label class="form-check-label" for="repaid">
-                                            Погашено
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-2 col-md-offset-7 <%= errors.creditTo ? 'has-error' : '' %>">
-                                <div class="form-group">
-                                    <label for="creditTo" class="control-label">Кредит до</label>
-                                    <div class="input-group date" id="dtCreditTo">
-                                        <input type="text" class="form-control" name="creditTo" id="creditTo"
-                                        value="<%= data.creditTo ? moment(data.creditTo).format( 'DD.MM.YYYY' ) : '' %>">
-                                        <span class="input-group-addon">
-                                        <span class="glyphicon glyphicon-calendar"></span>
-                                        </span>
-                                    </div>
-                                    <% if (errors.creditTo) { %>
-                                    <span class="help-block"><%= errors.creditTo.msg  %></span>
-                                    <% } %>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-9 <%= errors.address ? 'has-error' : '' %>">
-                              <div class="form-group">
-                                <label class="control-label" for="address">Адрес</label>
-                                <div class="input-group">
-                                    <span class="input-group-btn">
-                                        <button class="btn btn-default" type="button" id="addAddress">
-                                            <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
-                                        </button>
-                                        <button class="btn btn-default" type="button" id="clearAddress">
-                                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                        </button>
-                                    </span>
-                                    <input type="text" class="form-control" id="address" name="address"
-                                      value="<%= data.address %>">
-                                </div>
-                                <% if (errors.address) { %>
-                                <span class="help-block"><%= errors.address.msg  %></span>
-                                <% } %>
-                              </div>
-                            </div>
-                            <div class="col-md-1 <%= errors.porch ? 'has-error' : '' %>">
-                              <div class="form-group">
-                                <label class="control-label" for="porch">Подъезд</label>
-                                <input type="text" class="form-control" id="porch" name="porch"
-                                  value="<%= data.porch ? data.porch : '' %>">
-                                <% if (errors.porch) { %>
-                                <span class="help-block"><%= errors.porch.msg  %></span>
-                                <% } %>
-                              </div>
-                            </div>
-                            <div class="col-md-2 <%= errors.numeration ? 'has-error' : '' %>">
-                              <div class="form-group">
-                                <label class="control-label" for="numeration">Нумерация</label>
-                                <input type="text" class="form-control" id="numeration" name="numeration"
-                                  value="<%= data.numeration ? data.numeration : '' %>">
-                                <% if (errors.numeration) { %>
-                                <span class="help-block"><%= errors.numeration.msg  %></span>
-                                <% } %>
-                              </div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="row">
-                                <div class="col-md-9 <%= errors.performer ? 'has-error' : '' %>">
-                                    <label class="control-label" for="clientContractName">Старший по договору</label>
-                                    <div class="input-group">
-                                    <span class="input-group-btn">
-                                        <button class="btn btn-default" type="button" id="clearClientContract">
-                                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                        </button>
-                                    </span>
-                                    <input type="text" class="form-control select-all" id="clientContractName" name="clientContractName" placeholder="ФИО по договору"
-                                        value="<%= data.client.contract.value %>">
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label for="clientContractPhones">Телефоны</label>
-                                        <input type="text" class="form-control" name="clientContractPhones" value="<%= data.client.contract.phones %>" readonly>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="repaid" <%= data.client.onePerson ? ' checked' : '' %>>
-                                        <label class="form-check-label" for="repaid">
-                                            Старший - одно и то же лицо
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <div class="row">
-                                <div class="col-md-9 <%= errors.performer ? 'has-error' : '' %>">
-                                    <label class="control-label" for="clientServiceName">Старший по техобслуживанию</label>
-                                    <div class="input-group">
-                                        <span class="input-group-btn">
-                                        <button class="btn btn-default" type="button" id="clearClientService">
-                                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                        </button>
-                                        </span>
-                                        <input type="text" class="form-control select-all" id="clientServiceName" name="clientServiceName" placeholder="ФИО по ТО"
-                                        value="<%= data.client.service.value %>">
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label for="clientServicePhones">Телефоны</label>
-                                        <input type="text" class="form-control" name="clientServicePhones" value="<%= data.client.service.phones %>" readonly>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+      </div>
+      <!-- <form action="/payments/save" method="post"> -->
+      <form>
+        <div class="well">
+          <div class="card-body">
+            <div class="tab-content">
+              <div role="tabpanel" class="tab-pane in active" id="core">
+                <input type="text" hidden id="id" name="id" value="<%= data.id %>">
+                <div class="row">
+                  <div class="col-md-2">
+                    <div class="form-group">
+                      <label for="contractNumber">Номер</label>
+                      <input type="text" class="form-control" id="contractNumber" name="contractNumber"
+                        autofocus="autofocus" value="<%= data.contractNumber ? data.contractNumber : '' %>">
                     </div>
+                  </div>
+                  <div class="col-md-2 <%= errors.createDate ? 'has-error' : '' %>">
+                    <div class="form-group">
+                      <label for="createDate" class="control-label">Создано</label>
+                      <div class="input-group date" id="dtCreateDate">
+                        <input type="text" class="form-control" name="createDate" id="createDate"
+                          value="<%= data.createDate ? moment(data.createDate).format( 'DD.MM.YYYY' ) : moment(new Date()).format( 'DD.MM.YYYY' )  %>">
+                        <span class="input-group-addon">
+                          <span class="glyphicon glyphicon-calendar"></span>
+                        </span>
+                      </div>
+                      <% if (errors.createDate) { %>
+                      <span class="help-block"><%= errors.createDate.msg  %></span>
+                      <% } %>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="equipment_name">Оборудование</label>
+                      <input type="text" class="form-control select-all" id="equipment_name" name="equipment_name"
+                        placeholder="Выберите оборудование" value="<%= data.equipment ? data.equipment.value : '' %>">
+                    </div>
+                  </div>
+                  <div class="col-md-2">
+                    <div class="form-group">
+                      <label for="endContract" class="control-label">Окончание договора</label>
+                      <div class="input-group date" id="dtEndContract">
+                        <input type="text" class="form-control" name="endContract" id="endContract"
+                          value="<%= data.endContract ? moment(data.endContract).format( 'DD.MM.YYYY' ) : '' %>">
+                        <span class="input-group-addon">
+                          <span class="glyphicon glyphicon-calendar"></span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-3">
+                    <div class="form-group">
+                      <label>&nbsp;</label>
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="repaid"
+                          <%= data.repaid ? (+data.repaid === 1 ? ' checked' : '') : '' %>>
+                        <label class="form-check-label" for="repaid">
+                          Погашено
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-2 col-md-offset-7 <%= errors.creditTo ? 'has-error' : '' %>">
+                    <div class="form-group">
+                      <label for="creditTo" class="control-label">Кредит до</label>
+                      <div class="input-group date" id="dtCreditTo">
+                        <input type="text" class="form-control" name="creditTo" id="creditTo"
+                          value="<%= data.creditTo ? moment(data.creditTo).format( 'DD.MM.YYYY' ) : '' %>">
+                        <span class="input-group-addon">
+                          <span class="glyphicon glyphicon-calendar"></span>
+                        </span>
+                      </div>
+                      <% if (errors.creditTo) { %>
+                      <span class="help-block"><%= errors.creditTo.msg  %></span>
+                      <% } %>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-9 <%= errors.address ? 'has-error' : '' %>">
+                    <div class="form-group">
+                      <label class="control-label" for="address">Адрес</label>
+                      <div class="input-group">
+                        <span class="input-group-btn">
+                          <button class="btn btn-default" type="button" id="clearAddress">
+                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                          </button>
+                          <button class="btn btn-default" type="button" id="addAddress" disabled>
+                            <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                          </button>
+                        </span>
+                        <input type="text" class="form-control select-all" id="address" name="address" value="<%= data.address %>">
+                      </div>
+                      <% if (errors.address) { %>
+                      <span class="help-block"><%= errors.address.msg  %></span>
+                      <% } %>
+                    </div>
+                  </div>
+                  <div class="col-md-1 <%= errors.porch ? 'has-error' : '' %>">
+                    <div class="form-group">
+                      <label class="control-label" for="porch">Подъезд</label>
+                      <input type="text" class="form-control" id="porch" name="porch"
+                        value="<%= data.porch ? data.porch : '' %>">
+                      <% if (errors.porch) { %>
+                      <span class="help-block"><%= errors.porch.msg  %></span>
+                      <% } %>
+                    </div>
+                  </div>
+                  <div class="col-md-2 <%= errors.numeration ? 'has-error' : '' %>">
+                    <div class="form-group">
+                      <label class="control-label" for="numeration">Нумерация</label>
+                      <input type="text" class="form-control" id="numeration" name="numeration"
+                        value="<%= data.numeration ? data.numeration : '' %>">
+                      <% if (errors.numeration) { %>
+                      <span class="help-block"><%= errors.numeration.msg  %></span>
+                      <% } %>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="row">
+                    <div class="col-md-9 <%= errors.performer ? 'has-error' : '' %>">
+                      <label class="control-label" for="clientContractName">Старший по договору</label>
+                      <div class="input-group">
+                        <span class="input-group-btn">
+                          <button class="btn btn-default" type="button" id="clearClientContract">
+                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                          </button>
+                          <button class="btn btn-default" type="button" id="editClientContract">
+                            <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
+                          </button>
+                        </span>
+                        <input type="text" class="form-control select-all" id="clientContractName"
+                          name="clientContractName" placeholder="ФИО по договору"
+                          value="<%= data.client.contract.value %>">
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-group">
+                        <label for="clientContractPhones">Телефоны</label>
+                        <input type="text" class="form-control" name="clientContractPhones"
+                          value="<%= data.client.contract.phones %>" readonly>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-                    <div role="tabpanel" class="tab-pane" id="maintenance">
-                        <div class="row">
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label for="serviceNumber">Номер</label>
-                                    <input type="text" class="form-control" id="serviceNumber" name="serviceNumber" autofocus="autofocus" value="<%= data.serviceNumber %>">
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label for="startService" class="control-label">c</label>
-                                    <div class="input-group date" id="dtStartService">
-                                        <input type="text" class="form-control" name="startService" id="startService"
-                                        value="<%= data.startService != null ? moment(data.startService).format( 'DD.MM.YYYY' ) : '' %>">
-                                        <span class="input-group-addon">
-                                        <span class="glyphicon glyphicon-calendar"></span>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label for="endService" class="control-label">по</label>
-                                    <div class="input-group date" id="dtEndService">
-                                        <input type="text" class="form-control" name="endService" id="endService"
-                                        value="<%= data.endService != null ? moment(data.endService).format( 'DD.MM.YYYY' ) : '' %>">
-                                        <span class="input-group-addon">
-                                        <span class="glyphicon glyphicon-calendar"></span>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label for="maintenanceContract">Состояние</label>
-                                    <select class="form-control" id="maintenanceContract" name="maintenanceContract">
-                                        <% utils.maintenanceContract.forEach(function(element, index) { %>
-                                        <option value="<%= index %>"<%= data.maintenanceContract == index ? ' selected' : '' %>><%= element %></option>
-                                        <% }); %>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-1 col-md-offset-2">
-                                <div class="form-group">
-                                    <label for="startApartment">Кв-ра с</label>
-                                    <input type="text" class="form-control" id="startApartment" name="startApartment" value="<%= data.startApartment > 0 ? data.startApartment : '' %>">
-                                </div>
-                            </div>
-                            <div class="col-md-1">
-                                <div class="form-group">
-                                    <label for="endApartment">Кв-ра по</label>
-                                    <input type="text" class="form-control" id="endApartment" name="endApartment" value="<%= data.endApartment > 0 ? data.endApartment : '' %>">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label for="normalPayment">Обычная плата</label>
-                                    <input type="text" class="form-control" id="normalPayment" name="normalPayment" value="<%= data.normalPayment > 0 ? data.normalPayment : '' %>">
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label for="privilegePayment">Льготная плата</label>
-                                    <input type="text" class="form-control" id="privilegePayment" name="privilegePayment" value="<%= data.privilegePayment > 0 ? data.privilegePayment : '' %>">
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label for="receiptPrinting" class="control-label">Печать квитанций</label>
-                                    <div class="input-group date" id="dtReceiptPrinting">
-                                        <input type="text" class="form-control" name="receiptPrinting" id="receiptPrinting"
-                                        value="<%= data.receiptPrinting != null ? moment(data.receiptPrinting).format( 'DD.MM.YYYY' ) : '' %>">
-                                        <span class="input-group-addon">
-                                        <span class="glyphicon glyphicon-calendar"></span>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- <div class="row"> -->
-                        <div class="btn-toolbar" role="toolbar">
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Посторить список">1</button>
-                            </div>
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Вставить...">4</button>
-                                <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Изменить...">5</button>
-                                <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Удалить...">6</button>
-                                <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Очистить Оплачено">7</button>
-                            </div>
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Подключение...">8</button>
-                                <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="История платежей">9</button>
-                            </div>
-                        </div>
-                            <p>
-                        <!-- </div> -->
-                        <div class="row">
-                            <div class="col-md-12" style="height: 295px; overflow-y: scroll;">
-                            <!-- <div class="col-md-12" style="height: 295px; overflow-y: scroll; padding: 0px 0px;"> -->
-                            <!-- <table class="table table-bordered table-hover table-condensed table-sm"> -->
+                <div class="form-group">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="repaid"
+                          <%= data.client.onePerson ? ' checked' : '' %>>
+                        <label class="form-check-label" for="repaid">
+                          Старший - одно и то же лицо
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-                                <div id="dsTable" style="padding: 0px 0px;">
+                <div class="form-group">
+                  <div class="row">
+                    <div class="col-md-9 <%= errors.performer ? 'has-error' : '' %>">
+                      <label class="control-label" for="clientServiceName">Старший по техобслуживанию</label>
+                      <div class="input-group">
+                        <span class="input-group-btn">
+                          <button class="btn btn-default" type="button" id="clearClientService">
+                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                          </button>
+                          <button class="btn btn-default" type="button" id="editClientService">
+                            <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
+                          </button>
+                        </span>
+                        <input type="text" class="form-control select-all" id="clientServiceName"
+                          name="clientServiceName" placeholder="ФИО по ТО" value="<%= data.client.service.value %>">
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-group">
+                        <label for="clientServicePhones">Телефоны</label>
+                        <input type="text" class="form-control" name="clientServicePhones"
+                          value="<%= data.client.service.phones %>" readonly>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-                                    <table class="table table-bordered table-hover table-condensed" style="background-color: white;">
-                                        <thead>
-                                            <tr class="active">
-                                                <th class="col-xs-2 text-center">Кв-ра</th>
-                                                <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Опл-но <span class="badge">1</span></th>
-                                                <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Льготник <span class="badge">2</span></th>
-                                                <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Освоб. <span class="badge">3</span></th>
-                                                <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Забл-ван <span class="badge">4</span></th>
-                                                <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Дата</th>
-                                            </tr>
-                                            <tr class="active">
-                                                <th>
-                                                    <div class="input-group">
-                                                        <span class="input-group-btn">
-                                                        <button class="btn btn-default" type="button" id="clearCity">
-                                                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                                        </button>
-                                                        </span>
-                                                        <input type="text" class="form-control" name="findCity" id="findCity"
-                                                        value="">
-                                                </div>
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                        <% var _class %>
-                                        <% for (var cnt = 0, max = apartments.length; cnt < max; cnt++) {%>
+              <div role="tabpanel" class="tab-pane" id="maintenance">
+                <div class="row">
+                  <div class="col-md-2">
+                    <div class="form-group">
+                      <label for="serviceNumber">Номер</label>
+                      <input type="text" class="form-control" id="serviceNumber" name="serviceNumber"
+                        autofocus="autofocus" value="<%= data.serviceNumber %>">
+                    </div>
+                  </div>
+                  <div class="col-md-2">
+                    <div class="form-group">
+                      <label for="startService" class="control-label">c</label>
+                      <div class="input-group date" id="dtStartService">
+                        <input type="text" class="form-control" name="startService" id="startService"
+                          value="<%= data.startService != null ? moment(data.startService).format( 'DD.MM.YYYY' ) : '' %>">
+                        <span class="input-group-addon">
+                          <span class="glyphicon glyphicon-calendar"></span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-2">
+                    <div class="form-group">
+                      <label for="endService" class="control-label">по</label>
+                      <div class="input-group date" id="dtEndService">
+                        <input type="text" class="form-control" name="endService" id="endService"
+                          value="<%= data.endService != null ? moment(data.endService).format( 'DD.MM.YYYY' ) : '' %>">
+                        <span class="input-group-addon">
+                          <span class="glyphicon glyphicon-calendar"></span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-2">
+                    <div class="form-group">
+                      <label for="maintenanceContract">Состояние</label>
+                      <select class="form-control" id="maintenanceContract" name="maintenanceContract">
+                        <% utils.maintenanceContract.forEach(function(element, index) { %>
+                        <option value="<%= index %>" <%= data.maintenanceContract == index ? ' selected' : '' %>>
+                          <%= element %></option>
+                        <% }); %>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-md-1 col-md-offset-2">
+                    <div class="form-group">
+                      <label for="startApartment">Кв-ра с</label>
+                      <input type="text" class="form-control" id="startApartment" name="startApartment"
+                        value="<%= data.startApartment > 0 ? data.startApartment : '' %>">
+                    </div>
+                  </div>
+                  <div class="col-md-1">
+                    <div class="form-group">
+                      <label for="endApartment">Кв-ра по</label>
+                      <input type="text" class="form-control" id="endApartment" name="endApartment"
+                        value="<%= data.endApartment > 0 ? data.endApartment : '' %>">
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-2">
+                    <div class="form-group">
+                      <label for="normalPayment">Обычная плата</label>
+                      <input type="text" class="form-control" id="normalPayment" name="normalPayment"
+                        value="<%= data.normalPayment > 0 ? data.normalPayment : '' %>">
+                    </div>
+                  </div>
+                  <div class="col-md-2">
+                    <div class="form-group">
+                      <label for="privilegePayment">Льготная плата</label>
+                      <input type="text" class="form-control" id="privilegePayment" name="privilegePayment"
+                        value="<%= data.privilegePayment > 0 ? data.privilegePayment : '' %>">
+                    </div>
+                  </div>
+                  <div class="col-md-2">
+                    <div class="form-group">
+                      <label for="receiptPrinting" class="control-label">Печать квитанций</label>
+                      <div class="input-group date" id="dtReceiptPrinting">
+                        <input type="text" class="form-control" name="receiptPrinting" id="receiptPrinting"
+                          value="<%= data.receiptPrinting != null ? moment(data.receiptPrinting).format( 'DD.MM.YYYY' ) : '' %>">
+                        <span class="input-group-addon">
+                          <span class="glyphicon glyphicon-calendar"></span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- <div class="row"> -->
+                <div class="btn-toolbar" role="toolbar">
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top"
+                      title="Посторить список">1</button>
+                  </div>
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top"
+                      title="Вставить...">4</button>
+                    <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top"
+                      title="Изменить...">5</button>
+                    <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top"
+                      title="Удалить...">6</button>
+                    <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top"
+                      title="Очистить Оплачено">7</button>
+                  </div>
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top"
+                      title="Подключение...">8</button>
+                    <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top"
+                      title="История платежей">9</button>
+                  </div>
+                </div>
+                <p>
+                  <!-- </div> -->
+                <div class="row">
+                  <div class="col-md-12" style="height: 295px; overflow-y: scroll;">
+                    <!-- <div class="col-md-12" style="height: 295px; overflow-y: scroll; padding: 0px 0px;"> -->
+                    <!-- <table class="table table-bordered table-hover table-condensed table-sm"> -->
 
-                                            <% _class = '' %>
-                                            <% if ((+apartments[cnt].paid == 1) && (+apartments[cnt].half_paid == 2)) { %>
-                                            <% _class = 'primary' %>
-                                            <% } %>
+                    <div id="dsTable" style="padding: 0px 0px;">
 
-                                            <% if ((+apartments[cnt].paid == 1) && (+apartments[cnt].half_paid == 1)) { %>
-                                            <% _class = 'warning' %>
-                                            <% } %>
+                      <table class="table table-bordered table-hover table-condensed" style="background-color: white;">
+                        <thead>
+                          <tr class="active">
+                            <th class="col-xs-2 text-center">Кв-ра</th>
+                            <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Опл-но <span
+                                class="badge">1</span></th>
+                            <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Льготник <span
+                                class="badge">2</span></th>
+                            <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Освоб. <span
+                                class="badge">3</span></th>
+                            <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Забл-ван <span
+                                class="badge">4</span></th>
+                            <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Дата</th>
+                          </tr>
+                          <tr class="active">
+                            <th>
+                              <div class="input-group">
+                                <span class="input-group-btn">
+                                  <button class="btn btn-default" type="button" id="clearCity">
+                                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                                  </button>
+                                </span>
+                                <input type="text" class="form-control" name="findCity" id="findCity" value="">
+                              </div>
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <% var _class %>
+                          <% for (var cnt = 0, max = apartments.length; cnt < max; cnt++) {%>
 
-                                            <% if ((+apartments[cnt].paid == 1) && (+apartments[cnt].half_paid == 0)) { %>
-                                            <% _class = 'success' %>
-                                            <% } %>
+                          <% _class = '' %>
+                          <% if ((+apartments[cnt].paid == 1) && (+apartments[cnt].half_paid == 2)) { %>
+                          <% _class = 'primary' %>
+                          <% } %>
 
-                                            <% if (+apartments[cnt].exempt == 1) { %>
-                                            <% _class = 'danger' %>
-                                            <% } %>
+                          <% if ((+apartments[cnt].paid == 1) && (+apartments[cnt].half_paid == 1)) { %>
+                          <% _class = 'warning' %>
+                          <% } %>
 
-                                            <tr class="<%= _class %>" >
-                                                <td class="col-xs-2 text-center align-middle">
-                                                    <%= apartments[cnt].number %>
-                                                </td>
-                                                <td class="col-xs-2 text-center align-middle">
-                                                    <!-- <input type="checkbox" class="styled" <%= apartments[cnt].paid == 1 ? ' checked' : '' %>> -->
-                                                    1234
-                                                </td>
-                                                <td class="col-xs-2 text-center align-middle">
-                                                    <input type="checkbox" class="styled" <%= apartments[cnt].privilege == 1 ? ' checked' : '' %>>
-                                                </td>
-                                                <td class="col-xs-2 text-center align-middle">
-                                                    <input type="checkbox" class="styled" <%= apartments[cnt].exempt == 1 ? ' checked' : '' %>>
-                                                </td>
-                                                <td class="col-xs-2 text-center align-middle">
-                                                    <input type="checkbox" class="styled" <%= apartments[cnt].locked == 1 ? ' checked' : '' %>>
-                                                </td>
-                                                <td class="col-xs-2 text-center align-middle">
-                                                    <%= apartments[cnt].paid_dt ? moment(apartments[cnt].paid_dt).format( 'DD.MM.YYYY HH:mm:ss') : '\u00A0' %>
-                                                </td>
-                                            </tr>
-                                        <%}%>
+                          <% if ((+apartments[cnt].paid == 1) && (+apartments[cnt].half_paid == 0)) { %>
+                          <% _class = 'success' %>
+                          <% } %>
+
+                          <% if (+apartments[cnt].exempt == 1) { %>
+                          <% _class = 'danger' %>
+                          <% } %>
+
+                          <tr class="<%= _class %>">
+                            <td class="col-xs-2 text-center align-middle">
+                              <%= apartments[cnt].number %>
+                            </td>
+                            <td class="col-xs-2 text-center align-middle">
+                              <!-- <input type="checkbox" class="styled" <%= apartments[cnt].paid == 1 ? ' checked' : '' %>> -->
+                              1234
+                            </td>
+                            <td class="col-xs-2 text-center align-middle">
+                              <input type="checkbox" class="styled"
+                                <%= apartments[cnt].privilege == 1 ? ' checked' : '' %>>
+                            </td>
+                            <td class="col-xs-2 text-center align-middle">
+                              <input type="checkbox" class="styled"
+                                <%= apartments[cnt].exempt == 1 ? ' checked' : '' %>>
+                            </td>
+                            <td class="col-xs-2 text-center align-middle">
+                              <input type="checkbox" class="styled"
+                                <%= apartments[cnt].locked == 1 ? ' checked' : '' %>>
+                            </td>
+                            <td class="col-xs-2 text-center align-middle">
+                              <%= apartments[cnt].paid_dt ? moment(apartments[cnt].paid_dt).format( 'DD.MM.YYYY HH:mm:ss') : '\u00A0' %>
+                            </td>
+                          </tr>
+                          <%}%>
                                         </tbody>
                                     </table>
                                 </div>
@@ -398,134 +430,156 @@
                         <div class="form-group">
                             <label for="contract_info">Информация по договору</label>
                             <textarea class="form-control" id="contract_info" rows="7"><%= data.contractInfo %></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label for="service_info">Информация по обслуживанию</label>
-                            <textarea class="form-control" id="service_info" rows="7"><%= data.serviceInfo %></textarea>
-                        </div>
-                        <p>
                     </div>
+                    <div class="form-group">
+                      <label for="service_info">Информация по обслуживанию</label>
+                      <textarea class="form-control" id="service_info" rows="7"><%= data.serviceInfo %></textarea>
+                    </div>
+                    <p>
+                  </div>
 
                 </div>
                 <div class="col-12">
-                    <button type="button" class="btn btn-success" id="save">Записать</button>
-                    <div class="btn-group dropup">
-                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                          Действия <span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu" role="menu">
-                          <li><a href="#">Сформировать договор на установку</a></li>
-                          <li><a href="#">Сформировать договор на обслуживание</a></li>
-                          <li class="divider"></li>
-                          <li><a href="#">Открыть договор на установку</a></li>
-                          <li><a href="#">Открыть договор на обслуживание</a></li>
-                        </ul>
-                      </div>
-                      <button type="button" class="btn btn-info" id="save">Печать квитанций</button>
+                  <button type="button" class="btn btn-success" id="save">Записать</button>
+                  <div class="btn-group dropup">
+                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                      Действия <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" role="menu">
+                      <li><a href="#">Сформировать договор на установку</a></li>
+                      <li><a href="#">Сформировать договор на обслуживание</a></li>
+                      <li class="divider"></li>
+                      <li><a href="#">Открыть договор на установку</a></li>
+                      <li><a href="#">Открыть договор на обслуживание</a></li>
+                    </ul>
+                  </div>
+                  <button type="button" class="btn btn-info" id="save">Печать квитанций</button>
                 </div>
+              </div>
             </div>
-            </div>
-            </form>
-        </div>
+      </form>
     </div>
+  </div>
 
-    <script src="/bower_components/jquery/dist/jquery.min.js"></script>
-    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
-    <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
-    <script src="/bower_components/moment/min/moment-with-locales.min.js"></script>
-    <script src="/bower_components/bootstrap/js/transition.js"></script>
-    <script src="/bower_components/bootstrap/js/collapse.js"></script>
-    <script src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
-    <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
-    <script src="/bower_components/axios/dist/axios.min.js"></script>
-    <script>
-        var order = <%- JSON.stringify(data) %>;
+  <script src="/bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
+  <script src="/bower_components/moment/min/moment-with-locales.min.js"></script>
+  <script src="/bower_components/bootstrap/js/transition.js"></script>
+  <script src="/bower_components/bootstrap/js/collapse.js"></script>
+  <script src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
+  <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
+  <script src="/bower_components/axios/dist/axios.min.js"></script>
+  <script>
+    var order = <%- JSON.stringify(data) %>;
 
-        $(document).ready(function () {
-            var uid = order.id;
+    $(document).ready(function () {
+      var uid = order.id;
 
-        $('[data-toggle="tooltip"]').tooltip();
+      $('[data-toggle="tooltip"]').tooltip();
 
-        $('#dtCreateDate').datetimepicker({
-            locale: 'ru',
-            format: 'L'
-        });
-
-        $('#dtEndContract').datetimepicker({
-            locale: 'ru',
-            format: 'L'
-        });
-
-        $('#dtCreditTo').datetimepicker({
-            locale: 'ru',
-            format: 'L'
-        });
-
-        $('#dtStartService').datetimepicker({
-            locale: 'ru',
-            format: 'L'
-        });
-
-        $('#dtEndService').datetimepicker({
-            locale: 'ru',
-            format: 'L'
-        });
-
-        $('#dtReceiptPrinting').datetimepicker({
-            locale: 'ru',
-            format: 'L'
-        });
-
+      $('#dtCreateDate').datetimepicker({
+        locale: 'ru',
+        format: 'L'
       });
 
-      $('#save').click(function() {
-          alert(order.startApartment);
-    //    window.location.href = '/orders';
-       window.location.assign('/');
+      $('#dtEndContract').datetimepicker({
+        locale: 'ru',
+        format: 'L'
       });
 
-        $('#equipment_name').typeahead({
-          items: 15,
-          source: function (query, process) {
-            var results = [];
-            map = {};
-            $.ajax({
-              'url': '/orders/search_equipment',
-              'type': 'POST',
-              'contentType': 'application/json',
-              'data': JSON.stringify({
-                'suggestion': query,
-                'limit': 15
-              }),
-              success: function (datas) {
-                $.each(datas, function (i, result) {
-                  map[result.value] = result;
-                  results.push(result.value);
-                });
-                process(results);
-              }
+      $('#dtCreditTo').datetimepicker({
+        locale: 'ru',
+        format: 'L'
+      });
+
+      $('#dtStartService').datetimepicker({
+        locale: 'ru',
+        format: 'L'
+      });
+
+      $('#dtEndService').datetimepicker({
+        locale: 'ru',
+        format: 'L'
+      });
+
+      $('#dtReceiptPrinting').datetimepicker({
+        locale: 'ru',
+        format: 'L'
+      });
+
+    });
+
+    $('#save').click(function () {
+      alert(order.startApartment);
+      //    window.location.href = '/orders';
+      window.location.assign('/');
+    });
+
+    $('#equipment_name').typeahead({
+      items: 15,
+      source: function (query, process) {
+        var results = [];
+        map = {};
+        $.ajax({
+          'url': '/orders/search_equipment',
+          'type': 'POST',
+          'contentType': 'application/json',
+          'data': JSON.stringify({
+            'suggestion': query,
+            'limit': 15
+          }),
+          success: function (datas) {
+            $.each(datas, function (i, result) {
+              map[result.value] = result;
+              results.push(result.value);
             });
-          },
-          updater: function (element) {
-            // selectedElement = map[element].id; /**use the person id and search for it**/
-            // $('#driver_id').val(map[element].id);
-            // //
-            // $('#dlg_nickname').val(map[element].nickname);
-            // $('#car_name').val(map[element].car_name);
-            // $('#car_number').val(map[element].car_number);
-            // $('#color_name').val(map[element].color_name);
-            // var driverInfo = getDriverInfo(map[element].car_name, map[element].car_number, map[element].color_name);
-            // //
-            // $('#dlg_additional_info').val(driverInfo);
-            // //
-            // $('#saveOrder').focus();
-
-            // $(this).val('123');
-            // $('#equipment_name').val('123');
-            return element;
+            process(results);
           }
         });
-    </script>
+      },
+      updater: function (element) {
+        // selectedElement = map[element].id; /**use the person id and search for it**/
+        // $('#driver_id').val(map[element].id);
+        // //
+        // $('#dlg_nickname').val(map[element].nickname);
+        // $('#car_name').val(map[element].car_name);
+        // $('#car_number').val(map[element].car_number);
+        // $('#color_name').val(map[element].color_name);
+        // var driverInfo = getDriverInfo(map[element].car_name, map[element].car_number, map[element].color_name);
+        // //
+        // $('#dlg_additional_info').val(driverInfo);
+        // //
+        // $('#saveOrder').focus();
+
+        // $(this).val('123');
+        // $('#equipment_name').val('123');
+        return element;
+      }
+    });
+
+    $('#editClientContract').on('click', function (e) {
+      if (order.client.contract.key > 0) {
+        window.location.href = '/clients/edit/' + order.client.contract.key;
+      }
+    });
+
+    $('#editClientService').on('click', function (e) {
+      if (order.client.service.key > 0) {
+        window.location.href = '/clients/edit/' + order.client.service.key;
+      }
+    });
+
+    $('.select-all').on('focus', function (e) {
+      $(this)
+        .one('mouseup', function () {
+          $(this).select();
+          return false;
+        })
+        .select();
+    });
+
+  </script>
 </body>
 
 </html>

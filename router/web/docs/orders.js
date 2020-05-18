@@ -310,9 +310,9 @@ module.exports = function () {
                   if (data.cityId > 0) {
                     orderModel.address = data.cityName.trim();
                     if (data.streetId > 0) {
-                      orderModel.address += ', ' + data.streetName;
+                      orderModel.address += ', ' + data.streetName.trim();
                       if (data.houseId > 0) {
-                        orderModel.address += ', ' + data.houseNumber;
+                        orderModel.address += ', ' + data.houseNumber.trim();
                       }
                     }
                   }
