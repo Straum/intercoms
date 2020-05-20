@@ -93,7 +93,7 @@
                 <label for="registeredAddress">Адрес прописки</label>
                 <div class="input-group">
                   <span class="input-group-btn">
-                    <button class="btn btn-default" type="button" id="clearClientContract">
+                    <button class="btn btn-default" type="button" id="clearRegisteredAddress">
                       <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                     </button>
                   </span>
@@ -116,7 +116,7 @@
                 <label for="actualAddress">Фактический адрес</label>
                 <div class="input-group">
                   <span class="input-group-btn">
-                    <button class="btn btn-default" type="button" id="clearClientContract">
+                    <button class="btn btn-default" type="button" id="clearActualAddress">
                       <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                     </button>
                   </span>
@@ -157,6 +157,27 @@
   <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
   <script src="/bower_components/axios/dist/axios.min.js"></script>
   <script>
+
+    function clearAddress(index) {
+      var fieldName = ((index == 0) ? '#regAddress' : '#actAddress');
+      var rawData = $(fieldName).val();
+        try {
+
+          var storage = JSON.parse(rawData);
+
+          storage.city.key = 0;
+          storage.city.value = '';
+          storage.street.key = 0;
+          storage.street.value = '';
+          storage.house.key = 0;
+          storage.house.value = '';
+
+          $(fieldName).val(JSON.stringify(storage));
+        }
+        catch (e) {
+          console.log(e.message);
+        }
+    }
 
     function saveFullAddress(data, index) {
       var fieldName = ((index == 0) ? '#regAddress' : '#actAddress');
@@ -210,6 +231,19 @@
           return false;
         })
         .select();
+    });
+
+    $('#clearRegisteredAddress').on('click', function (e) {
+      clearAddress(0);
+      $('#registeredAddress').val('');
+      $('#registeredAddress').focus();
+
+    });
+
+    $('#clearActualAddress').on('click', function (e) {
+      clearAddress(1);
+      $('#actualAddress').val('');
+      $('#actualAddress').focus();
     });
 
     $('.full-address').typeahead({
@@ -267,32 +301,12 @@
           var selectedElement = map[element];
           switch (selectedElement.level) {
             case 0:
-              // appData.address.cityId = selectedElement.cityId;
-              // appData.address.cityName = selectedElement.cityName;
-              // appData.setCityId(selectedElement.cityId);
-              // appData.clearStreet();
               saveFullAddress(selectedElement, fieldNumber);
               return selectedElement.cityName + ', ';
             case 1:
-              // appData.address.cityId = selectedElement.cityId;
-              // appData.address.cityName = selectedElement.cityName;
-              // appData.address.streetId = selectedElement.streetId;
-              // appData.address.streetName = selectedElement.streetName;
-              // appData.setCityId(selectedElement.cityId);
-              // appData.setStreetId(selectedElement.streetId);
-              // appData.clearHouse();
               saveFullAddress(selectedElement, fieldNumber);
               return selectedElement.cityName + ', ' + selectedElement.streetName + ', ';
             case 2:
-              // appData.address.cityId = selectedElement.cityId;
-              // appData.address.cityName = selectedElement.cityName;
-              // appData.address.streetId = selectedElement.streetId;
-              // appData.address.streetName = selectedElement.streetName;
-              // appData.address.houseId = selectedElement.houseId;
-              // appData.address.houseNumber = selectedElement.houseNumber;
-              // appData.setCityId(selectedElement.cityId);
-              // appData.setStreetId(selectedElement.streetId);
-              // appData.setHouseId(selectedElement.houseId);
               saveFullAddress(selectedElement, fieldNumber);
               return selectedElement.cityName + ', ' + selectedElement.streetName + ', ' + selectedElement.houseNumber;
             default:

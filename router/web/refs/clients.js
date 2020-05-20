@@ -271,6 +271,117 @@ var updateClientActualAddress = function (client) {
   });
 };
 
+var addClient = function (client) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        ' INSERT INTO clients (name)' +
+        ' VALUES (?)', [client.lastName], function (err, rows) {
+          connection.release();
+          if (err) {
+            reject();
+          } else {
+            resolve(rows.insertId);
+          }
+        });
+    });
+  });
+};
+
+var addClientFace = function (client) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        ' INSERT INTO faces (' +
+        ' doc_type_id,' +
+        ' series,' +
+        ' number,' +
+        ' issue_date,' +
+        ' issue,' +
+        ' phones,' +
+        ' client_id)' +
+        ' VALUES (?,?,?,?,?,?,?)',
+          [
+            client.certificate.typeId,
+            client.certificate.series,
+            client.certificate.number,
+            client.certificate.issued,
+            client.certificate.department,
+            client.certificate.phones,
+            client.id], function (err) {
+          connection.release();
+          if (err) {
+            reject();
+          } else {
+            resolve();
+          }
+        });
+    });
+  });
+};
+
+var addClientRegisteredAddress = function (client) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        ' INSERT INTO residence_clients (' +
+        ' city_id,' +
+        ' street_id,' +
+        ' house_id,' +
+        ' room_apartment,' +
+        ' client_id,' +
+        ' residence_type_id)' +
+        ' VALUES (?,?,?,?,?,?)', [
+            client.registeredAddress.city.key,
+            client.registeredAddress.street.key,
+            client.registeredAddress.house.key,
+            client.registeredAddress.apartment,
+            client.id,
+            0,
+          ], function (err) {
+              connection.release();
+              if (err) {
+                reject();
+              } else {
+                resolve();
+              }
+            }
+      );
+    });
+  });
+};
+
+var addClientActualAddress = function (client) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        ' INSERT INTO residence_clients (' +
+        ' city_id,' +
+        ' street_id,' +
+        ' house_id,' +
+        ' room_apartment,' +
+        ' client_id,' +
+        ' residence_type_id)' +
+        ' VALUES (?,?,?,?,?,?)', [
+            client.actualAddress.city.key,
+            client.actualAddress.street.key,
+            client.actualAddress.house.key,
+            client.actualAddress.apartment,
+            client.id,
+            1,
+          ], function (err) {
+              connection.release();
+              if (err) {
+                reject();
+              } else {
+                resolve();
+              }
+            }
+      );
+    });
+  });
+};
+
 module.exports = function () {
   var router = express.Router();
 
@@ -478,7 +589,7 @@ module.exports = function () {
 
     if (client.id > 0) {
       updateClient(client)
-      .then(function(){
+      .then(function() {
         updateClientFace(client);
       })
       .then(function() {
@@ -493,7 +604,23 @@ module.exports = function () {
       });
     }
     else {
-      res.redirect('/clients');
+      addClient(client)
+      .then(function(newId) {
+        client.id = newId;
+        console.log('newId_1: ' + newId);
+        console.log('newId_2: ' + client.id);
+        addClientFace(client);
+      })
+      .then(function() {
+        addClientRegisteredAddress(client);
+      }).
+      then(function() {
+        addClientActualAddress(client);
+        res.redirect('/clients');
+      })
+      .catch(function(error) {
+        console.log(error);
+      });;
     }
 
 
