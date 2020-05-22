@@ -11,12 +11,18 @@ var app = express();
 app.set('views', path.resolve(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-var publicPath = path.resolve(__dirname, 'public');
-var staticPath = path.join(__dirname, 'static');
+// var publicPath = path.resolve(__dirname, 'public');
+// var staticPath = path.join(__dirname, 'static');
 
 app.use(logger('short'));
-app.use(express.static(publicPath));
-app.use(express.static(staticPath));
+// app.use(express.static(publicPath));
+// app.use(express.static(staticPath));
+
+// app.use(express.static(__dirname + '/public'));
+// app.use('downloads', express.static(__dirname + '/public'));
+app.use(express.static('public'));
+app.use(express.static('static'));
+
 
 // https://stackoverflow.com/questions/19917401/error-request-entity-too-large
 var bodyParser = require('body-parser');

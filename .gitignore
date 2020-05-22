@@ -1,6 +1,7 @@
 /fonts/
 /public/bower_components/
 /public/photos/
+/public/docs/
 /node_modules/
 /.vscode/
 /nbproject/private/

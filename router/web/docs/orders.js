@@ -1,5 +1,6 @@
 'use strict';
 
+const path = require('path');
 const express = require('express');
 var db = require('../../../lib/db');
 const visibleRows = require('../../../lib/config').config.visibleRows;
@@ -10,6 +11,7 @@ var order = require('../../../lib/order_service');
 const queryOrder = require('../../../queries/orders').getOrder;
 var common = require('../../common/typeheads');
 var OrderModel = require('../../models/order').OrderModel;
+require('shelljs/global');
 
 var Filters = function() {
   this.conditions = {
@@ -528,6 +530,32 @@ module.exports = function () {
     else {
       res.status(400);
     }
+  });
+
+  router.get('/open_order_setup/:id', function (req, res) {
+    var id = Number(req.params.id);
+    console.log('id for /open_order_setup/ ', id);
+    var fileName = id + '-1.doc';
+    var destination = path.join(__dirname, '../../../public/docs/');
+
+    res.download(destination + fileName, fileName, function(err) {
+      if (err) {
+        res.send('Нет файла!');
+      }
+    });
+  });
+
+  router.get('/open_order_service/:id', function (req, res) {
+    var id = Number(req.params.id);
+    console.log('id for /open_order_service/ ', id);
+    var fileName = id + '-2.doc';
+    var destination = path.join(__dirname, '../../../public/docs/');
+
+    res.download(destination + fileName, fileName, function(err) {
+      if (err) {
+        res.send('Нет файла!');
+      }
+    });
   });
 
   router.post('/save', function (req, res) {

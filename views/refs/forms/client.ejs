@@ -23,8 +23,7 @@
     <div class="form-header">
       <h3><%= title %></h3>
     </div>
-    <form method="post" action="/clients/save" novalidate>
-    <!-- <form> -->
+    <form action="/clients/save" method="post" novalidate>
       <div class="well">
         <div class="card-body">
           <input type="text" hidden id="id" name="id" value="<%= data.id %>">

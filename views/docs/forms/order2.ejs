@@ -36,8 +36,7 @@
           </ul>
         </div>
       </div>
-      <!-- <form action="/payments/save" method="post"> -->
-      <form>
+      <form action="/orders/save" method="post">
         <div class="well">
           <div class="card-body">
             <div class="tab-content">
@@ -124,9 +123,9 @@
                           <button class="btn btn-default" type="button" id="clearAddress">
                             <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                           </button>
-                          <button class="btn btn-default" type="button" id="addAddress" disabled>
+                          <!-- <button class="btn btn-default" type="button" id="addAddress" disabled>
                             <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
-                          </button>
+                          </button> -->
                         </span>
                         <input type="text" class="form-control select-all" id="address" name="address" value="<%= data.address %>">
                       </div>
@@ -165,9 +164,9 @@
                           <button class="btn btn-default" type="button" id="clearClientContract">
                             <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                           </button>
-                          <button class="btn btn-default" type="button" id="editClientContract">
+                          <!-- <button class="btn btn-default" type="button" id="editClientContract">
                             <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
-                          </button>
+                          </button> -->
                         </span>
                         <input type="text" class="form-control select-all" id="clientContractName"
                           name="clientContractName" placeholder="ФИО по договору"
@@ -207,9 +206,9 @@
                           <button class="btn btn-default" type="button" id="clearClientService">
                             <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                           </button>
-                          <button class="btn btn-default" type="button" id="editClientService">
+                          <!-- <button class="btn btn-default" type="button" id="editClientService">
                             <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
-                          </button>
+                          </button> -->
                         </span>
                         <input type="text" class="form-control select-all" id="clientServiceName"
                           name="clientServiceName" placeholder="ФИО по ТО" value="<%= data.client.service.value %>">
@@ -442,15 +441,17 @@
                 <div class="col-12">
                   <button type="button" class="btn btn-success" id="save">Записать</button>
                   <div class="btn-group dropup">
+                    <!-- <button type="button" class="btn btn-default dropdown-toggle disabled" data-toggle="dropdown"> -->
                     <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
                       Действия <span class="caret"></span>
                     </button>
                     <ul class="dropdown-menu" role="menu">
-                      <li><a href="#">Сформировать договор на установку</a></li>
-                      <li><a href="#">Сформировать договор на обслуживание</a></li>
+                      <!-- <li <%- (data.id > 0) ? 'class="disabled"' : '' %>><a href="#">Сформировать договор на установку</a></li> -->
+                      <li class="disabled"><a href="#">Сформировать договор на установку</a></li>
+                      <li class="disabled"><a href="#">Сформировать договор на обслуживание</a></li>
                       <li class="divider"></li>
-                      <li><a href="#">Открыть договор на установку</a></li>
-                      <li><a href="#">Открыть договор на обслуживание</a></li>
+                      <li><a href="/orders/open_order_setup/<%= data.contractNumber %>">Открыть договор на установку</a></li>
+                      <li><a href="/orders/open_order_service/<%= data.contractNumber %>">Открыть договор на обслуживание</a></li>
                     </ul>
                   </div>
                   <button type="button" class="btn btn-info" id="save">Печать квитанций</button>
