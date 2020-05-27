@@ -447,8 +447,9 @@
                     </button>
                     <ul class="dropdown-menu" role="menu">
                       <!-- <li <%- (data.id > 0) ? 'class="disabled"' : '' %>><a href="#">Сформировать договор на установку</a></li> -->
-                      <li class="disabled"><a href="#">Сформировать договор на установку</a></li>
-                      <li class="disabled"><a href="#">Сформировать договор на обслуживание</a></li>
+                      <!-- <li class="disabled"><a href="#">Сформировать договор на обслуживание</a></li> -->
+                      <li><a href="/orders/generate_order_setup/<%= data.id %>">Сформировать договор на установку</a></li>
+                      <li><a href="/orders/generate_order_service/<%= data.id %>">Сформировать договор на обслуживание</a></li>
                       <li class="divider"></li>
                       <li><a href="/orders/open_order_setup/<%= data.contractNumber %>">Открыть договор на установку</a></li>
                       <li><a href="/orders/open_order_service/<%= data.contractNumber %>">Открыть договор на обслуживание</a></li>

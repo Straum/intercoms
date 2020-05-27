@@ -58,3 +58,53 @@ module.exports.OrderModel = function () {
 
   return this;
 };
+
+module.exports.ReportModel = function () {
+  'use strict';
+  this.contractNumber = 0;
+  this.createDate = null;
+  this.creditTo = null;
+  this.equipment = {
+    name: '',
+    guaranteePeriod: 0
+  },
+  this.city = {
+    name: '',
+    printType: 1
+  },
+  this.streetName = '';
+  this.houseNumber = '';
+  this.numeration = '';
+  this.porch = 0;
+  this.clientSetupId = 0;
+  this.clientServiceId = 0;
+  
+  this.client = {
+    name: '',
+    phones: '',
+    
+    registeredAddress: {
+      city: '',
+      street: '',
+      house: '',
+      apartment: ''
+    },
+
+    actualAddress: {
+      city: '',
+      street: '',
+      house: '',
+      apartment: ''
+    },
+    
+    certificate: {
+      name: '',
+      series: '',
+      number: '',
+      issued: null,
+      department: '',
+    }
+  };
+  
+  return this;
+};

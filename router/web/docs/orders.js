@@ -11,18 +11,312 @@ var order = require('../../../lib/order_service');
 const queryOrder = require('../../../queries/orders').getOrder;
 var common = require('../../common/typeheads');
 var OrderModel = require('../../models/order').OrderModel;
+var models = require('../../models/order');
+
+var PizZip = require('pizzip');
+var Docxtemplater = require('docxtemplater');
+var fs = require('fs');
+
 require('shelljs/global');
 
-var Filters = function() {
+function getOrderInfo(orderId) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        ' SELECT a.contract_number AS contractNumber,' +
+        ' a.create_date AS createDate,' +
+        ' a.credit_to AS creditTo,' +
+        ' e.name AS equipmentName, e.guarantee_period AS guaranteePeriod,' +
+        ' a.client_id AS clientSetupId,' +
+        ' a.m_client_id AS clientServiceId,' +
+        ' b.name AS cityName,' +
+        ' b.print_type AS printType,' +
+        ' c.name AS streetName,' +
+        ' d.number AS houseNumber,' +
+        ' a.porch,' +
+        ' a.numeration' +
+        ' FROM cards a' +
+        ' LEFT JOIN cities b ON b.city_id = a.city_id' +
+        ' LEFT JOIN streets c ON c.street_id = a.street_id' +
+        ' LEFT JOIN houses d ON d.house_id = a.house_id' +
+        ' LEFT JOIN equipments e ON e.equipment_id = a.equipment_id' +
+        ' WHERE (a.card_id = ?)' +
+        ' LIMIT 1', [orderId], function (err, rows) {
+          connection.release();
+          if (err) {
+            reject();
+          } else {
+            resolve(rows);
+          }
+        });
+    });
+  });
+};
+
+function getAddressInfo(clientId, residenceType) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        ' SELECT a.room_apartment AS apartment,' +
+        ' b.name AS cityName,' +
+        ' c.name AS streetName,' +
+        ' d.number AS houseNumber' +
+        ' FROM residence_clients a' +
+        ' LEFT JOIN cities b ON b.city_id = a.city_id' +
+        ' LEFT JOIN streets c ON c.street_id = a.street_id' +
+        ' LEFT JOIN houses d ON d.house_id = a.house_id' +
+        ' WHERE (a.client_id = ?) AND (a.residence_type_id = ?)' +
+        ' LIMIT 1', [clientId, residenceType], function (err, rows) {
+          connection.release();
+          if (err) {
+            reject();
+          } else {
+            resolve(rows);
+          }
+        });
+    });
+  });
+};
+
+function getClientInfo(clientId) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        ' SELECT a.name AS clientName, b.series, b.number, b.issue_date AS issued,' +
+        ' b.issue AS department, b.phones, c.name AS certificate' +
+        ' FROM clients a' +
+        ' LEFT JOIN faces b ON b.client_id = a.client_id' +
+        ' LEFT JOIN docs_types c ON c.doc_type_id = b.doc_type_id' +
+        ' WHERE (a.client_id = ?)' +
+        ' LIMIT 1', [clientId], function (err, rows) {
+          connection.release();
+          if (err) {
+            reject();
+          } else {
+            resolve(rows);
+          }
+        });
+    });
+  });
+};
+
+function addressOfClient(data) {
+  var out = [];
+  try {
+    if (data.city.trim() != '') {
+      out.push('Город: ' + data.city);
+      {
+        if (data.street.trim() != '') {
+          out.push(', улица: ' + data.street);
+        }
+        if (data.house.trim() != '') {
+          out.push(', дом: ' + data.house);
+        }
+        if (data.apartment.trim() != '') {
+          out.push(', кв: ' + data.apartment);
+        }
+      }
+    }
+  }
+  catch (err) {
+    console.log('addressOfClient error: ', err.message);
+  };
+  return out.join('');
+}
+
+function passportData(data) {
+  var out = [];
+  try {
+    if (data.name.trim() != '') {
+      out.push(data.name);
+      {
+        if (data.series.trim() != '') {
+          out.push(' серия ' + data.series);
+        }
+        if (data.number.trim() != '') {
+          out.push(' № ' + data.number);
+        }
+        if (data.issued != null) {
+          out.push(' выдан ' + moment(data.issued).format('DD.MM.YYYY'));
+        }
+        if (data.department.trim() != '') {
+          out.push(' ' + data.department);
+        }
+      }
+    }
+  }
+  catch (err) {
+    console.log('passportData error: ', err.message);
+  };
+  return out.join('');
+}
+
+function generateReportForSetup(res, sceleton) {
+  var templateFile = (sceleton.city.printType == 1) ? 'setup_pskov.docx' : 'setup_vluki.docx';
+  var content = fs
+    .readFileSync(path.join(__dirname, '../../../public/templates/' + templateFile), 'binary');
+
+  var zip = new PizZip(content);
+  var doc;
+  try {
+    doc = new Docxtemplater(zip);
+  } catch (error) {
+    errorHandler(error);
+    return;
+  }
+
+  doc.setData({
+    IDDOC1: sceleton.contractNumber,
+    DOCDATE1: sceleton.createDate == null ? '' : moment(sceleton.createDate).format('DD.MM.YYYY'),
+    
+    CLIENT1: sceleton.client.name,
+    POD1: sceleton.porch,
+    GOROD2: sceleton.city.name,
+    STREET1: sceleton.streetName,
+    HOUSE1: sceleton.houseNumber,
+    GOROD1: sceleton.city.name,
+    STREET2: sceleton.streetName,
+    HOUSE2: sceleton.houseNumber,
+    POD2: sceleton.porch,
+    OBORUD: sceleton.equipment.name,
+    DATE1: sceleton.creditTo == null ? '' : moment(sceleton.creditTo).format('DD.MM.YYYY'),
+    CLIENT2: sceleton.client.name,
+    PROPISKA: addressOfClient(sceleton.client.registeredAddress),
+    FAKT: addressOfClient(sceleton.client.actualAddress),
+    MES: sceleton.equipment.guaranteePeriod == 0 ? 12 : sceleton.equipment.guaranteePeriod * 12,
+    PASSPORT: passportData(sceleton.client.certificate),
+    NUMER: sceleton.numeration,
+    MPHONE: sceleton.client.phones,
+    KW: sceleton.client.registeredAddress.apartment,
+  });
+
+  try {
+    // render the document (replace all occurences of {first_name} by John, {last_name} by Doe, ...)
+    doc.render()
+  } catch (error) {
+    // Catch rendering errors (errors relating to the rendering of the template : angularParser throws an error)
+    errorHandler(error);
+  }
+
+  var buf = doc.getZip()
+    .generate({ type: 'nodebuffer' });
+
+  var outputFile = path.join(__dirname, '../../../public/docs/') + 'proba_pera1.doc'
+  // buf is a nodejs buffer, you can either write it to a file or do anything else with it.
+  fs.writeFileSync(outputFile, buf);
+
+  res.download(outputFile, 'proba_pera_3', function (err) {
+    if (err) {
+      res.send('Нет файла!');
+    }
+  });  
+
+}
+
+function generateReportForService(res, sceleton) {
+  // Orginal code
+  // https://www.tutorialswebsite.com/replace-word-document-placeholder-node-js/
+
+  // Load the docx file as a binary
+  var templateFile = (sceleton.city.printType == 1) ? 'service_pskov.docx' : 'service_vluki.docx';
+  var content = fs
+    // .readFileSync(path.resolve(__dirname, 'input.docx'), 'binary');
+    .readFileSync(path.join(__dirname, '../../../public/templates/' + templateFile), 'binary');
+
+  var zip = new PizZip(content);
+  var doc;
+  try {
+    doc = new Docxtemplater(zip);
+  } catch (error) {
+    // Catch compilation errors (errors caused by the compilation of the template : misplaced tags)
+    errorHandler(error);
+    return;
+  }
+
+  doc.setData({
+    GOROD1: sceleton.city.name,
+    GOROD2: sceleton.city.name,
+    GOROD3: sceleton.city.name,
+
+    IDDOC1: sceleton.contractNumber,
+    DOCDATE1: sceleton.createDate == null ? '' : moment(sceleton.createDate).format('DD.MM.YYYY'),
+    CLIENT1: sceleton.client.name,
+    OBORUD: sceleton.equipment.name,
+
+    STREET1: sceleton.streetName,
+    STREET2: sceleton.streetName,
+    STREET3: sceleton.streetName,
+
+    HOUSE1: sceleton.houseNumber,
+    HOUSE2: sceleton.houseNumber,
+    HOUSE3: sceleton.houseNumber,
+
+    POD1: sceleton.porch,
+    POD2: sceleton.porch,
+    CLIENT2: sceleton.client.name,
+    PHONES: sceleton.client.phones,
+    UD: passportData(sceleton.client.certificate),
+    KW: sceleton.client.registeredAddress.apartment,
+
+  });
+
+  try {
+    // render the document (replace all occurences of {first_name} by John, {last_name} by Doe, ...)
+    doc.render()
+  } catch (error) {
+    // Catch rendering errors (errors relating to the rendering of the template : angularParser throws an error)
+    errorHandler(error);
+  }
+
+  var buf = doc.getZip()
+    .generate({ type: 'nodebuffer' });
+
+  var outputFile = path.join(__dirname, '../../../public/docs/') + 'proba_pera.doc'
+  // buf is a nodejs buffer, you can either write it to a file or do anything else with it.
+  fs.writeFileSync(outputFile, buf);
+
+  res.download(outputFile, 'proba_pera_2', function (err) {
+    if (err) {
+      res.send('Нет файла!');
+    }
+  });
+};
+
+// The error object contains additional information when logged with JSON.stringify (it contains a properties object containing all suberrors).
+function replaceErrors(key, value) {
+  if (value instanceof Error) {
+    return Object.getOwnPropertyNames(value).reduce(function (error, key) {
+      error[key] = value[key];
+      return error;
+    }, {});
+  }
+  return value;
+}
+
+function errorHandler(error) {
+  console.log(JSON.stringify({ error: error }, replaceErrors));
+
+  if (error.properties && error.properties.errors instanceof Array) {
+    const errorMessages = error.properties.errors.map(function (error) {
+      return error.properties.explanation;
+    }).join("\n");
+    console.log('errorMessages', errorMessages);
+    // errorMessages is a humanly readable message looking like this :
+    // 'The tag beginning with "foobar" is unopened'
+  }
+  throw error;
+}
+
+var Filters = function () {
   this.conditions = {
     period: {
       start: '',
       end: ''
     },
     city: { id: 0, name: '' },
-    street: { id: 0, name: '', cityId: 0},
-    house: { id: 0, number: '', streetId: 0},
-    porch: { number: 0, houseId: 0},
+    street: { id: 0, name: '', cityId: 0 },
+    house: { id: 0, number: '', streetId: 0 },
+    porch: { number: 0, houseId: 0 },
     number: {
       order: 0,
       prolongedOrder: 0
@@ -43,7 +337,7 @@ var filterBuilder = function (req) {
   var startDate = moment().startOf('month').toDate();
   var endDate = moment().endOf('month').toDate();
 
-  if (! ('filtersOrders' in req.session)) {
+  if (!('filtersOrders' in req.session)) {
     req.session.filtersOrders = filters;
   }
   cloneFilters = req.session.filtersOrders;
@@ -108,21 +402,19 @@ var filterBuilder = function (req) {
         }
 
         var _start = obj.period.start; // YYYY-MM-DD HH:mm
-        if (typeof _start  === 'string') {
+        if (typeof _start === 'string') {
           if (_start.length > 0) {
             cloneFilters.conditions.period.start = _start;
-          }
-          else {
+          } else {
             cloneFilters.conditions.period.start = moment(startDate).format('YYYY-MM-DD HH:mm');
           }
         }
 
         var _end = obj.period.end; // YYYY-MM-DD HH:mm
-        if (typeof _end  === 'string') {
+        if (typeof _end === 'string') {
           if (_end.length > 0) {
             cloneFilters.conditions.period.end = _end;
-          }
-          else {
+          } else {
             cloneFilters.conditions.period.end = endDate;
           }
         }
@@ -133,8 +425,7 @@ var filterBuilder = function (req) {
           where += ' AND (a.end_service <= ' + '"' + cloneFilters.conditions.period.end + '")';
 
           cloneFilters.orderBy = ' ORDER BY a.end_service DESC, a.contract_number DESC';
-        }
-        else {
+        } else {
           where += ' AND (a.create_date >= ' + '"' + cloneFilters.conditions.period.start + '")';
           where += ' AND (a.create_date <= ' + '"' + cloneFilters.conditions.period.end + '")';
 
@@ -147,8 +438,7 @@ var filterBuilder = function (req) {
 
     req.session.filtersOrders = cloneFilters;
 
-  }
-  catch (err) {
+  } catch (err) {
     throw (err);
   }
   return cloneFilters;
@@ -194,8 +484,8 @@ var filterRecords = function (req, res) {
     ' LEFT JOIN houses d ON a.house_id = d.house_id' +
     ' LEFT JOIN equipments e ON a.equipment_id = e.equipment_id' +
     ' WHERE (a.card_id > 0) AND (a.is_deleted = 0)' +
-      add.whereSQL +
-      add.orderBy +
+    add.whereSQL +
+    add.orderBy +
     ' LIMIT ' + visibleRows;
 
   db.get().getConnection(function (err, connection) {
@@ -246,16 +536,6 @@ module.exports = function () {
     filterRecords(req, res);
   });
 
-  // router.get('/edit/:id', function (req, res) {
-  //   var id = req.params.id;
-
-  //   res.render('docs/forms/order.ejs', {
-  //     title: 'Договор',
-  //     user: req.session.userName,
-  //   });
-
-  // });
-
   router.get('/edit/:id', function (req, res) {
     var id = req.params.id;
     var contractClientData = null;
@@ -273,7 +553,7 @@ module.exports = function () {
 
           db.get().getConnection(function (err, connection) {
             connection.query(
-                queryOrder, [id], function (err, rows) {
+              queryOrder, [id], function (err, rows) {
 
                 connection.release();
 
@@ -387,7 +667,7 @@ module.exports = function () {
     res.status(200).send({ 'table': id });
   });
 
-  router.get('/filter', function (req, res)  {
+  router.get('/filter', function (req, res) {
     filterRecords(req, res);
   });
 
@@ -399,41 +679,41 @@ module.exports = function () {
     var add = filterBuilder(req);
 
     var countRecordsQuery =
-    ' SELECT COUNT(*) AS count' +
-    ' FROM cards a WHERE (a.card_id > 0)' +
-    ' AND (a.is_deleted = 0)' + add.whereSQL;
+      ' SELECT COUNT(*) AS count' +
+      ' FROM cards a WHERE (a.card_id > 0)' +
+      ' AND (a.is_deleted = 0)' + add.whereSQL;
 
     var fullQuery = ' SELECT' +
-    ' a.card_id AS id,' +
-    ' a.contract_number,' +
-    ' a.maintenance_contract,' +
-    ' a.attention,' +
-    ' a.create_date,' +
-    ' a.credit_to,' +
-    ' a.end_contract,' +
-    ' a.repaid,' +
-    ' b.name AS city_name,' +
-    ' c.name AS street_name,' +
-    ' d.number AS house_number,' +
-    ' a.porch,' +
-    ' a.numeration,' +
-    ' e.name AS equipment_name,' +
-    ' a.m_repaid,' +
-    ' a.m_contract_number,' +
-    ' a.end_service,' +
-    ' a.m_prolongation,' +
-    ' a.receipt_printing' +
-    ' FROM' +
-    ' cards a' +
-    ' LEFT JOIN cities b ON a.city_id = b.city_id' +
-    ' LEFT JOIN streets c ON a.street_id = c.street_id' +
-    ' LEFT JOIN houses d ON a.house_id = d.house_id' +
-    ' LEFT JOIN equipments e ON a.equipment_id = e.equipment_id' +
-    ' WHERE (a.card_id > 0) AND (a.is_deleted = 0)' +
+      ' a.card_id AS id,' +
+      ' a.contract_number,' +
+      ' a.maintenance_contract,' +
+      ' a.attention,' +
+      ' a.create_date,' +
+      ' a.credit_to,' +
+      ' a.end_contract,' +
+      ' a.repaid,' +
+      ' b.name AS city_name,' +
+      ' c.name AS street_name,' +
+      ' d.number AS house_number,' +
+      ' a.porch,' +
+      ' a.numeration,' +
+      ' e.name AS equipment_name,' +
+      ' a.m_repaid,' +
+      ' a.m_contract_number,' +
+      ' a.end_service,' +
+      ' a.m_prolongation,' +
+      ' a.receipt_printing' +
+      ' FROM' +
+      ' cards a' +
+      ' LEFT JOIN cities b ON a.city_id = b.city_id' +
+      ' LEFT JOIN streets c ON a.street_id = c.street_id' +
+      ' LEFT JOIN houses d ON a.house_id = d.house_id' +
+      ' LEFT JOIN equipments e ON a.equipment_id = e.equipment_id' +
+      ' WHERE (a.card_id > 0) AND (a.is_deleted = 0)' +
       add.whereSQL +
       add.orderBy +
-    ' LIMIT ' + visibleRows +
-    ' OFFSET ' + offset;
+      ' LIMIT ' + visibleRows +
+      ' OFFSET ' + offset;
 
     db.get().getConnection(function (err, connection) {
       connection.query(
@@ -453,8 +733,7 @@ module.exports = function () {
 
                 if (err) {
                   res.status(500).send(db.showDatabaseError(500, err));
-                }
-                else {
+                } else {
                   var currentPage = Math.ceil(offset / visibleRows) + 1;
                   res.render('docs/orders.ejs', {
                     title: 'Договора',
@@ -483,7 +762,7 @@ module.exports = function () {
       var serviceClientData = null;
       var apartments = [];
 
-        order.getClientContractData(id, function (contractData) {
+      order.getClientContractData(id, function (contractData) {
         contractClientData = order.decodeClientData(contractData);
 
         order.getClientServiceData(id, function (serviceData) {
@@ -494,15 +773,14 @@ module.exports = function () {
 
             db.get().getConnection(function (err, connection) {
               connection.query(
-                  queryOrder, [id], function (err, rows) {
+                queryOrder, [id], function (err, rows) {
 
                   connection.release();
 
                   if (err) {
                     console.error(err);
                     res.status(500).send(db.showDatabaseError(500, err));
-                  }
-                  else {
+                  } else {
                     var data = rows[0];
                     data.address = '';
                     if (rows[0].cityId > 0) {
@@ -526,32 +804,149 @@ module.exports = function () {
           });
         });
       });
-    }
-    else {
+    } else {
       res.status(400);
     }
   });
 
-  router.get('/open_order_setup/:id', function (req, res) {
+  router.get('/generate_order_setup/:id', function (req, res) {
     var id = Number(req.params.id);
-    console.log('id for /open_order_setup/ ', id);
-    var fileName = id + '-1.doc';
+
+    var sceleton = new models.ReportModel();
+    getOrderInfo(id)
+      .then(function (order) {
+        if ((Array.isArray(order)) && (order.length === 1)) {
+          sceleton.contractNumber = order[0].contractNumber;
+          sceleton.createDate = order[0].createDate;
+          sceleton.creditTo = order[0].creditTo;
+          sceleton.equipment.name = order[0].equipmentName;
+          sceleton.equipment.guaranteePeriod = order[0].guaranteePeriod;
+          sceleton.city.name = order[0].cityName;
+          sceleton.city.printType = order[0].printType;
+          sceleton.streetName = order[0].streetName;
+          sceleton.houseNumber = order[0].houseNumber;
+          sceleton.porch = order[0].porch;
+          sceleton.numeration = order[0].numeration;
+          sceleton.clientSetupId = order[0].clientSetupId;
+          sceleton.clientServiceId = order[0].clientServiceId;
+        }
+
+        return getAddressInfo(sceleton.clientServiceId, 0);
+      })
+      .then(function(registeredAddress ) {
+        if ((Array.isArray(registeredAddress)) && (registeredAddress.length === 1)) {
+          sceleton.client.registeredAddress.city = registeredAddress[0].cityName;
+          sceleton.client.registeredAddress.street = registeredAddress[0].streetName;
+          sceleton.client.registeredAddress.house = registeredAddress[0].houseNumber;
+          sceleton.client.registeredAddress.apartment = registeredAddress[0].apartment;
+        }
+        return getAddressInfo(sceleton.clientServiceId, 1);
+      })
+      .then(function(actualAddress ) {
+        if ((Array.isArray(actualAddress)) && (actualAddress.length === 1)) {
+          sceleton.client.actualAddress.city = actualAddress[0].cityName;
+          sceleton.client.actualAddress.street = actualAddress[0].streetName;
+          sceleton.client.actualAddress.house = actualAddress[0].houseNumber;
+          sceleton.client.actualAddress.apartment = actualAddress[0].apartment;
+        }
+        return getClientInfo(sceleton.clientServiceId);
+      })
+      .then(function(passport) {
+        if ((Array.isArray(passport)) && (passport.length === 1)) {
+          sceleton.client.name = passport[0].clientName;
+          sceleton.client.phones = passport[0].phones;
+          sceleton.client.certificate.name = passport[0].certificate;
+          sceleton.client.certificate.series = passport[0].series;
+          sceleton.client.certificate.number = passport[0].number;
+          sceleton.client.certificate.issued = passport[0].issued
+          sceleton.client.certificate.department = passport[0].department;
+        }
+        generateReportForSetup(res, sceleton);
+      })
+      .catch(function (error) {
+        console.log(error.message);
+        res.status(500).send(error.message);
+      });
+  });
+
+  router.get('/generate_order_service/:id', function (req, res) {
+    var id = Number(req.params.id);
+
+    var sceleton = new models.ReportModel();
+    getOrderInfo(id)
+      .then(function (order) {
+        if ((Array.isArray(order)) && (order.length === 1)) {
+          sceleton.contractNumber = order[0].contractNumber;
+          sceleton.createDate = order[0].createDate;
+          sceleton.creditTo = order[0].creditTo;
+          sceleton.equipment.name = order[0].equipmentName;
+          sceleton.equipment.guaranteePeriod = order[0].guaranteePeriod;
+          sceleton.city.name = order[0].cityName;
+          sceleton.city.printType = order[0].printType;
+          sceleton.streetName = order[0].streetName;
+          sceleton.houseNumber = order[0].houseNumber;
+          sceleton.porch = order[0].porch;
+          sceleton.numeration = order[0].numeration;
+          sceleton.clientSetupId = order[0].clientSetupId;
+          sceleton.clientServiceId = order[0].clientServiceId;
+        }
+
+        return getAddressInfo(sceleton.clientServiceId, 0);
+      })
+      .then(function(registeredAddress ) {
+        if ((Array.isArray(registeredAddress)) && (registeredAddress.length === 1)) {
+          sceleton.client.registeredAddress.city = registeredAddress[0].cityName;
+          sceleton.client.registeredAddress.street = registeredAddress[0].streetName;
+          sceleton.client.registeredAddress.house = registeredAddress[0].houseNumber;
+          sceleton.client.registeredAddress.apartment = registeredAddress[0].apartment;
+        }
+        return getAddressInfo(sceleton.clientServiceId, 1);
+      })
+      .then(function(actualAddress ) {
+        if ((Array.isArray(actualAddress)) && (actualAddress.length === 1)) {
+          sceleton.client.actualAddress.city = actualAddress[0].cityName;
+          sceleton.client.actualAddress.street = actualAddress[0].streetName;
+          sceleton.client.actualAddress.house = actualAddress[0].houseNumber;
+          sceleton.client.actualAddress.apartment = actualAddress[0].apartment;
+        }
+        return getClientInfo(sceleton.clientServiceId);
+      })
+      .then(function(passport) {
+        if ((Array.isArray(passport)) && (passport.length === 1)) {
+          sceleton.client.name = passport[0].clientName;
+          sceleton.client.phones = passport[0].phones;
+          sceleton.client.certificate.name = passport[0].certificate;
+          sceleton.client.certificate.series = passport[0].series;
+          sceleton.client.certificate.number = passport[0].number;
+          sceleton.client.certificate.issued = passport[0].issued
+          sceleton.client.certificate.department = passport[0].department;
+        }
+        generateReportForService(res, sceleton);
+      })
+      .catch(function (error) {
+        console.log(error);
+        res.status(500).send(error);
+      });
+  });
+
+  router.get('/open_order_setup/:number', function (req, res) {
+    var documentNumer = Number(req.params.number);
+    var fileName = documentNumer + '-1.doc';
     var destination = path.join(__dirname, '../../../public/docs/');
 
-    res.download(destination + fileName, fileName, function(err) {
+    res.download(destination + fileName, fileName, function (err) {
       if (err) {
         res.send('Нет файла!');
       }
     });
   });
 
-  router.get('/open_order_service/:id', function (req, res) {
-    var id = Number(req.params.id);
-    console.log('id for /open_order_service/ ', id);
-    var fileName = id + '-2.doc';
+  router.get('/open_order_service/:number', function (req, res) {
+    var documentNumer = Number(req.params.number);
+    var fileName = documentNumer + '-2.doc';
     var destination = path.join(__dirname, '../../../public/docs/');
 
-    res.download(destination + fileName, fileName, function(err) {
+    res.download(destination + fileName, fileName, function (err) {
       if (err) {
         res.send('Нет файла!');
       }
@@ -580,8 +975,7 @@ module.exports = function () {
           }
         );
       });
-    }
-    else {
+    } else {
       res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
     }
   });
@@ -589,12 +983,12 @@ module.exports = function () {
   router.post('/search_equipment', function (req, res) {
     var data = req.body;
     var suggestion = '';
-    if ((data) && (typeof(data) === 'object') && ('suggestion' in data)) {
+    if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
       suggestion = data.suggestion.trim();
 
       var queryText =
-      ' SELECT a.equipment_id AS id, a.name AS value' +
-      ' FROM equipments a';
+        ' SELECT a.equipment_id AS id, a.name AS value' +
+        ' FROM equipments a';
       if (suggestion.length > 0) {
         queryText += ' WHERE a.name LIKE ' + `'` + suggestion + '%' + `'`;
       }
@@ -619,110 +1013,103 @@ module.exports = function () {
           }
         );
       });
-    }
-    else {
+    } else {
       res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
     }
-});
+  });
 
-router.post('/find_city', function (req, res) {
-  var data = req.body;
-  if ((data) && (typeof(data) === 'object') && ('cityName' in data)) {
-    var rowsCount = 'limit' in data ? data.limit : rowsLimit;
-    var params = {
-      cityName: data.cityName,
-      rowsCount: rowsCount
-    };
-    common.filterCities(params, function (err, rows) {
-      res.status(200).send(rows);
-    });
-  }
-  else {
-    res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
-  }
-});
+  router.post('/find_city', function (req, res) {
+    var data = req.body;
+    if ((data) && (typeof (data) === 'object') && ('cityName' in data)) {
+      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      var params = {
+        cityName: data.cityName,
+        rowsCount: rowsCount
+      };
+      common.filterCities(params, function (err, rows) {
+        res.status(200).send(rows);
+      });
+    } else {
+      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    }
+  });
 
-router.post('/find_street', function (req, res) {
-  var data = req.body;
-  if ((data) && (typeof(data) === 'object') && ('streetName' in data) && ('cityId' in data)) {
-    var rowsCount = 'limit' in data ? data.limit : rowsLimit;
-    var params = {
-      cityId: data.cityId,
-      streetName: data.streetName,
-      rowsCount: rowsCount
-    };
-    common.filterStreets(params, function (err, rows) {
-      res.status(200).send(rows);
-    });
-  }
-  else {
-    res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
-  }
-});
+  router.post('/find_street', function (req, res) {
+    var data = req.body;
+    if ((data) && (typeof (data) === 'object') && ('streetName' in data) && ('cityId' in data)) {
+      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      var params = {
+        cityId: data.cityId,
+        streetName: data.streetName,
+        rowsCount: rowsCount
+      };
+      common.filterStreets(params, function (err, rows) {
+        res.status(200).send(rows);
+      });
+    } else {
+      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    }
+  });
 
-router.post('/find_house', function (req, res) {
-  var data = req.body;
-  if ((data) && (typeof(data) === 'object') && ('houseNumber' in data) && ('streetId' in data)) {
-    var rowsCount = 'limit' in data ? data.limit : rowsLimit;
-    var params = {
-      streetId: data.streetId,
-      houseNumber: data.houseNumber,
-      rowsCount: rowsCount
-    };
-    common.filterHouses(params, function (err, rows) {
-      res.status(200).send(rows);
-    });
-  }
-  else {
-    res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
-  }
-});
+  router.post('/find_house', function (req, res) {
+    var data = req.body;
+    if ((data) && (typeof (data) === 'object') && ('houseNumber' in data) && ('streetId' in data)) {
+      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      var params = {
+        streetId: data.streetId,
+        houseNumber: data.houseNumber,
+        rowsCount: rowsCount
+      };
+      common.filterHouses(params, function (err, rows) {
+        res.status(200).send(rows);
+      });
+    } else {
+      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    }
+  });
 
-router.post('/find_porch', function (req, res) {
-  var data = req.body;
-  if ((data) && (typeof(data) === 'object') && ('porch' in data) && ('houseId' in data)) {
-    var rowsCount = 'limit' in data ? data.limit : rowsLimit;
-    var params = {
-      houseId: data.houseId,
-      porch: data.porch,
-      rowsCount: rowsCount
-    };
-    common.filterPorches(params, function (err, rows) {
-      res.status(200).send(rows);
-    });
-  }
-  else {
-    res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
-  }
-});
+  router.post('/find_porch', function (req, res) {
+    var data = req.body;
+    if ((data) && (typeof (data) === 'object') && ('porch' in data) && ('houseId' in data)) {
+      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      var params = {
+        houseId: data.houseId,
+        porch: data.porch,
+        rowsCount: rowsCount
+      };
+      common.filterPorches(params, function (err, rows) {
+        res.status(200).send(rows);
+      });
+    } else {
+      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    }
+  });
 
-router.post('/find_order', function (req, res) {
-  var data = req.body;
-  if ((data) && (typeof(data) === 'object') && ('orderNumber' in data)) {
-    var orderNumber = data.orderNumber;
-    var rowsCount = 'limit' in data ? data.limit : rowsLimit;
-    common.filterOrders(orderNumber, rowsCount, function (err, rows) {
-      res.status(200).send(rows);
-    });
-  }
-  else {
-    res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
-  }
-});
+  router.post('/find_order', function (req, res) {
+    var data = req.body;
+    if ((data) && (typeof (data) === 'object') && ('orderNumber' in data)) {
+      var orderNumber = data.orderNumber;
+      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      common.filterOrders(orderNumber, rowsCount, function (err, rows) {
+        res.status(200).send(rows);
+      });
+    } else {
+      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    }
+  });
 
-router.post('/find_prolonged_order', function (req, res) {
-  var data = req.body;
-  if ((data) && (typeof(data) === 'object') && ('orderNumber' in data)) {
-    var orderNumber = data.orderNumber;
-    var rowsCount = 'limit' in data ? data.limit : rowsLimit;
-    common.filterProlongedOrders(orderNumber, rowsCount, function (err, rows) {
-      res.status(200).send(rows);
-    });
-  }
-  else {
-    res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
-  }
-});
+  router.post('/find_prolonged_order', function (req, res) {
+    var data = req.body;
+    if ((data) && (typeof (data) === 'object') && ('orderNumber' in data)) {
+      var orderNumber = data.orderNumber;
+      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      common.filterProlongedOrders(orderNumber, rowsCount, function (err, rows) {
+        res.status(200).send(rows);
+      });
+    } else {
+      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    }
+  });
 
-return router;
+  return router;
 };
