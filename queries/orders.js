@@ -42,7 +42,27 @@ exports.getOrder = `
     a.is_one_person AS onePerson,
 
     a.contract_info AS contractInfo,
-    a.service_info AS serviceInfo
+    a.service_info AS serviceInfo,
+
+    a.equipment_quantity AS equipmentQuantity,
+    a.equipment_price AS equipmentPrice,
+    a.equipment_cost AS equipmentCost,
+    a.mounting_quantity AS mountingQuantity,
+    a.mounting_price AS mountingPrice,
+    a.mounting_cost AS mountingCost,
+    a.subscriber_unit_quantity AS subscriberUnitQuantity,
+    a.subscriber_unit_price AS subscriberUnitPrice,
+    a.subscriber_unit_cost AS subscriberUnitCost,
+    a.key_quantity AS keyQuantity,
+    a.key_price AS keyPrice,
+    a.key_cost AS keyCost,
+    a.door_quantity AS doorQuantity,
+    a.door_price AS doorPrice,
+    a.door_cost AS doorCost,
+    a.subtotal AS subtotalCost,
+    a.subtotal_for_apartment AS subtotalForApartmentCost,
+    a.discount_for_apartment AS discountForApartmentCost,
+    a.total AS totalCost
   FROM
     cards a
   LEFT JOIN cities b ON a.city_id = b.city_id

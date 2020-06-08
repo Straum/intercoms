@@ -24,30 +24,46 @@
   <div class="container">
     <div class="form-header">
       <h3><%= title %></h3>
+      <% if (Object.keys(errors).length > 0) { %>
+        <h3><span class="text-danger">Выявлены ошибки:</span></h3>
+        <ul>
+          <% for (var key in errors) { %>
+          <li><span class="text-danger"><%= errors[key].msg %></span></li>
+          <% }; %>
+        </ul>
+        <% } %>
     </div>
 
     <div class="card">
+
       <div class="row">
         <div class="col-xs-12">
           <ul class="nav nav-pills">
             <li class="active"><a data-toggle="tab" href="#core">Основное</a></li>
             <li><a data-toggle="tab" href="#maintenance">Техобслуживание</a></li>
             <li><a data-toggle="tab" href="#additionally">Дополнительно</a></li>
+            <li><a data-toggle="tab" href="#completePackage">Комплектация</a></li>
           </ul>
         </div>
       </div>
-      <form action="/orders/save" method="post">
+
+      <form method="post" action="/orders/save">
         <div class="well">
           <div class="card-body">
             <div class="tab-content">
+
               <div role="tabpanel" class="tab-pane in active" id="core">
                 <input type="text" hidden id="id" name="id" value="<%= data.id %>">
+                <input type="text" hidden id="equipment" name="equipment" value="<%= JSON.stringify(data.equipment) %>"> 
+                <input type="text" hidden id="address" name="address" value="<%= JSON.stringify(data.address) %>"> 
+                <input type="text" hidden id="client" name="client" value="<%= JSON.stringify(data.client) %>"> 
+                <input type="text" hidden id="complete" name="complete" value="<%= JSON.stringify(data.complete) %>">
                 <div class="row">
                   <div class="col-md-2">
                     <div class="form-group">
                       <label for="contractNumber">Номер</label>
                       <input type="text" class="form-control" id="contractNumber" name="contractNumber"
-                        autofocus="autofocus" value="<%= data.contractNumber ? data.contractNumber : '' %>">
+                        autofocus="autofocus" value="<%= data.contractNumber > 0 ? data.contractNumber : '' %>">
                     </div>
                   </div>
                   <div class="col-md-2 <%= errors.createDate ? 'has-error' : '' %>">
@@ -67,9 +83,16 @@
                   </div>
                   <div class="col-md-6">
                     <div class="form-group">
-                      <label for="equipment_name">Оборудование</label>
-                      <input type="text" class="form-control select-all" id="equipment_name" name="equipment_name"
-                        placeholder="Выберите оборудование" value="<%= data.equipment ? data.equipment.value : '' %>">
+                      <label class="control-label" for="equipmentName">Оборудование</label>
+                      <div class="input-group">
+                        <span class="input-group-btn">
+                          <button class="btn btn-default" type="button" id="clearEquipment">
+                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                          </button>
+                        </span>
+                        <input type="text" class="form-control select-all" id="equipmentName" name="equipmentName"
+                          placeholder="Выберите оборудование" value="<%= data.equipment.value %>">
+                      </div>
                     </div>
                   </div>
                   <div class="col-md-2">
@@ -90,7 +113,7 @@
                     <div class="form-group">
                       <label>&nbsp;</label>
                       <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="repaid"
+                        <input class="form-check-input" type="checkbox" id="repaid" name="repaid"
                           <%= data.repaid ? (+data.repaid === 1 ? ' checked' : '') : '' %>>
                         <label class="form-check-label" for="repaid">
                           Погашено
@@ -108,9 +131,6 @@
                           <span class="glyphicon glyphicon-calendar"></span>
                         </span>
                       </div>
-                      <% if (errors.creditTo) { %>
-                      <span class="help-block"><%= errors.creditTo.msg  %></span>
-                      <% } %>
                     </div>
                   </div>
                 </div>
@@ -120,28 +140,20 @@
                       <label class="control-label" for="address">Адрес</label>
                       <div class="input-group">
                         <span class="input-group-btn">
-                          <button class="btn btn-default" type="button" id="clearAddress">
+                          <button class="btn btn-default" type="button" id="clearFullAddress">
                             <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                           </button>
-                          <!-- <button class="btn btn-default" type="button" id="addAddress" disabled>
-                            <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
-                          </button> -->
                         </span>
-                        <input type="text" class="form-control select-all" id="address" name="address" value="<%= data.address %>">
+                        <input type="text" class="form-control select-all" id="fullAddress" name="fullAddress"
+                          value="<%= data.fullAddress %>">
                       </div>
-                      <% if (errors.address) { %>
-                      <span class="help-block"><%= errors.address.msg  %></span>
-                      <% } %>
                     </div>
                   </div>
                   <div class="col-md-1 <%= errors.porch ? 'has-error' : '' %>">
                     <div class="form-group">
                       <label class="control-label" for="porch">Подъезд</label>
                       <input type="text" class="form-control" id="porch" name="porch"
-                        value="<%= data.porch ? data.porch : '' %>">
-                      <% if (errors.porch) { %>
-                      <span class="help-block"><%= errors.porch.msg  %></span>
-                      <% } %>
+                        value="<%= data.porch > 0 ? data.porch : '' %>">
                     </div>
                   </div>
                   <div class="col-md-2 <%= errors.numeration ? 'has-error' : '' %>">
@@ -149,9 +161,6 @@
                       <label class="control-label" for="numeration">Нумерация</label>
                       <input type="text" class="form-control" id="numeration" name="numeration"
                         value="<%= data.numeration ? data.numeration : '' %>">
-                      <% if (errors.numeration) { %>
-                      <span class="help-block"><%= errors.numeration.msg  %></span>
-                      <% } %>
                     </div>
                   </div>
                 </div>
@@ -164,9 +173,6 @@
                           <button class="btn btn-default" type="button" id="clearClientContract">
                             <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                           </button>
-                          <!-- <button class="btn btn-default" type="button" id="editClientContract">
-                            <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
-                          </button> -->
                         </span>
                         <input type="text" class="form-control select-all" id="clientContractName"
                           name="clientContractName" placeholder="ФИО по договору"
@@ -176,7 +182,7 @@
                     <div class="col-md-3">
                       <div class="form-group">
                         <label for="clientContractPhones">Телефоны</label>
-                        <input type="text" class="form-control" name="clientContractPhones"
+                        <input type="text" class="form-control" id="clientContractPhones" name="clientContractPhones" 
                           value="<%= data.client.contract.phones %>" readonly>
                       </div>
                     </div>
@@ -187,9 +193,9 @@
                   <div class="row">
                     <div class="col-md-6">
                       <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="repaid"
+                        <input class="form-check-input" type="checkbox" id="onePerson" name="onePerson"
                           <%= data.client.onePerson ? ' checked' : '' %>>
-                        <label class="form-check-label" for="repaid">
+                        <label class="form-check-label" for="onePerson">
                           Старший - одно и то же лицо
                         </label>
                       </div>
@@ -206,9 +212,6 @@
                           <button class="btn btn-default" type="button" id="clearClientService">
                             <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                           </button>
-                          <!-- <button class="btn btn-default" type="button" id="editClientService">
-                            <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
-                          </button> -->
                         </span>
                         <input type="text" class="form-control select-all" id="clientServiceName"
                           name="clientServiceName" placeholder="ФИО по ТО" value="<%= data.client.service.value %>">
@@ -217,7 +220,7 @@
                     <div class="col-md-3">
                       <div class="form-group">
                         <label for="clientServicePhones">Телефоны</label>
-                        <input type="text" class="form-control" name="clientServicePhones"
+                        <input type="text" class="form-control" id="clientServicePhones" name="clientServicePhones"
                           value="<%= data.client.service.phones %>" readonly>
                       </div>
                     </div>
@@ -312,7 +315,7 @@
                     </div>
                   </div>
                 </div>
-                <!-- <div class="row"> -->
+
                 <div class="btn-toolbar" role="toolbar">
                   <div class="btn-group">
                     <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top"
@@ -335,8 +338,8 @@
                       title="История платежей">9</button>
                   </div>
                 </div>
-                <p>
-                  <!-- </div> -->
+                <p></p>
+
                 <div class="row">
                   <div class="col-md-12" style="height: 295px; overflow-y: scroll;">
                     <!-- <div class="col-md-12" style="height: 295px; overflow-y: scroll; padding: 0px 0px;"> -->
@@ -417,49 +420,243 @@
                             </td>
                           </tr>
                           <%}%>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                        <p>
+                        </tbody>
+                      </table>
                     </div>
+                  </div>
+                </div>
+                </p></p>
+              </div>
 
-                    <div role="tabpanel" class="tab-pane" id="additionally">
-                        <div class="form-group">
-                            <label for="contract_info">Информация по договору</label>
-                            <textarea class="form-control" id="contract_info" rows="7"><%= data.contractInfo %></textarea>
+              <div role="tabpanel" class="tab-pane" id="additionally">
+                <div class="form-group">
+                  <label for="contract_info">Информация по договору</label>
+                  <textarea class="form-control" name="contractInfo" rows="7"><%= data.contractInfo %></textarea>
                     </div>
                     <div class="form-group">
                       <label for="service_info">Информация по обслуживанию</label>
-                      <textarea class="form-control" id="service_info" rows="7"><%= data.serviceInfo %></textarea>
+                      <textarea class="form-control" name="serviceInfo" rows="7"><%= data.serviceInfo %></textarea>
                     </div>
-                    <p>
+                  </div>
+
+                  <div role="tabpanel" class="tab-pane" id="completePackage">
+                    <table class="table table-bordered table-hover table-condensed" style="background-color: white;"
+                      id="tableComplete">
+                      <thead>
+                        <tr class="active">
+                          <th class="col-xs-6 text-center">
+                            Описание
+                          </th>
+                          <th class="col-xs-2 text-center" style="vertical-align: middle">
+                            Кол-во, шт.
+                          </th>
+                          <th class="col-xs-2 text-center" style="vertical-align: middle">
+                            Цена
+                          </th>
+                          <th class="col-xs-2 text-center" style="vertical-align: middle">
+                            Общая стоимость
+                          </th>
+                        </tr>
+                      </thead>
+                      <tr>
+                        <td>
+                          Оборудование общего назначения с панелью
+                        </td>
+                        <td class="text-center">
+                          <%= data.complete.equipment.quantity %>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.equipment.price).toFixed(2) %>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.equipment.cost).toFixed(2) %>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          Монтажные и пуско-наладочные работы
+                        </td>
+                        <td class="text-center">
+                          <%= data.complete.mounting.quantity %>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.mounting.price).toFixed(2) %>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.mounting.cost).toFixed(2) %>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          Абонентское устройство
+                        </td>
+                        <td class="text-center">
+                          <%= data.complete.subscriberUnit.quantity %>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.subscriberUnit.price).toFixed(2) %>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.subscriberUnit.cost).toFixed(2) %>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          Ключ/Брелок/Карта
+                        </td>
+                        <td class="text-center">
+                          <%= data.complete.key.quantity %>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.key.price).toFixed(2) %>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.key.cost).toFixed(2) %>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          Дверь металлическая
+                        </td>
+                        <td class="text-center">
+                          <%= data.complete.door.quantity %>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.door.price).toFixed(2) %>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.door.cost).toFixed(2) %>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          Итого
+                        </td>
+                        <td>
+                        </td>
+                        <td>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.subtotal.cost).toFixed(2) %>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          Итого с 1 квартиры
+                        </td>
+                        <td>
+                        </td>
+                        <td>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.subtotalForApartment.cost).toFixed(2) %>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          Скидка для квартиры
+                        </td>
+                        <td>
+                        </td>
+                        <td>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.discountForApartment.cost).toFixed(2) %>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <strong>Итого к оплате</strong>
+                        </td>
+                        <td>
+                        </td>
+                        <td>
+                        </td>
+                        <td class="text-right">
+                          <strong><%= (data.complete.total.cost).toFixed(2) %></strong>
+                        </td>
+                      </tr>
+
+                      <tbody>
+                      </tbody>
+                    </table>
                   </div>
 
                 </div>
+
                 <div class="col-12">
-                  <button type="button" class="btn btn-success" id="save">Записать</button>
+                  <button type="submit" class="btn btn-success" id="save">Записать</button>
                   <div class="btn-group dropup">
                     <!-- <button type="button" class="btn btn-default dropdown-toggle disabled" data-toggle="dropdown"> -->
-                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                    <button class="btn btn-default dropdown-toggle" data-toggle="dropdown">
                       Действия <span class="caret"></span>
                     </button>
                     <ul class="dropdown-menu" role="menu">
-                      <!-- <li <%- (data.id > 0) ? 'class="disabled"' : '' %>><a href="#">Сформировать договор на установку</a></li> -->
+                      <!-- <li ><a href="#">Сформировать договор на установку</a></li> -->
                       <!-- <li class="disabled"><a href="#">Сформировать договор на обслуживание</a></li> -->
-                      <li><a href="/orders/generate_order_setup/<%= data.id %>">Сформировать договор на установку</a></li>
-                      <li><a href="/orders/generate_order_service/<%= data.id %>">Сформировать договор на обслуживание</a></li>
+                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
+                          href="/orders/generate_order_setup/<%= data.id %>">Сформировать договор на установку</a></li>
+                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
+                          href="/orders/generate_order_service/<%= data.id %>">Сформировать договор на обслуживание</a>
+                      </li>
                       <li class="divider"></li>
-                      <li><a href="/orders/open_order_setup/<%= data.contractNumber %>">Открыть договор на установку</a></li>
-                      <li><a href="/orders/open_order_service/<%= data.contractNumber %>">Открыть договор на обслуживание</a></li>
+                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
+                          href="/orders/open_order_setup/<%= data.contractNumber %>">Открыть договор на установку</a>
+                      </li>
+                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
+                          href="/orders/open_order_service/<%= data.contractNumber %>">Открыть договор на
+                          обслуживание</a></li>
                     </ul>
                   </div>
                   <button type="button" class="btn btn-info" id="save">Печать квитанций</button>
                 </div>
+
               </div>
             </div>
       </form>
+    </div>
+  </div>
+
+  <div class="modal bs-example-modal-normal" id="completeDialog" tabindex="-1" role="dialog"
+    aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+              aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="applicationCapton">Введите значение</h4>
+        </div>
+        <div class="modal-body">
+          <!-- <input type="number" class="hidden" id="rowIndex"> -->
+          <div class="form-group" id="completeQuantityRow">
+            <div class="row">
+              <div class="col-xs-12">
+                <label for="completeQuantity">Количество</label>
+                <input type="number" min="1" class="form-control select-all" id="completeQuantity">
+              </div>
+            </div>
+          </div>
+          <div class="form-group" id="completePriceRow">
+            <div class="row">
+              <div class="col-xs-12">
+                <label for="completePrice">Цена</label>
+                <input type="number" class="form-control select-all" id="completePrice">
+              </div>
+            </div>
+          </div>
+          <div class="form-group" id="completeCostRow">
+            <div class="row">
+              <div class="col-xs-12">
+                <label for="completeCost">Общая стоимость</label>
+                <input type="number" class="form-control select-all" id="completeCost">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-success" id="saveComplete">&nbsp;Записать&nbsp;</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -474,6 +671,44 @@
   <script src="/bower_components/axios/dist/axios.min.js"></script>
   <script>
     var order = <%- JSON.stringify(data) %>;
+    var completeRowIndex = 1;
+
+    function saveFullAddress(data) {
+      try {
+        var address = JSON.parse(document.getElementById('address').value);
+
+        switch (data.level) {
+          case 0:
+            address.city.key = data.cityId;
+            address.city.value = data.cityName;
+            address.street.key = 0;
+            address.street.value = '';
+            address.house.key = 0;
+            address.house.value = '';
+            break;
+          case 1:
+            address.city.key = data.cityId;
+            address.city.value = data.cityName;
+            address.street.key = data.streetId;
+            address.street.value = data.streetName;
+            address.house.key = 0;
+            address.house.value = '';
+            break;
+          case 2:
+            address.city.key = data.cityId;
+            address.city.value = data.cityName;
+            address.street.key = data.streetId;
+            address.street.value = data.streetName;
+            address.house.key = data.houseId;
+            address.house.value = data.houseNumber;
+            break;
+        }
+        document.getElementById('address').value = JSON.stringify(address);
+      }
+      catch (e) {
+        console.log(e.message);
+      }
+    }
 
     $(document).ready(function () {
       var uid = order.id;
@@ -512,63 +747,308 @@
 
     });
 
-    $('#save').click(function () {
-      alert(order.startApartment);
-      //    window.location.href = '/orders';
-      window.location.assign('/');
+    document.getElementById('clearEquipment').addEventListener('click', function (e) {
+      try {
+        var equipment = JSON.parse(document.getElementById('equipment').value);
+        equipment.key = 0;
+        equipment.value = '';
+        document.getElementById('equipment').value = JSON.stringify(equipment);
+        document.getElementById('equipmentName').value = '';
+        document.getElementById('endContract').value = '';
+      } catch (error) {
+        console.log('clearEquipment Error: ' + error.message);
+      }
     });
 
-    $('#equipment_name').typeahead({
+    document.getElementById('clearFullAddress').addEventListener('click', function (e) {
+      try {
+        var address = JSON.parse(document.getElementById('address').value);
+        address.city.key = 0;
+        address.city.value = '';
+
+        address.street.key = 0;
+        address.street.value = '';
+        address.street.cityId = 0;
+
+        address.house.key = 0;
+        address.house.value = '';
+        address.house.streetId = 0;
+
+        document.getElementById('address').value = JSON.stringify(address);
+      } catch (error) {
+        console.log('clearFullAddress Error: ' + error.message);
+      }
+    });
+
+    document.getElementById('clearClientContract').addEventListener('click', function (e) {
+      try {
+        var client = JSON.parse(document.getElementById('client').value);
+        client.contract.key = 0;
+        client.contract.value = '';
+        document.getElementById('client').value = JSON.stringify(client);
+        document.getElementById('clientContractName').value = '';
+        document.getElementById('clientContractPhones').value = '';
+
+        if (document.getElementById('onePerson').checked) {
+          document.getElementById('onePerson').checked = !document.getElementById('onePerson').checked;
+        }
+      } catch (error) {
+        console.log('clearClientContract Error: ' + error.message);
+      }
+    });
+
+    document.getElementById('onePerson').addEventListener('click', function (e) {
+      if (e.currentTarget.checked) {
+        try {
+          var client = JSON.parse(document.getElementById('client').value);
+          if ((client.contract.key > 0) && (client.service.key != client.contract.key)) {
+            client.service = client.contract;
+            document.getElementById('client').value = JSON.stringify(client);
+            document.getElementById('clientServiceName').value = client.service.value;
+            document.getElementById('clientServicePhones').value = document.getElementById('clientContractPhones').value;
+          }
+        } catch (error) {
+          
+        }
+      }
+    });
+
+    document.getElementById('clearClientService').addEventListener('click', function (e) {
+      try {
+        var client = JSON.parse(document.getElementById('client').value);
+        client.service.key = 0;
+        client.service.value = '';
+        document.getElementById('client').value = JSON.stringify(client);
+        document.getElementById('clientServiceName').value = '';
+        document.getElementById('clientServicePhones').value = '';
+
+        if (document.getElementById('onePerson').checked) {
+          document.getElementById('onePerson').checked = !document.getElementById('onePerson').checked;
+        }
+      } catch (error) {
+        console.log('clearClientContract Error: ' + error.message);
+      }
+    });
+
+    // $('#equipment_name').typeahead({
+    //   items: 15,
+    //   source: function (query, process) {
+    //     var results = [];
+    //     map = {};
+    //     $.ajax({
+    //       'url': '/orders/search_equipment',
+    //       'type': 'POST',
+    //       'contentType': 'application/json',
+    //       'data': JSON.stringify({
+    //         'suggestion': query,
+    //         'limit': 15
+    //       }),
+    //       success: function (datas) {
+    //         $.each(datas, function (i, result) {
+    //           map[result.value] = result;
+    //           results.push(result.value);
+    //         });
+    //         process(results);
+    //       }
+    //     });
+    //   },
+    //   updater: function (element) {
+    //     var equipment = JSON.parse(document.getElementById('equipment').value);
+    //     try {
+    //       equipment.key = map[element].id;
+    //       equipment.value = map[element].value;
+    //       document.getElementById('equipment').value = JSON.stringify(equipment);
+    //     } catch (error) {
+    //       //
+    //     }
+
+    //     return element;
+    //   }
+    // });
+
+    $('#equipmentName').typeahead({
+        items: 15,
+        source: function (query, process) {
+          var results = [];
+          map = {};
+
+          axios.post('/orders/find_equipment', {
+            suggestion: query,
+            limit: 15
+          }
+          ).then(function (response) {
+              var data = response.data;
+              data.forEach( function (item) {
+                map[item.value] = item;
+                results.push(item.value);
+              });
+              process(results);
+          }).catch(function (error) {
+            console.log(error);
+          });
+        },
+        updater: function (element) {
+          try {
+            var equipment = JSON.parse(document.getElementById('equipment').value);
+            equipment.key = map[element].id;
+            equipment.value = map[element].value;
+            var createDate = document.getElementById('createDate').value;
+            if (createDate.trim() != '') {
+              document.getElementById('endContract').value = moment(createDate, 'DD.MM.YYYY').add(map[element].guaranteePeriod, 'years').format('DD.MM.YYYY');
+            }
+
+            document.getElementById('equipment').value = JSON.stringify(equipment);
+          }
+          catch (e) {
+            console.log('equipmentName Error: ' + e.message);
+          }
+          return element;
+        }
+    });
+
+    $('#fullAddress').typeahead({
+        items: 15,
+        source: function (query, process) {
+          var results = [];
+          map = {};
+
+          axios.post('/orders/find_full_address', {
+            suggestion: query,
+            rowsCount: 15
+          })
+          .then(function (response) {
+            var datas = response.data;
+            if ((typeof datas == 'object') && ('items' in datas) && ('level' in datas)) {
+                var level = datas.level;
+                var data = datas.items;
+                var text;
+                if (Array.isArray(data)) {
+                  data.forEach(function (item, index) {
+                    item.level = level;
+                    switch (level) {
+                      case 0:
+                        text = item.cityName;
+                        map[text] = item;
+                        results.push(text);
+                        break;
+                      case 1:
+                        text = item.cityName + ', ' + item.streetName;
+                        if (item.streetName.trim() !== '') {
+                          map[text] = item;
+                          results.push(text);
+                        }
+                        break;
+                      case 2:
+                        text = item.cityName + ', ' + item.streetName + ', ' + item.houseNumber;
+                        if (item.houseNumber.trim() !== '') {
+                          map[text] = item;
+                          results.push(text);
+                        }
+                        break;
+                      default:
+                    }
+                  });
+                }
+              }
+              process(results);
+          })
+            .catch(function (error) {
+            console.log(error);
+          });
+          },
+        updater: function (element) {
+          var selectedElement = map[element];
+
+          switch (selectedElement.level) {
+            case 0:
+              saveFullAddress(selectedElement);
+              return selectedElement.cityName + ', ';
+            case 1:
+              saveFullAddress(selectedElement);
+              return selectedElement.cityName + ', ' + selectedElement.streetName + ', ';
+            case 2:
+              saveFullAddress(selectedElement);
+              return selectedElement.cityName + ', ' + selectedElement.streetName + ', ' + selectedElement.houseNumber;
+            default:
+              saveFullAddress(selectedElement);
+              return selectedElement.cityName;
+          }
+        }
+      });
+
+    $('#clientContractName').typeahead({
       items: 15,
       source: function (query, process) {
         var results = [];
         map = {};
-        $.ajax({
-          'url': '/orders/search_equipment',
-          'type': 'POST',
-          'contentType': 'application/json',
-          'data': JSON.stringify({
-            'suggestion': query,
-            'limit': 15
-          }),
-          success: function (datas) {
-            $.each(datas, function (i, result) {
-              map[result.value] = result;
-              results.push(result.value);
+
+        axios.post('/orders/find_client', {
+          suggestion: query,
+          limit: 15
+        }
+        ).then(function (response) {
+            var data = response.data;
+            data.forEach( function (item) {
+              map[item.value] = item;
+              results.push(item.value);
             });
             process(results);
-          }
+        }).catch(function (error) {
+          console.log(error);
         });
       },
       updater: function (element) {
-        // selectedElement = map[element].id; /**use the person id and search for it**/
-        // $('#driver_id').val(map[element].id);
-        // //
-        // $('#dlg_nickname').val(map[element].nickname);
-        // $('#car_name').val(map[element].car_name);
-        // $('#car_number').val(map[element].car_number);
-        // $('#color_name').val(map[element].color_name);
-        // var driverInfo = getDriverInfo(map[element].car_name, map[element].car_number, map[element].color_name);
-        // //
-        // $('#dlg_additional_info').val(driverInfo);
-        // //
-        // $('#saveOrder').focus();
+        try {
+          var client = JSON.parse(document.getElementById('client').value);
+          client.contract.key = map[element].id;
+          client.contract.value = map[element].value;
+          document.getElementById('clientContractPhones').value = map[element].phones;
+          document.getElementById('onePerson').checked = (+client.contract.key === +client.service.key);
 
-        // $(this).val('123');
-        // $('#equipment_name').val('123');
+          document.getElementById('client').value = JSON.stringify(client);
+        }
+        catch (e) {
+          console.log(e.message);
+        }
         return element;
       }
     });
 
-    $('#editClientContract').on('click', function (e) {
-      if (order.client.contract.key > 0) {
-        window.location.href = '/clients/edit/' + order.client.contract.key;
-      }
-    });
+    $('#clientServiceName').typeahead({
+      items: 15,
+      source: function (query, process) {
+        var results = [];
+        map = {};
 
-    $('#editClientService').on('click', function (e) {
-      if (order.client.service.key > 0) {
-        window.location.href = '/clients/edit/' + order.client.service.key;
+        axios.post('/orders/find_client', {
+          suggestion: query,
+          limit: 15
+        }
+        ).then(function (response) {
+            var data = response.data;
+            data.forEach( function (item) {
+              map[item.value] = item;
+              results.push(item.value);
+            });
+            process(results);
+        }).catch(function (error) {
+          console.log(error);
+        });
+      },
+      updater: function (element) {
+        try {
+          var client = JSON.parse(document.getElementById('client').value);
+          client.service.key = map[element].id;
+          client.service.value = map[element].value;
+          document.getElementById('clientServicePhones').value = map[element].phones;
+          
+          document.getElementById('onePerson').checked = (+client.contract.key === +client.service.key);
+          document.getElementById('client').value = JSON.stringify(client);
+        }
+        catch (e) {
+          console.log(e.message);
+        }
+        return element;
       }
     });
 
@@ -580,6 +1060,196 @@
         })
         .select();
     });
+
+    function calculateComplete(index) {
+      var row = document.getElementById("tableComplete").rows[index];
+      // row.cells[0].innerText = dataTable[uid].faultName;
+      // row.cells[1].innerText = dataTable[uid].decision;
+      // row.cells[2].innerText = dataTable[uid].workerName;
+
+      var dataTable = [];
+      var data = document.getElementById('complete').value;
+      try {
+        dataTable = JSON.parse(data);
+        switch (index) {
+          case 1:
+            dataTable.equipment.quantity = parseInt(document.getElementById('completeQuantity').value);
+            dataTable.equipment.price = parseFloat(document.getElementById('completePrice').value);
+            dataTable.equipment.cost = dataTable.equipment.quantity * dataTable.equipment.price;
+
+            row.cells[1].innerText = dataTable.equipment.quantity;
+            row.cells[2].innerText = dataTable.equipment.price.toFixed(2);
+            row.cells[3].innerText = dataTable.equipment.cost.toFixed(2);
+            break;
+          case 2:
+            dataTable.mounting.quantity = parseInt(document.getElementById('completeQuantity').value);
+            dataTable.mounting.price = parseFloat(document.getElementById('completePrice').value);
+            dataTable.mounting.cost = dataTable.mounting.quantity * dataTable.mounting.price;
+
+            row.cells[1].innerText = dataTable.mounting.quantity;
+            row.cells[2].innerText = dataTable.mounting.price.toFixed(2);
+            row.cells[3].innerText = dataTable.mounting.cost.toFixed(2);
+            break;
+          case 3:
+            dataTable.subscriberUnit.quantity = parseInt(document.getElementById('completeQuantity').value);
+            dataTable.subscriberUnit.price = parseFloat(document.getElementById('completePrice').value);
+            dataTable.subscriberUnit.cost = dataTable.subscriberUnit.quantity * dataTable.subscriberUnit.price;
+
+            row.cells[1].innerText = dataTable.subscriberUnit.quantity;
+            row.cells[2].innerText = dataTable.subscriberUnit.price.toFixed(2);
+            row.cells[3].innerText = dataTable.subscriberUnit.cost.toFixed(2);
+            break;
+          case 4:
+            dataTable.key.quantity = parseInt(document.getElementById('completeQuantity').value);
+            dataTable.key.price = parseFloat(document.getElementById('completePrice').value);
+            dataTable.key.cost = dataTable.key.quantity * dataTable.key.price;
+
+            row.cells[1].innerText = dataTable.key.quantity;
+            row.cells[2].innerText = dataTable.key.price.toFixed(2);
+            row.cells[3].innerText = dataTable.key.cost.toFixed(2);
+            break;
+          case 5:
+            dataTable.door.quantity = parseInt(document.getElementById('completeQuantity').value);
+            dataTable.door.price = parseFloat(document.getElementById('completePrice').value);
+            dataTable.door.cost = dataTable.door.quantity * dataTable.door.price;
+
+            row.cells[1].innerText = dataTable.door.quantity;
+            row.cells[2].innerText = dataTable.door.price.toFixed(2);
+            row.cells[3].innerText = dataTable.door.cost.toFixed(2);
+            break;
+          case 8:
+            dataTable.discountForApartment.cost = parseFloat(document.getElementById('completeCost').value);
+
+            row.cells[3].innerText = dataTable.discountForApartment.cost.toFixed(2);
+            break;
+        }
+
+        dataTable.subtotal.cost = dataTable.equipment.cost + dataTable.mounting.cost + 
+          dataTable.subscriberUnit.cost + dataTable.key.cost + dataTable.door.cost;
+
+        dataTable.subtotalForApartment.cost = dataTable.subscriberUnit.quantity > 0 ? dataTable.subtotal.cost/dataTable.subscriberUnit.quantity : 0;
+
+        dataTable.total.cost = dataTable.subtotal.cost - dataTable.discountForApartment.cost;
+
+        var rowTotal = document.getElementById("tableComplete").rows[6];
+        rowTotal.cells[3].innerText = dataTable.subtotal.cost.toFixed(2);
+
+        var rowApartment = document.getElementById("tableComplete").rows[7];
+        rowApartment.cells[3].innerText = dataTable.subtotalForApartment.cost.toFixed(2)
+
+        var rowTotal = document.getElementById("tableComplete").rows[9];
+        rowTotal.cells[3].innerText = (dataTable.subtotal.cost - dataTable.discountForApartment.cost).toFixed(2)
+
+        document.getElementById('complete').value = JSON.stringify(dataTable);
+      }
+      catch (e) {
+        //
+      }
+    };
+
+    document.getElementById('tableComplete').addEventListener('click', function (e) {
+      var target = e.target;
+      if (target.closest('td') == null) return;
+
+      //   alert("row" + target.closest('tr').rowIndex + 
+      // " -column" + target.closest('td').cellIndex +  ', value: ' + target.parentElement.children[target.closest('td').cellIndex].innerText);
+      var rowIndex = target.closest('tr').rowIndex;
+      if ((rowIndex == 6) || (rowIndex == 7)) return;
+      if (rowIndex > 8) return;
+
+      completeRowIndex = rowIndex;
+      var show = ((rowIndex >= 1) && (rowIndex <= 5));
+
+      document.getElementById('completeQuantityRow').hidden = !show;
+      document.getElementById('completePriceRow').hidden = !show;
+      document.getElementById('completeCostRow').hidden = show;
+
+      // if (show) {
+
+      //   // document.getElementById('completeQuantityRow').has
+
+      //   // document.getElementById('completeQuantityRow').classList.remove('hidden');
+      //   // document.getElementById('completePriceRow').classList.remove('hidden');
+      // }
+      // else {
+
+      // }
+
+      // if (!showElements) {
+      //   document.getElementById('completeQuantityRow').classList.add('hidden');
+      //   document.getElementById('completePriceRow').classList.add('hidden');
+      // }
+      // document.getElementById('completeCost').readOnly = showElements;
+      // document.getElementById('completeCost').readOnly = showElements;
+
+      var dataTable = [];
+      var data = $('#complete').val();
+      try {
+        dataTable = JSON.parse(data);
+        switch (rowIndex) {
+          case 1:
+            document.getElementById('completeQuantity').value = dataTable.equipment.quantity;
+            document.getElementById('completePrice').value = dataTable.equipment.price.toFixed(2);
+            document.getElementById('completeCost').value = dataTable.equipment.cost.toFixed(2);
+            break;
+          case 2:
+            document.getElementById('completeQuantity').value = dataTable.mounting.quantity;
+            document.getElementById('completePrice').value = dataTable.mounting.price.toFixed(2);
+            document.getElementById('completeCost').value = dataTable.mounting.cost.toFixed(2);
+            break;
+          case 3:
+            document.getElementById('completeQuantity').value = dataTable.subscriberUnit.quantity;
+            document.getElementById('completePrice').value = dataTable.subscriberUnit.price.toFixed(2);
+            document.getElementById('completeCost').value = dataTable.subscriberUnit.cost.toFixed(2);
+            break;
+          case 4:
+            document.getElementById('completeQuantity').value = dataTable.key.quantity;
+            document.getElementById('completePrice').value = dataTable.key.price.toFixed(2);
+            document.getElementById('completeCost').value = dataTable.key.cost.toFixed(2);
+            break;
+          case 5:
+            document.getElementById('completeQuantity').value = dataTable.door.quantity;
+            document.getElementById('completePrice').value = dataTable.door.price.toFixed(2);
+            document.getElementById('completeCost').value = dataTable.door.cost.toFixed(2);
+            break;
+          case 8:
+            document.getElementById('completeQuantity').value = 1;
+            document.getElementById('completePrice').value = 0.00;
+            document.getElementById('completeCost').value = dataTable.discountForApartment.cost.toFixed(2);
+            break;
+        }
+      }
+      catch (e) {
+        //
+      }
+
+      $('#completeDialog').modal();
+    });
+
+    $('#completeDialog').on('shown.bs.modal', function () {
+      var fieldName = 'completeQuantity';
+      if (completeRowIndex == 8) {
+        fieldName = 'completeCost';
+      }
+      document.getElementById(fieldName).focus();
+    })
+
+
+    document.getElementById('saveComplete').addEventListener('click', function (e) {
+      calculateComplete(completeRowIndex);
+      $('#completeDialog').modal('hide');
+    });
+
+
+
+
+    // var gridComplete = document.getElementById('tableComplete');
+    // gridComplete.onclick = function (e) {
+    //   var tr = $(this).closest('tr');
+    //   var rowIndex = tr.index();
+    //   alert('click!');
+    // };
+
 
   </script>
 </body>

@@ -30,18 +30,16 @@
     </div>
     <form class="form-inline" role="form" method="get" action="/orders/filter">
       <input type="text" hidden id="filters" name="filters" value="<%= JSON.stringify(filters) %>">
-      <a href="/orders/add" class="btn btn-default" data-toggle="tooltip" data-placement="top"
-        title="Новый договор"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
       <div class="input-group date my-tooltip" id="startDate" data-toggle="tooltip" data-placement="top" title="Начальная дата конца ТО">
         <input type="text" class="form-control" name="startDate" value="<%= moment(filters.period.start).format( 'DD.MM.YYYY HH:mm' ) %>" />
         <span class="input-group-addon">
-            <span class="glyphicon glyphicon-calendar"></span>
+          <span class="glyphicon glyphicon-calendar"></span>
         </span>
       </div>
       <div class="input-group date my-tooltip" id="endDate" data-toggle="tooltip" data-placement="top" title="Конечная дата конца ТО">
         <input type="text" class="form-control" name="endDate" value="<%= moment(filters.period.end).format( 'DD.MM.YYYY HH:mm' ) %>" />
         <span class="input-group-addon">
-            <span class="glyphicon glyphicon-calendar"></span>
+          <span class="glyphicon glyphicon-calendar"></span>
         </span>
       </div>
       &nbsp;
@@ -50,6 +48,8 @@
       </div>
       &nbsp;
       <button type="submit" class="btn btn-success" name="applyFilter">&nbsp;Применить фильтр&nbsp;</button>
+      <a href="/orders/add" class="btn btn-default" data-toggle="tooltip" data-placement="top"
+        title="Новый договор"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
     </form>
     <p>
       <table class="table table-bordered table-condensed table-hover">

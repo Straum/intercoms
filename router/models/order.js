@@ -11,23 +11,27 @@ module.exports.OrderModel = function () {
     key: 0,
     value: ''
   };
-  this.city = {
-    key: 0,
-    value: ''
-  };
-  this.street = {
-    key: 0,
-    value: '',
-    cityId: 0
-  };
-  this.house = {
-    key: 0,
-    value: '',
-    streetId: 0
-  };
+
+  this.address = {
+    city: {
+      key: 0,
+      value: ''
+    },
+    street: {
+      key: 0,
+      value: '',
+      cityId: 0
+    },
+    house: {
+      key: 0,
+      value: '',
+      streetId: 0
+    }
+  },
+  this.fullAddress = '';
+  
   this.porch = 0;
   this.numeration = '';
-  this.address = '';
 
   this.client = {
     contract: {
@@ -40,8 +44,9 @@ module.exports.OrderModel = function () {
       value: '',
       phones: ''
     },
-    onePerson: false
   };
+
+  this.onePerson = false;
 
   this.serviceNumber = '';
   this.startService = null;
@@ -55,6 +60,46 @@ module.exports.OrderModel = function () {
 
   this.contractInfo = '';
   this.serviceInfo = '';
+
+  this.complete = {
+    equipment: {
+      quantity: 1,
+      price: 0.00,
+      cost: 0.00
+    },
+    mounting: {
+      quantity: 1,
+      price: 0.00,
+      cost: 0.00
+    },
+    subscriberUnit: {
+      quantity: 1,
+      price: 0.00,
+      cost: 0.00
+    },
+    key: {
+      quantity: 1,
+      price: 0.00,
+      cost: 0.00
+    },
+    door: {
+      quantity: 1,
+      price: 0.00,
+      cost: 0.00
+    },
+    subtotal: {
+      cost: 0.00
+    },
+    subtotalForApartment: {
+      cost: 0.00
+    },
+    discountForApartment: {
+      cost: 0.00
+    },
+    total: {
+      cost: 0.00
+    }
+  };
 
   return this;
 };
@@ -105,6 +150,46 @@ module.exports.ReportModel = function () {
       department: '',
     }
   };
-  
+
+  this.complete = {
+    equipment: {
+      quantity: 1,
+      price: 0.00,
+      cost: 0.00
+    },
+    mounting: {
+      quantity: 1,
+      price: 0.00,
+      cost: 0.00
+    },
+    subscriberUnit: {
+      quantity: 1,
+      price: 0.00,
+      cost: 0.00
+    },
+    key: {
+      quantity: 1,
+      price: 0.00,
+      cost: 0.00
+    },
+    door: {
+      quantity: 1,
+      price: 0.00,
+      cost: 0.00
+    },
+    subtotal: {
+      cost: 0.00
+    },
+    subtotalForApartment: {
+      cost: 0.00
+    },
+    discountForApartment: {
+      cost: 0.00
+    },
+    total: {
+      cost: 0.00
+    }
+  };
+ 
   return this;
 };

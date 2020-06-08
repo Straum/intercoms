@@ -620,7 +620,7 @@ module.exports = function () {
       })
       .catch(function(error) {
         console.log(error);
-      });;
+      });
     }
 
 
@@ -683,10 +683,10 @@ module.exports = function () {
 
   router.post('/find_client', function (req, res) {
     var data = req.body;
-    if ((data) && (typeof (data) === 'object') && ('clientName' in data)) {
+    if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
       var rowsCount = 'limit' in data ? data.limit : rowsLimit;
       var params = {
-        clientName: data.clientName,
+        suggestion: data.suggestion,
         rowsCount: rowsCount
       };
       common.filterClients(params, function (err, rows) {

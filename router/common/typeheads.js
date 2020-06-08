@@ -209,6 +209,38 @@ module.exports.filterPorches = function (params, callback) {
   });
 };
 
+module.exports.filterEquipments = function (params, callback) {
+
+  var queryText =
+    ' SELECT a.equipment_id AS id, a.name AS `value`, guarantee_period AS guaranteePeriod' +
+    ' FROM equipments a' +
+    ' WHERE (a.equipment_id > 0)';
+
+  if (params.suggestion.length > 0) {
+    queryText += ' AND a.name LIKE ' + `'` + params.suggestion.trim() + '%' + `'`;
+  }
+
+  queryText += ' ORDER BY a.name ASC';
+  queryText += ' LIMIT ' + params.rowsCount;
+
+
+  db.get().getConnection(function (err, connection) {
+    connection.query(
+      queryText, [], function (err, rows) {
+        connection.release();
+
+        if (err) {
+          throw err;
+        }
+
+        if (typeof callback === 'function') {
+          callback(null, rows);
+        }
+      }
+    );
+  });
+};
+
 module.exports.filterOrders = function (orderNumber, rowsCount, callback) {
 
   var queryText =
@@ -305,12 +337,13 @@ module.exports.filterPerformers = function (params, callback) {
 module.exports.filterClients = function (params, callback) {
 
   var queryText =
-    ' SELECT a.client_id AS id, a.name AS `value`' +
+    ' SELECT a.client_id AS id, a.name AS `value`, b.phones' +
     ' FROM clients a' +
+    ' LEFT JOIN faces b ON b.client_id = a.client_id' +
     ' WHERE (a.is_deleted = 0)';
 
-  if (params.clientName.length > 0) {
-    queryText += ' AND a.name LIKE ' + `'` + params.clientName.trim() + '%' + `'`;
+  if (params.suggestion.length > 0) {
+    queryText += ' AND a.name LIKE ' + `'` + params.suggestion.trim() + '%' + `'`;
   }
 
   queryText += ' ORDER BY a.name ASC';

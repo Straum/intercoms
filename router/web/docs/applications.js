@@ -1710,7 +1710,7 @@ module.exports = function () {
               db.get().getConnection(function (err, connection) {
                 connection.query(
                   ' INSERT INTO applications (create_date, completion_date, city_id, street_id, house_id, porch, kind, phone, worker_id, card_id, weight)' +
-                  ' VALUE(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                  ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
                   checkDate.outputDate(),
                   checkCompletionDate.outputDate() === '' ? null : checkCompletionDate.outputDate(),
                   req.body.cityId,

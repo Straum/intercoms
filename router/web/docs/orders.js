@@ -19,6 +19,158 @@ var fs = require('fs');
 
 require('shelljs/global');
 
+function updateOrder(data) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+    connection.query(
+      ' UPDATE cards SET ' +
+      ' contract_number = ?,' +
+      ' create_date = ?,' +
+      ' equipment_id = ?,' +
+      ' end_contract = ?,' +
+      ' credit_to = ?,' +
+      ' repaid = ?,' +
+      ' city_id = ?,' +
+      ' street_id = ?,' +
+      ' house_id = ?,' +
+      ' porch = ?,' +
+      ' numeration = ?,' +
+      ' client_id = ?,' +
+      ' is_one_person = ?,' +
+      ' m_client_id = ?,' +
+      ' contract_info = ?,' +
+      ' service_info = ?,' +
+      ' equipment_quantity = ?,' +
+      ' equipment_price = ?,' +
+      ' equipment_cost = ?,' +
+      ' mounting_quantity = ?,' +
+      ' mounting_price = ?,' +
+      ' mounting_cost = ?,' +
+      ' subscriber_unit_quantity = ?,' +
+      ' subscriber_unit_price = ?,' +
+      ' subscriber_unit_cost = ?,' +
+      ' key_quantity = ?,' +
+      ' key_price = ?,' +
+      ' key_cost = ?,' +
+      ' door_quantity = ?,' +
+      ' door_price = ?,' +
+      ' door_cost = ?,' +
+      ' subtotal = ?,' +
+      ' subtotal_for_apartment = ?,' +
+      ' discount_for_apartment = ?,' +
+      ' total = ?' +
+      ' WHERE card_id = ?', [
+          data.contractNumber,
+          data.createDate,
+          data.equipment.key,
+          data.endContract,
+          data.creditTo,
+          data.repaid,
+          data.address.city.key,
+          data.address.street.key,
+          data.address.house.key,
+          data.porch,
+          data.numeration,
+          data.client.contract.key,
+          data.onePerson,
+          data.client.service.key,
+          data.contractInfo,
+          data.serviceInfo,
+          data.complete.equipment.quantity,
+          data.complete.equipment.price,
+          data.complete.equipment.cost,
+          data.complete.mounting.quantity,
+          data.complete.mounting.price,
+          data.complete.mounting.cost,
+          data.complete.subscriberUnit.quantity,
+          data.complete.subscriberUnit.price,
+          data.complete.subscriberUnit.cost,
+          data.complete.key.quantity,
+          data.complete.key.price,
+          data.complete.key.cost,
+          data.complete.door.quantity,
+          data.complete.door.price,
+          data.complete.door.cost,
+          data.complete.subtotal.cost,
+          data.complete.subtotalForApartment.cost,
+          data.complete.discountForApartment.cost,
+          data.complete.total.cost,
+          data.id], function (err) {
+            connection.release();
+            if (err) {
+              reject();
+            }
+            else {
+              resolve();
+            }      
+      });
+    });
+  }); 
+}
+
+function saveOrder(data) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+    connection.query(
+      ' INSERT INTO cards (' +
+      ' contract_number, create_date, equipment_id, end_contract, credit_to, repaid, city_id, street_id, house_id, porch, numeration,' +
+      ' client_id, is_one_person, m_client_id,' +
+      ' contract_info, service_info,' +
+      ' equipment_quantity, equipment_price, equipment_cost,' +
+      ' mounting_quantity, mounting_price, mounting_cost,' +
+      ' subscriber_unit_quantity, subscriber_unit_price, subscriber_unit_cost,' +
+      ' key_quantity, key_price, key_cost,' +
+      ' door_quantity, door_price, door_cost,' +
+      ' subtotal, subtotal_for_apartment, discount_for_apartment, total)' +
+      ' VALUES (' + 
+      ' ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [
+          data.contractNumber,
+          data.createDate,
+          data.equipment.key,
+          data.endContract,
+          data.creditTo,
+          data.repaid,
+          data.address.city.key,
+          data.address.street.key,
+          data.address.house.key,
+          data.porch,
+          data.numeration,
+          data.client.contract.key,
+          data.onePerson,
+          data.client.service.key,
+          data.contractInfo,
+          data.serviceInfo,
+          data.complete.equipment.quantity,
+          data.complete.equipment.price,
+          data.complete.equipment.cost,
+          data.complete.mounting.quantity,
+          data.complete.mounting.price,
+          data.complete.mounting.cost,
+          data.complete.subscriberUnit.quantity,
+          data.complete.subscriberUnit.price,
+          data.complete.subscriberUnit.cost,
+          data.complete.key.quantity,
+          data.complete.key.price,
+          data.complete.key.cost,
+          data.complete.door.quantity,
+          data.complete.door.price,
+          data.complete.door.cost,
+          data.complete.subtotal.cost,
+          data.complete.subtotalForApartment.cost,
+          data.complete.discountForApartment.cost,
+          data.complete.total.cost], function (err, rows) {
+            connection.release();
+            if (err) {
+              reject();
+            }
+            else {
+              resolve(rows.insertId);
+            }      
+      });
+    });
+  }); 
+}
+
 function getOrderInfo(orderId) {
   return new Promise(function (resolve, reject) {
     db.get().getConnection(function (err, connection) {
@@ -34,7 +186,13 @@ function getOrderInfo(orderId) {
         ' c.name AS streetName,' +
         ' d.number AS houseNumber,' +
         ' a.porch,' +
-        ' a.numeration' +
+        ' a.numeration,' +
+        ' a.equipment_quantity, a.equipment_price, a.equipment_cost,' +
+        ' a.mounting_quantity, a.mounting_price, a.mounting_cost,' +
+        ' a.subscriber_unit_quantity, a.subscriber_unit_price, a.subscriber_unit_cost,' +
+        ' a.key_quantity, a.key_price, a.key_cost,' +
+        ' a.door_quantity, a.door_price, a.door_cost,' +
+        ' a.subtotal, a.subtotal_for_apartment, a.discount_for_apartment, a.total' +
         ' FROM cards a' +
         ' LEFT JOIN cities b ON b.city_id = a.city_id' +
         ' LEFT JOIN streets c ON c.street_id = a.street_id' +
@@ -103,7 +261,7 @@ function getClientInfo(clientId) {
 function addressOfClient(data) {
   var out = [];
   try {
-    if (data.city.trim() != '') {
+    if ((data.city) && (data.city.trim() != '')) {
       out.push('Город: ' + data.city);
       {
         if (data.street.trim() != '') {
@@ -127,19 +285,19 @@ function addressOfClient(data) {
 function passportData(data) {
   var out = [];
   try {
-    if (data.name.trim() != '') {
+    if ((data.name) && (data.name.trim() != '')) {
       out.push(data.name);
       {
-        if (data.series.trim() != '') {
+        if ((data.series) && (data.series.trim() != '')) {
           out.push(' серия ' + data.series);
         }
-        if (data.number.trim() != '') {
+        if ((data.number) && (data.number.trim() != '')) {
           out.push(' № ' + data.number);
         }
-        if (data.issued != null) {
+        if (data.issued) {
           out.push(' выдан ' + moment(data.issued).format('DD.MM.YYYY'));
         }
-        if (data.department.trim() != '') {
+        if ((data.department) && (data.department.trim() != '')) {
           out.push(' ' + data.department);
         }
       }
@@ -188,24 +346,41 @@ function generateReportForSetup(res, sceleton) {
     NUMER: sceleton.numeration,
     MPHONE: sceleton.client.phones,
     KW: sceleton.client.registeredAddress.apartment,
+    equipmentQuantity: sceleton.complete.equipment.quantity,
+    equipmentPrice: sceleton.complete.equipment.price.toFixed(2),
+    equipmentCost: sceleton.complete.equipment.cost.toFixed(2),
+    mountingQuantity: sceleton.complete.mounting.quantity,
+    mountingPrice: sceleton.complete.mounting.price.toFixed(2),
+    mountingCost: sceleton.complete.mounting.cost.toFixed(2),
+    subscriberUnitQuantity: sceleton.complete.subscriberUnit.quantity,
+    subscriberUnitPrice: sceleton.complete.subscriberUnit.price.toFixed(2),
+    subscriberUnitCost: sceleton.complete.subscriberUnit.cost.toFixed(2),
+    keyQuantity: sceleton.complete.key.quantity,
+    keyPrice: sceleton.complete.key.price.toFixed(2),
+    keyCost: sceleton.complete.key.cost.toFixed(2),
+    doorQuantity: sceleton.complete.door.quantity,
+    doorPrice: sceleton.complete.door.price.toFixed(2),
+    doorCost: sceleton.complete.door.cost.toFixed(2),
+    subtotal: sceleton.complete.subtotal.cost.toFixed(2),
+    subtotalForApartment: sceleton.complete.subtotalForApartment.cost.toFixed(2),
+    discountForApartment: sceleton.complete.discountForApartment.cost.toFixed(2),
+    total: sceleton.complete.total.cost.toFixed(2)
   });
 
   try {
-    // render the document (replace all occurences of {first_name} by John, {last_name} by Doe, ...)
     doc.render()
   } catch (error) {
-    // Catch rendering errors (errors relating to the rendering of the template : angularParser throws an error)
     errorHandler(error);
   }
 
   var buf = doc.getZip()
     .generate({ type: 'nodebuffer' });
 
-  var outputFile = path.join(__dirname, '../../../public/docs/') + 'proba_pera1.doc'
+  var outputFile = path.join(__dirname, '../../../public/docs/') + sceleton.contractNumber + '-1.doc';
   // buf is a nodejs buffer, you can either write it to a file or do anything else with it.
   fs.writeFileSync(outputFile, buf);
 
-  res.download(outputFile, 'proba_pera_3', function (err) {
+  res.download(outputFile, sceleton.contractNumber + '-1', function (err) {
     if (err) {
       res.send('Нет файла!');
     }
@@ -217,10 +392,8 @@ function generateReportForService(res, sceleton) {
   // Orginal code
   // https://www.tutorialswebsite.com/replace-word-document-placeholder-node-js/
 
-  // Load the docx file as a binary
   var templateFile = (sceleton.city.printType == 1) ? 'service_pskov.docx' : 'service_vluki.docx';
   var content = fs
-    // .readFileSync(path.resolve(__dirname, 'input.docx'), 'binary');
     .readFileSync(path.join(__dirname, '../../../public/templates/' + templateFile), 'binary');
 
   var zip = new PizZip(content);
@@ -228,7 +401,6 @@ function generateReportForService(res, sceleton) {
   try {
     doc = new Docxtemplater(zip);
   } catch (error) {
-    // Catch compilation errors (errors caused by the compilation of the template : misplaced tags)
     errorHandler(error);
     return;
   }
@@ -261,28 +433,24 @@ function generateReportForService(res, sceleton) {
   });
 
   try {
-    // render the document (replace all occurences of {first_name} by John, {last_name} by Doe, ...)
     doc.render()
   } catch (error) {
-    // Catch rendering errors (errors relating to the rendering of the template : angularParser throws an error)
     errorHandler(error);
   }
 
   var buf = doc.getZip()
     .generate({ type: 'nodebuffer' });
 
-  var outputFile = path.join(__dirname, '../../../public/docs/') + 'proba_pera.doc'
-  // buf is a nodejs buffer, you can either write it to a file or do anything else with it.
+  var outputFile = path.join(__dirname, '../../../public/docs/') + sceleton.contractNumber + '-2.doc';
   fs.writeFileSync(outputFile, buf);
 
-  res.download(outputFile, 'proba_pera_2', function (err) {
+  res.download(outputFile, sceleton.contractNumber + '-2', function (err) {
     if (err) {
       res.send('Нет файла!');
     }
   });
 };
 
-// The error object contains additional information when logged with JSON.stringify (it contains a properties object containing all suberrors).
 function replaceErrors(key, value) {
   if (value instanceof Error) {
     return Object.getOwnPropertyNames(value).reduce(function (error, key) {
@@ -540,7 +708,7 @@ module.exports = function () {
     var id = req.params.id;
     var contractClientData = null;
     var serviceClientData = null;
-    var apartments;
+    var apartments = [];
 
     order.getClientContractData(id, function (contractData) {
       contractClientData = order.decodeClientData(contractData);
@@ -574,30 +742,29 @@ module.exports = function () {
                   orderModel.equipment.key = data.equipmentId;
                   orderModel.equipment.value = data.equipmentName;
 
-                  orderModel.city.key = data.cityId;
-                  orderModel.city.value = data.cityName;
+                  orderModel.address.city.key = data.cityId;
+                  orderModel.address.city.value = data.cityName;
 
-                  orderModel.street.key = data.streetId;
-                  orderModel.street.value = data.streetName;
-                  orderModel.street.cityId = data.cityId;
+                  orderModel.address.street.key = data.streetId;
+                  orderModel.address.street.value = data.streetName;
+                  orderModel.address.street.cityId = data.cityId;
 
-                  orderModel.house.key = data.houseId;
-                  orderModel.house.value = data.houseNumber;
-                  orderModel.house.streetId = data.streetId;
+                  orderModel.address.house.key = data.houseId;
+                  orderModel.address.house.value = data.houseNumber;
+                  orderModel.address.house.streetId = data.streetId;
 
-                  orderModel.porch = data.porch;
-                  orderModel.numeration = data.numeration;
-
-                  orderModel.address = '';
+                  orderModel.fullAddress = '';
                   if (data.cityId > 0) {
-                    orderModel.address = data.cityName.trim();
+                    orderModel.fullAddress = data.cityName.trim();
                     if (data.streetId > 0) {
-                      orderModel.address += ', ' + data.streetName.trim();
+                      orderModel.fullAddress += ', ' + data.streetName.trim();
                       if (data.houseId > 0) {
-                        orderModel.address += ', ' + data.houseNumber.trim();
+                        orderModel.fullAddress += ', ' + data.houseNumber.trim();
                       }
                     }
                   }
+                  orderModel.porch = data.porch;
+                  orderModel.numeration = data.numeration;
 
                   orderModel.client.contract = {
                     key: data.clientId,
@@ -624,28 +791,50 @@ module.exports = function () {
                   orderModel.contractInfo = data.contractInfo;
                   orderModel.serviceInfo = data.serviceInfo;
 
+                  // Complete 
+                  orderModel.complete.equipment.quantity = data.equipmentQuantity;
+                  orderModel.complete.equipment.price = data.equipmentPrice;
+                  orderModel.complete.equipment.cost = data.equipmentCost;
+
+                  orderModel.complete.mounting.quantity = data.mountingQuantity;
+                  orderModel.complete.mounting.price = data.mountingPrice;
+                  orderModel.complete.mounting.cost = data.mountingCost;
+                  
+                  orderModel.complete.subscriberUnit.quantity = data.subscriberUnitQuantity;
+                  orderModel.complete.subscriberUnit.price = data.subscriberUnitPrice;
+                  orderModel.complete.subscriberUnit.cost = data.subscriberUnitCost;
+
+                  orderModel.complete.key.quantity = data.keyQuantity;
+                  orderModel.complete.key.price = data.keyPrice;
+                  orderModel.complete.key.cost = data.keyCost;
+                  
+                  orderModel.complete.door.quantity = data.doorQuantity;
+                  orderModel.complete.door.price = data.doorPrice;
+                  orderModel.complete.door.cost = data.doorCost;
+
+                  orderModel.complete.subtotal.cost = data.subtotalCost;
+                  orderModel.complete.subtotalForApartment.cost = data.subtotalForApartmentCost;
+                  orderModel.complete.discountForApartment.cost = data.discountForApartmentCost;
+                  orderModel.complete.total.cost = data.totalCost;
 
                   // res.render('docs/forms/order.ejs', {
                   res.render('docs/forms/order2.ejs', {
                     title: 'Договор',
-
                     data: orderModel,
                     moment: moment,
                     utils: utils,
                     errors: {},
-
-                    contractPassportData: contractClientData.passport,
-                    contractRegisteredAddress: contractClientData.registeredAddress,
-                    contractActualAddress: contractClientData.actualAddress,
-                    contractPhones: contractData.phones,
-
-                    servicePassportData: serviceClientData.passport,
-                    serviceRegisteredAddress: serviceClientData.registeredAddress,
-                    serviceActualAddress: serviceClientData.actualAddress,
-                    servicePhones: serviceData.phones,
-
                     apartments: apartments,
                     user: req.session.userName
+                    // contractPassportData: contractClientData.passport,
+                    // contractRegisteredAddress: contractClientData.registeredAddress,
+                    // contractActualAddress: contractClientData.actualAddress,
+                    // contractPhones: contractData.phones,
+
+                    // servicePassportData: serviceClientData.passport,
+                    // serviceRegisteredAddress: serviceClientData.registeredAddress,
+                    // serviceActualAddress: serviceClientData.actualAddress,
+                    // servicePhones: serviceData.phones,
                   });
                 }
               });
@@ -656,8 +845,15 @@ module.exports = function () {
   });
 
   router.get('/add', function (req, res) {
-    res.render('refs/forms/order.ejs', {
-      'title': 'Договор',
+    var orderModel = new OrderModel();
+
+    res.render('docs/forms/order2.ejs', {
+      title: 'Договор',
+      data: orderModel,
+      moment: moment,
+      utils: utils,
+      errors: {},
+      apartments: [],
       user: req.session.userName
     });
   });
@@ -828,10 +1024,28 @@ module.exports = function () {
           sceleton.porch = order[0].porch;
           sceleton.numeration = order[0].numeration;
           sceleton.clientSetupId = order[0].clientSetupId;
-          sceleton.clientServiceId = order[0].clientServiceId;
+          sceleton.complete.equipment.quantity = order[0].equipment_quantity;
+          sceleton.complete.equipment.price = order[0].equipment_price;
+          sceleton.complete.equipment.cost = order[0].equipment_cost;
+          sceleton.complete.mounting.quantity = order[0].mounting_quantity;
+          sceleton.complete.mounting.price = order[0].mounting_price;
+          sceleton.complete.mounting.cost = order[0].mounting_cost;
+          sceleton.complete.subscriberUnit.quantity = order[0].subscriber_unit_quantity;
+          sceleton.complete.subscriberUnit.price = order[0].subscriber_unit_price;
+          sceleton.complete.subscriberUnit.cost = order[0].subscriber_unit_cost;
+          sceleton.complete.key.quantity = order[0].key_quantity;
+          sceleton.complete.key.price = order[0].key_price;
+          sceleton.complete.key.cost = order[0].key_cost;
+          sceleton.complete.door.quantity = order[0].door_quantity;
+          sceleton.complete.door.price = order[0].door_price;
+          sceleton.complete.door.cost = order[0].door_cost;
+          sceleton.complete.subtotal.cost = order[0].subtotal;
+          sceleton.complete.subtotalForApartment.cost = order[0].subtotal_for_apartment;
+          sceleton.complete.discountForApartment.cost = order[0].discount_for_apartment;
+          sceleton.complete.total.cost = order[0].total;
         }
 
-        return getAddressInfo(sceleton.clientServiceId, 0);
+        return getAddressInfo(sceleton.clientSetupId, 0);
       })
       .then(function(registeredAddress ) {
         if ((Array.isArray(registeredAddress)) && (registeredAddress.length === 1)) {
@@ -840,7 +1054,7 @@ module.exports = function () {
           sceleton.client.registeredAddress.house = registeredAddress[0].houseNumber;
           sceleton.client.registeredAddress.apartment = registeredAddress[0].apartment;
         }
-        return getAddressInfo(sceleton.clientServiceId, 1);
+        return getAddressInfo(sceleton.clientSetupId, 1);
       })
       .then(function(actualAddress ) {
         if ((Array.isArray(actualAddress)) && (actualAddress.length === 1)) {
@@ -849,7 +1063,7 @@ module.exports = function () {
           sceleton.client.actualAddress.house = actualAddress[0].houseNumber;
           sceleton.client.actualAddress.apartment = actualAddress[0].apartment;
         }
-        return getClientInfo(sceleton.clientServiceId);
+        return getClientInfo(sceleton.clientSetupId);
       })
       .then(function(passport) {
         if ((Array.isArray(passport)) && (passport.length === 1)) {
@@ -954,7 +1168,88 @@ module.exports = function () {
   });
 
   router.post('/save', function (req, res) {
-    res.redirect('/orders');
+
+    var orderModel = new OrderModel();
+    orderModel.id = req.body.id;
+    orderModel.contractNumber = req.body.contractNumber;
+    orderModel.createDate = req.body.createDate == null ? moment(new Date()).format('YYYY-MM-DD') : moment(req.body.createDate, 'DD.MM.YYYY').format('YYYY-MM-DD');
+    orderModel.endContract = req.body.endContract != null ? moment(req.body.endContract, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
+    orderModel.creditTo = req.body.creditTo != null ? moment(req.body.creditTo, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
+    orderModel.repaid = req.body.repaid === 'on' ? 1 : 0;
+    orderModel.fullAddress= req.body.fullAddress;
+    orderModel.porch = req.body.porch;
+    orderModel.numeration = req.body.numeration;
+    orderModel.contractInfo = req.body.contractInfo;
+    orderModel.onePerson = req.body.onePerson === 'on' ? 1 : 0;
+    orderModel.serviceInfo = req.body.serviceInfo;
+
+    try {
+      orderModel.equipment = JSON.parse(req.body.equipment);
+      orderModel.client = JSON.parse(req.body.client);
+      orderModel.address = JSON.parse(req.body.address);
+      orderModel.complete = JSON.parse(req.body.complete);
+    } catch (error) {
+      console.log(error);
+    }
+
+    req.assert('contractNumber', 'Номер договора не введен').notEmpty();
+    req.assert('createDate', 'Дата создания не заполнена').notEmpty();
+    req.assert('equipment', 'Оборудование не заполнено').custom(function(data) {
+      var result = false
+      try {
+        var equipment = JSON.parse(data);
+        result = +equipment.key > 0;
+      } catch (error) {
+
+      }
+      return result;
+    });
+    req.assert('creditTo', 'Дата кредита не заполнена').notEmpty();
+    req.assert('address', 'Адрес не заполнен').custom(function(data) {
+      var result = false
+      try {
+        var address = JSON.parse(data);
+        result = (+address.city.key > 0) && (+address.street.key > 0) && (+address.house.key > 0);
+      } catch (error) {
+
+      }
+      return result;
+    });
+    req.assert('porch', 'Номер подъезда не заполнен').isNumeric();
+    req.assert('numeration', 'Нумерация не заполнена').notEmpty();
+    
+    var errors = req.validationErrors();
+    if (! errors) {
+      if (orderModel.id != 0) {
+        updateOrder(orderModel)
+        .then(function() {
+          res.redirect('/orders');
+        })
+        .catch(function(error) {
+          console.log(error);
+        });
+      }
+      else {
+        saveOrder(orderModel)
+        .then(function() {
+          res.redirect('/orders');
+        })
+        .catch(function(error) {
+          console.log(error);
+        });
+      }
+    }
+    else {
+      res.render('docs/forms/order2.ejs', {
+        title: 'Договор',
+        data: orderModel,
+        moment: moment,
+        utils: utils,
+        errors: errors,
+        apartments: [],
+        user: req.session.userName
+      });
+    }
   });
 
   router.post('/delete', function (req, res) {
@@ -1014,6 +1309,39 @@ module.exports = function () {
         );
       });
     } else {
+      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    }
+  });
+
+  router.post('/find_equipment', function (req, res) {
+    var data = req.body;
+    if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
+      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      var params = {
+        suggestion: data.suggestion,
+        rowsCount: rowsCount
+      };
+      common.filterEquipments(params, function (err, rows) {
+        res.status(200).send(rows);
+      });
+    } else {
+      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    }
+  });
+
+  router.post('/find_full_address', function (req, res) {
+    var data = req.body;
+    if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
+      var rowsCount = 'rowsCount' in data ? data.rowsCount : rowsLimit;
+      var params = {
+        suggestion: data.suggestion,
+        rowsCount: rowsCount
+      };
+      common.outFullAddress(params, function (err, rows) {
+        res.status(200).send(rows);
+      });
+    }
+    else {
       res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
     }
   });
@@ -1107,6 +1435,23 @@ module.exports = function () {
         res.status(200).send(rows);
       });
     } else {
+      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    }
+  });
+
+  router.post('/find_client', function (req, res) {
+    var data = req.body;
+    if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
+      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      var params = {
+        suggestion: data.suggestion,
+        rowsCount: rowsCount
+      };
+      common.filterClients(params, function (err, rows) {
+        res.status(200).send(rows);
+      });
+    }
+    else {
       res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
     }
   });

@@ -217,7 +217,7 @@
           map = {};
 
           axios.post('/clients/find_client', {
-            clientName: query,
+            suggestion: query,
             limit: 15
           }
           ).then(function (response) {
