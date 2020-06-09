@@ -58,6 +58,16 @@ module.exports.OrderModel = function () {
   this.privilegePayment = 0;
   this.receiptPrinting = null;
 
+  this.apartments = {
+    stat: {
+      paid: 0,
+      privilege: 0,
+      exempt: 0,
+      locked: 0
+    },
+    table: []
+  },
+
   this.contractInfo = '';
   this.serviceInfo = '';
 

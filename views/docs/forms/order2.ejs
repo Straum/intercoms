@@ -292,14 +292,14 @@
                     <div class="form-group">
                       <label for="normalPayment">Обычная плата</label>
                       <input type="text" class="form-control" id="normalPayment" name="normalPayment"
-                        value="<%= data.normalPayment > 0 ? data.normalPayment : '' %>">
+                        value="<%= data.normalPayment > 0 ? data.normalPayment.toFixed(2) : '' %>">
                     </div>
                   </div>
                   <div class="col-md-2">
                     <div class="form-group">
                       <label for="privilegePayment">Льготная плата</label>
                       <input type="text" class="form-control" id="privilegePayment" name="privilegePayment"
-                        value="<%= data.privilegePayment > 0 ? data.privilegePayment : '' %>">
+                        value="<%= data.privilegePayment > 0 ? data.privilegePayment.toFixed(2) : '' %>">
                     </div>
                   </div>
                   <div class="col-md-2">
@@ -347,29 +347,25 @@
 
                     <div id="dsTable" style="padding: 0px 0px;">
 
-                      <table class="table table-bordered table-hover table-condensed" style="background-color: white;">
+                      <table class="table table-bordered table-hover table-condensed" style="background-color: white;" name="tableApartments" id="tableApartments">
                         <thead>
                           <tr class="active">
-                            <th class="col-xs-2 text-center">Кв-ра</th>
-                            <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Опл-но <span
-                                class="badge">1</span></th>
-                            <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Льготник <span
-                                class="badge">2</span></th>
-                            <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Освоб. <span
-                                class="badge">3</span></th>
-                            <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Забл-ван <span
-                                class="badge">4</span></th>
+                            <th class="col-xs-2 text-center" onclick="sortApartments(0)">Кв-ра <span class="badge"><%= data.apartments.table.length %></span></th>
+                            <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2" onclick="sortTable(1)">Опл-но <span class="badge"><%= data.apartments.stat.paid %></span></th>
+                            <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2" onclick="sortTable(2)">Льготник <span class="badge"><%= data.apartments.stat.privilege %></span></th>
+                            <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2" onclick="sortTable(3)">Освоб. <span class="badge"><%= data.apartments.stat.exempt %></span></th>
+                            <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2" onclick="sortTable(4)">Забл-ван <span class="badge"><%= data.apartments.stat.locked %></span></th>
                             <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Дата</th>
                           </tr>
                           <tr class="active">
                             <th>
                               <div class="input-group">
                                 <span class="input-group-btn">
-                                  <button class="btn btn-default" type="button" id="clearCity">
+                                  <button class="btn btn-default" type="button" id="clearApartment">
                                     <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                                   </button>
                                 </span>
-                                <input type="text" class="form-control" name="findCity" id="findCity" value="">
+                                <input type="text" class="form-control" name="findApartment" id="findApartment" value="">
                               </div>
                             </th>
                           </tr>
@@ -400,8 +396,7 @@
                               <%= apartments[cnt].number %>
                             </td>
                             <td class="col-xs-2 text-center align-middle">
-                              <!-- <input type="checkbox" class="styled" <%= apartments[cnt].paid == 1 ? ' checked' : '' %>> -->
-                              1234
+                              <input type="checkbox" class="styled" <%= apartments[cnt].paid == 1 ? ' checked' : '' %>>
                             </td>
                             <td class="col-xs-2 text-center align-middle">
                               <input type="checkbox" class="styled"
@@ -673,6 +668,77 @@
     var order = <%- JSON.stringify(data) %>;
     var completeRowIndex = 1;
 
+    // Original code: https://www.w3schools.com/howto/howto_js_sort_table.asp
+    // Code modify
+    function sortApartments() {
+      var rows, shouldSwitch;
+      var table = document.getElementById('tableApartments');
+      var switching = true;
+      var dir = "asc";
+      var switchcount = 0;
+      while (switching) {
+        switching = false;
+        rows = table.rows;
+        for (var ind = 2; ind < (rows.length - 1); ind++) {
+          shouldSwitch = false;
+          var x = rows[ind].getElementsByTagName('td')[0];
+          var y = rows[ind + 1].getElementsByTagName('td')[0];
+          if (dir == "asc") {
+            if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+              shouldSwitch = true;
+              break;
+            }
+          } 
+          else if (dir == "desc") {
+            if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+              shouldSwitch = true;
+              break;
+            }
+          }
+        }
+
+        if (shouldSwitch) {
+          rows[ind].parentNode.insertBefore(rows[ind + 1], rows[ind]);
+          switching = true;
+          switchcount ++;
+        } 
+      }
+    }
+
+    function sortTable(index) {
+      var rows, shouldSwitch;
+      var table = document.getElementById('tableApartments');
+      var switching = true;
+      var dir = "desc";
+      var switchcount = 0;
+      while (switching) {
+        switching = false;
+        rows = table.rows;
+        for (var ind = 2; ind < (rows.length - 1); ind++) {
+          shouldSwitch = false;
+          var x = rows[ind].getElementsByTagName('td')[index];
+          var y = rows[ind + 1].getElementsByTagName('td')[index];
+          if (dir == "asc") {
+            if (x.firstElementChild.checked > y.firstElementChild.checked) {
+              shouldSwitch = true;
+              break;
+            }
+          } else if (dir == "desc") {
+            if (x.firstElementChild.checked < y.firstElementChild.checked) {
+              shouldSwitch = true;
+              break;
+            }
+          }
+        }
+
+        if (shouldSwitch) {
+          rows[ind].parentNode.insertBefore(rows[ind + 1], rows[ind]);
+          switching = true;
+          switchcount ++;
+        } 
+      }
+    }
+
     function saveFullAddress(data) {
       try {
         var address = JSON.parse(document.getElementById('address').value);
@@ -707,6 +773,25 @@
       }
       catch (e) {
         console.log(e.message);
+      }
+    }
+
+    function filterApartment() {
+      var filter = document.getElementById('findApartment').value.trim().toLowerCase();
+      var rows = document.getElementById('tableApartments').getElementsByTagName('tr');
+      
+      if ((rows instanceof HTMLCollection) && (rows.length > 0)) {
+        for (ind = 0; ind < rows.length; ind++) {
+          var td = rows[ind].getElementsByTagName("td")[0];
+          if (td) {
+            var value = td.textContent || td.innerText;
+            if (value.trim().toLowerCase().indexOf(filter, 0) === 0) {
+              rows[ind].style.display = "";
+            } else {
+              rows[ind].style.display = "none";
+            }
+          }
+        }
       }
     }
 
@@ -828,6 +913,16 @@
       } catch (error) {
         console.log('clearClientContract Error: ' + error.message);
       }
+    });
+
+    document.getElementById('clearApartment').addEventListener('click', function (e) {
+      document.getElementById('findApartment').value = '';
+      document.getElementById('findApartment').focus();
+      filterApartment();
+    });
+
+    document.getElementById('findApartment').addEventListener("keyup", function (e) {
+      filterApartment();      
     });
 
     // $('#equipment_name').typeahead({
@@ -1163,24 +1258,6 @@
       document.getElementById('completeQuantityRow').hidden = !show;
       document.getElementById('completePriceRow').hidden = !show;
       document.getElementById('completeCostRow').hidden = show;
-
-      // if (show) {
-
-      //   // document.getElementById('completeQuantityRow').has
-
-      //   // document.getElementById('completeQuantityRow').classList.remove('hidden');
-      //   // document.getElementById('completePriceRow').classList.remove('hidden');
-      // }
-      // else {
-
-      // }
-
-      // if (!showElements) {
-      //   document.getElementById('completeQuantityRow').classList.add('hidden');
-      //   document.getElementById('completePriceRow').classList.add('hidden');
-      // }
-      // document.getElementById('completeCost').readOnly = showElements;
-      // document.getElementById('completeCost').readOnly = showElements;
 
       var dataTable = [];
       var data = $('#complete').val();

@@ -38,6 +38,15 @@ function updateOrder(data) {
       ' client_id = ?,' +
       ' is_one_person = ?,' +
       ' m_client_id = ?,' +
+      ' m_contract_number = ?,' +
+      ' start_service = ?,' +
+      ' end_service = ?,' +
+      ' maintenance_contract = ?,' +
+      ' m_start_apartment = ?,' +
+      ' m_end_apartment = ?,' +
+      ' normal_payment = ?,' +
+      ' privilege_payment = ?,' +
+      ' receipt_printing = ?,' +
       ' contract_info = ?,' +
       ' service_info = ?,' +
       ' equipment_quantity = ?,' +
@@ -74,6 +83,15 @@ function updateOrder(data) {
           data.client.contract.key,
           data.onePerson,
           data.client.service.key,
+          data.serviceNumber,
+          data.startService,
+          data.endService,
+          data.maintenanceContract,
+          data.startApartment,
+          data.endApartment,
+          data.normalPayment,
+          data.privilegePayment,
+          data.receiptPrinting,
           data.contractInfo,
           data.serviceInfo,
           data.complete.equipment.quantity,
@@ -115,6 +133,8 @@ function saveOrder(data) {
       ' INSERT INTO cards (' +
       ' contract_number, create_date, equipment_id, end_contract, credit_to, repaid, city_id, street_id, house_id, porch, numeration,' +
       ' client_id, is_one_person, m_client_id,' +
+      ' m_contract_number, start_service, end_service, maintenance_contract, m_start_apartment, m_end_apartment,' +
+      ' normal_payment, privilege_payment, receipt_prnting,' +
       ' contract_info, service_info,' +
       ' equipment_quantity, equipment_price, equipment_cost,' +
       ' mounting_quantity, mounting_price, mounting_cost,' +
@@ -123,7 +143,7 @@ function saveOrder(data) {
       ' door_quantity, door_price, door_cost,' +
       ' subtotal, subtotal_for_apartment, discount_for_apartment, total)' +
       ' VALUES (' + 
-      ' ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [
+      ' ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [
           data.contractNumber,
           data.createDate,
           data.equipment.key,
@@ -138,6 +158,15 @@ function saveOrder(data) {
           data.client.contract.key,
           data.onePerson,
           data.client.service.key,
+          data.serviceNumber,
+          data.startService,
+          data.endService,
+          data.maintenanceContract,
+          data.startApartment,
+          data.endApartment,
+          data.normalPayment,
+          data.privilegePayment,
+          data.receiptPrinting,
           data.contractInfo,
           data.serviceInfo,
           data.complete.equipment.quantity,
@@ -788,6 +817,22 @@ module.exports = function () {
                   orderModel.privilegePayment = data.privilegePayment;
                   orderModel.receiptPrinting = data.receiptPrinting;
 
+                  if (apartments.length > 0) {
+                    orderModel.apartments.stat.paid = apartments.filter(function(element) {
+                      return Number(element.paid) === 1;
+                    }).length;
+                    orderModel.apartments.stat.privilege = apartments.filter(function(element) {
+                      return Number(element.privilege) === 1;
+                    }).length;
+                    orderModel.apartments.stat.exempt = apartments.filter(function(element) {
+                      return Number(element.exempt) === 1;
+                    }).length;
+                    orderModel.apartments.stat.locked = apartments.filter(function(element) {
+                      return Number(element.locked) === 1;
+                    }).length;
+                  }
+                  orderModel.apartments.table = apartments;
+
                   orderModel.contractInfo = data.contractInfo;
                   orderModel.serviceInfo = data.serviceInfo;
 
@@ -826,15 +871,6 @@ module.exports = function () {
                     errors: {},
                     apartments: apartments,
                     user: req.session.userName
-                    // contractPassportData: contractClientData.passport,
-                    // contractRegisteredAddress: contractClientData.registeredAddress,
-                    // contractActualAddress: contractClientData.actualAddress,
-                    // contractPhones: contractData.phones,
-
-                    // servicePassportData: serviceClientData.passport,
-                    // serviceRegisteredAddress: serviceClientData.registeredAddress,
-                    // serviceActualAddress: serviceClientData.actualAddress,
-                    // servicePhones: serviceData.phones,
                   });
                 }
               });
@@ -1179,8 +1215,17 @@ module.exports = function () {
     orderModel.fullAddress= req.body.fullAddress;
     orderModel.porch = req.body.porch;
     orderModel.numeration = req.body.numeration;
-    orderModel.contractInfo = req.body.contractInfo;
     orderModel.onePerson = req.body.onePerson === 'on' ? 1 : 0;
+    orderModel.serviceNumber = req.body.serviceNumber;
+    orderModel.startService = req.body.startService != null ? moment(req.body.startService, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
+    orderModel.endService = req.body.endService != null ? moment(req.body.endService, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
+    orderModel.maintenanceContract = req.body.maintenanceContract;
+    orderModel.startApartment = req.body.startApartment;
+    orderModel.endApartment = req.body.endApartment;
+    orderModel.normalPayment = req.body.normalPayment;
+    orderModel.privilegePayment = req.body.privilegePayment;
+    orderModel.receiptPrinting = req.body.receiptPrinting != null ? moment(req.body.receiptPrinting, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
+    orderModel.contractInfo = req.body.contractInfo;
     orderModel.serviceInfo = req.body.serviceInfo;
 
     try {
