@@ -350,15 +350,16 @@
                       <table class="table table-bordered table-hover table-condensed" style="background-color: white;" name="tableApartments" id="tableApartments">
                         <thead>
                           <tr class="active">
-                            <th class="col-xs-2 text-center" onclick="sortApartments(0)">Кв-ра <span class="badge"><%= data.apartments.table.length %></span></th>
-                            <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2" onclick="sortTable(1)">Опл-но <span class="badge"><%= data.apartments.stat.paid %></span></th>
-                            <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2" onclick="sortTable(2)">Льготник <span class="badge"><%= data.apartments.stat.privilege %></span></th>
-                            <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2" onclick="sortTable(3)">Освоб. <span class="badge"><%= data.apartments.stat.exempt %></span></th>
-                            <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2" onclick="sortTable(4)">Забл-ван <span class="badge"><%= data.apartments.stat.locked %></span></th>
+                            <th class="col-xs-2 text-center" colspan="2" onclick="sortApartments(0)">Кв-ра <span class="badge"><%= data.apartments.table.length %></span></th>
+                            <th class="col-xs-1 text-center" style="vertical-align: middle" rowspan="2" onclick="sortTable(2)">Опл-но <span class="badge"><%= data.apartments.stat.paid %></span></th>
+                            <th class="col-xs-1 text-center" style="vertical-align: middle" rowspan="2" onclick="sortTable(3)">Льготник <span class="badge"><%= data.apartments.stat.privilege %></span></th>
+                            <th class="col-xs-1 text-center" style="vertical-align: middle" rowspan="2" onclick="sortTable(4)">Освоб. <span class="badge"><%= data.apartments.stat.exempt %></span></th>
+                            <th class="col-xs-1 text-center" style="vertical-align: middle" rowspan="2" onclick="sortTable(5)">Забл-ван <span class="badge"><%= data.apartments.stat.locked %></span></th>
                             <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Дата</th>
+                            <th class="col-xs-1 text-center" style="vertical-align: middle" rowspan="2">Действия</th>
                           </tr>
                           <tr class="active">
-                            <th>
+                            <th colspan="2">
                               <div class="input-group">
                                 <span class="input-group-btn">
                                   <button class="btn btn-default" type="button" id="clearApartment">
@@ -372,46 +373,59 @@
                         </thead>
                         <tbody>
                           <% var _class %>
-                          <% for (var cnt = 0, max = apartments.length; cnt < max; cnt++) {%>
+                          <% for (var cnt = 0, max = data.apartments.table.length; cnt < max; cnt++) {%>
 
                           <% _class = '' %>
-                          <% if ((+apartments[cnt].paid == 1) && (+apartments[cnt].half_paid == 2)) { %>
+                          <% if ((+data.apartments.table[cnt].paid == 1) && (+data.apartments.table[cnt].half_paid == 2)) { %>
                           <% _class = 'primary' %>
                           <% } %>
 
-                          <% if ((+apartments[cnt].paid == 1) && (+apartments[cnt].half_paid == 1)) { %>
+                          <% if ((+data.apartments.table[cnt].paid == 1) && (+data.apartments.table[cnt].half_paid == 1)) { %>
                           <% _class = 'warning' %>
                           <% } %>
 
-                          <% if ((+apartments[cnt].paid == 1) && (+apartments[cnt].half_paid == 0)) { %>
+                          <% if ((+data.apartments.table[cnt].paid == 1) && (+data.apartments.table[cnt].half_paid == 0)) { %>
                           <% _class = 'success' %>
                           <% } %>
 
-                          <% if (+apartments[cnt].exempt == 1) { %>
+                          <% if (+data.apartments.table[cnt].exempt == 1) { %>
                           <% _class = 'danger' %>
                           <% } %>
 
-                          <tr class="<%= _class %>">
-                            <td class="col-xs-2 text-center align-middle">
-                              <%= apartments[cnt].number %>
+                          <tr class="<%= _class %>" data-uid="<%= data.apartments.table[cnt].uid %>">
+                            <td class="col-xs-1 text-center align-middle">
+                              <button type="button" class="btn btn-default btn-xs" onclick="showHistory(event)">
+                                <span class="glyphicon glyphicon-rub" aria-hidden="true"></span>
+                              </button>
                             </td>
-                            <td class="col-xs-2 text-center align-middle">
-                              <input type="checkbox" class="styled" <%= apartments[cnt].paid == 1 ? ' checked' : '' %>>
+                            <td class="col-xs-1 text-center align-middle">
+                              <%= data.apartments.table[cnt].number %>
                             </td>
-                            <td class="col-xs-2 text-center align-middle">
+                            <td class="col-xs-1 text-center align-middle">
+                              <input type="checkbox" class="styled" <%= data.apartments.table[cnt].paid == 1 ? ' checked' : '' %>>
+                            </td>
+                            <td class="col-xs-1 text-center align-middle">
                               <input type="checkbox" class="styled"
-                                <%= apartments[cnt].privilege == 1 ? ' checked' : '' %>>
+                                <%= data.apartments.table[cnt].privilege == 1 ? ' checked' : '' %>>
                             </td>
-                            <td class="col-xs-2 text-center align-middle">
+                            <td class="col-xs-1 text-center align-middle">
                               <input type="checkbox" class="styled"
-                                <%= apartments[cnt].exempt == 1 ? ' checked' : '' %>>
+                                <%= data.apartments.table[cnt].exempt == 1 ? ' checked' : '' %>>
                             </td>
-                            <td class="col-xs-2 text-center align-middle">
+                            <td class="col-xs-1 text-center align-middle">
                               <input type="checkbox" class="styled"
-                                <%= apartments[cnt].locked == 1 ? ' checked' : '' %>>
+                                <%= data.apartments.table[cnt].locked == 1 ? ' checked' : '' %>>
                             </td>
                             <td class="col-xs-2 text-center align-middle">
-                              <%= apartments[cnt].paid_dt ? moment(apartments[cnt].paid_dt).format( 'DD.MM.YYYY HH:mm:ss') : '\u00A0' %>
+                              <%= data.apartments.table[cnt].paid_dt ? moment(data.apartments.table[cnt].paid_dt).format( 'DD.MM.YYYY HH:mm:ss') : '\u00A0' %>
+                            </td>
+                            <td class="col-xs-1 text-center align-middle">
+                              <button type="button" class="btn btn-info btn-xs" onclick="editApartment(event)" data-uid="<%= data.apartments.table[cnt].uid %>">
+                                <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
+                              </button>
+                              <button type="button" class="btn btn-danger btn-xs" onclick="removeApartment(event)" data-uid="<%= data.apartments.table[cnt].uid %>">
+                                <span class="glyphicon glyphicon-minus" aria-hidden="true"></span>
+                              </button>  
                             </td>
                           </tr>
                           <%}%>
@@ -427,187 +441,187 @@
                 <div class="form-group">
                   <label for="contract_info">Информация по договору</label>
                   <textarea class="form-control" name="contractInfo" rows="7"><%= data.contractInfo %></textarea>
-                    </div>
-                    <div class="form-group">
-                      <label for="service_info">Информация по обслуживанию</label>
-                      <textarea class="form-control" name="serviceInfo" rows="7"><%= data.serviceInfo %></textarea>
-                    </div>
-                  </div>
-
-                  <div role="tabpanel" class="tab-pane" id="completePackage">
-                    <table class="table table-bordered table-hover table-condensed" style="background-color: white;"
-                      id="tableComplete">
-                      <thead>
-                        <tr class="active">
-                          <th class="col-xs-6 text-center">
-                            Описание
-                          </th>
-                          <th class="col-xs-2 text-center" style="vertical-align: middle">
-                            Кол-во, шт.
-                          </th>
-                          <th class="col-xs-2 text-center" style="vertical-align: middle">
-                            Цена
-                          </th>
-                          <th class="col-xs-2 text-center" style="vertical-align: middle">
-                            Общая стоимость
-                          </th>
-                        </tr>
-                      </thead>
-                      <tr>
-                        <td>
-                          Оборудование общего назначения с панелью
-                        </td>
-                        <td class="text-center">
-                          <%= data.complete.equipment.quantity %>
-                        </td>
-                        <td class="text-right">
-                          <%= (data.complete.equipment.price).toFixed(2) %>
-                        </td>
-                        <td class="text-right">
-                          <%= (data.complete.equipment.cost).toFixed(2) %>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>
-                          Монтажные и пуско-наладочные работы
-                        </td>
-                        <td class="text-center">
-                          <%= data.complete.mounting.quantity %>
-                        </td>
-                        <td class="text-right">
-                          <%= (data.complete.mounting.price).toFixed(2) %>
-                        </td>
-                        <td class="text-right">
-                          <%= (data.complete.mounting.cost).toFixed(2) %>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>
-                          Абонентское устройство
-                        </td>
-                        <td class="text-center">
-                          <%= data.complete.subscriberUnit.quantity %>
-                        </td>
-                        <td class="text-right">
-                          <%= (data.complete.subscriberUnit.price).toFixed(2) %>
-                        </td>
-                        <td class="text-right">
-                          <%= (data.complete.subscriberUnit.cost).toFixed(2) %>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>
-                          Ключ/Брелок/Карта
-                        </td>
-                        <td class="text-center">
-                          <%= data.complete.key.quantity %>
-                        </td>
-                        <td class="text-right">
-                          <%= (data.complete.key.price).toFixed(2) %>
-                        </td>
-                        <td class="text-right">
-                          <%= (data.complete.key.cost).toFixed(2) %>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>
-                          Дверь металлическая
-                        </td>
-                        <td class="text-center">
-                          <%= data.complete.door.quantity %>
-                        </td>
-                        <td class="text-right">
-                          <%= (data.complete.door.price).toFixed(2) %>
-                        </td>
-                        <td class="text-right">
-                          <%= (data.complete.door.cost).toFixed(2) %>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>
-                          Итого
-                        </td>
-                        <td>
-                        </td>
-                        <td>
-                        </td>
-                        <td class="text-right">
-                          <%= (data.complete.subtotal.cost).toFixed(2) %>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>
-                          Итого с 1 квартиры
-                        </td>
-                        <td>
-                        </td>
-                        <td>
-                        </td>
-                        <td class="text-right">
-                          <%= (data.complete.subtotalForApartment.cost).toFixed(2) %>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>
-                          Скидка для квартиры
-                        </td>
-                        <td>
-                        </td>
-                        <td>
-                        </td>
-                        <td class="text-right">
-                          <%= (data.complete.discountForApartment.cost).toFixed(2) %>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>
-                          <strong>Итого к оплате</strong>
-                        </td>
-                        <td>
-                        </td>
-                        <td>
-                        </td>
-                        <td class="text-right">
-                          <strong><%= (data.complete.total.cost).toFixed(2) %></strong>
-                        </td>
-                      </tr>
-
-                      <tbody>
-                      </tbody>
-                    </table>
-                  </div>
-
                 </div>
-
-                <div class="col-12">
-                  <button type="submit" class="btn btn-success" id="save">Записать</button>
-                  <div class="btn-group dropup">
-                    <!-- <button type="button" class="btn btn-default dropdown-toggle disabled" data-toggle="dropdown"> -->
-                    <button class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                      Действия <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu" role="menu">
-                      <!-- <li ><a href="#">Сформировать договор на установку</a></li> -->
-                      <!-- <li class="disabled"><a href="#">Сформировать договор на обслуживание</a></li> -->
-                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
-                          href="/orders/generate_order_setup/<%= data.id %>">Сформировать договор на установку</a></li>
-                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
-                          href="/orders/generate_order_service/<%= data.id %>">Сформировать договор на обслуживание</a>
-                      </li>
-                      <li class="divider"></li>
-                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
-                          href="/orders/open_order_setup/<%= data.contractNumber %>">Открыть договор на установку</a>
-                      </li>
-                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
-                          href="/orders/open_order_service/<%= data.contractNumber %>">Открыть договор на
-                          обслуживание</a></li>
-                    </ul>
-                  </div>
-                  <button type="button" class="btn btn-info" id="save">Печать квитанций</button>
+                <div class="form-group">
+                  <label for="service_info">Информация по обслуживанию</label>
+                  <textarea class="form-control" name="serviceInfo" rows="7"><%= data.serviceInfo %></textarea>
                 </div>
-
               </div>
+
+              <div role="tabpanel" class="tab-pane" id="completePackage">
+                <table class="table table-bordered table-hover table-condensed" style="background-color: white;"
+                  id="tableComplete">
+                  <thead>
+                    <tr class="active">
+                      <th class="col-xs-6 text-center">
+                        Описание
+                      </th>
+                      <th class="col-xs-2 text-center" style="vertical-align: middle">
+                        Кол-во, шт.
+                      </th>
+                      <th class="col-xs-2 text-center" style="vertical-align: middle">
+                        Цена
+                      </th>
+                      <th class="col-xs-2 text-center" style="vertical-align: middle">
+                        Общая стоимость
+                      </th>
+                    </tr>
+                  </thead>
+                  <tr>
+                    <td>
+                      Оборудование общего назначения с панелью
+                    </td>
+                    <td class="text-center">
+                      <%= data.complete.equipment.quantity %>
+                    </td>
+                    <td class="text-right">
+                      <%= (data.complete.equipment.price).toFixed(2) %>
+                    </td>
+                    <td class="text-right">
+                      <%= (data.complete.equipment.cost).toFixed(2) %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      Монтажные и пуско-наладочные работы
+                    </td>
+                    <td class="text-center">
+                      <%= data.complete.mounting.quantity %>
+                    </td>
+                    <td class="text-right">
+                      <%= (data.complete.mounting.price).toFixed(2) %>
+                    </td>
+                    <td class="text-right">
+                      <%= (data.complete.mounting.cost).toFixed(2) %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      Абонентское устройство
+                    </td>
+                    <td class="text-center">
+                      <%= data.complete.subscriberUnit.quantity %>
+                    </td>
+                    <td class="text-right">
+                      <%= (data.complete.subscriberUnit.price).toFixed(2) %>
+                    </td>
+                    <td class="text-right">
+                      <%= (data.complete.subscriberUnit.cost).toFixed(2) %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      Ключ/Брелок/Карта
+                    </td>
+                    <td class="text-center">
+                      <%= data.complete.key.quantity %>
+                    </td>
+                    <td class="text-right">
+                      <%= (data.complete.key.price).toFixed(2) %>
+                    </td>
+                    <td class="text-right">
+                      <%= (data.complete.key.cost).toFixed(2) %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      Дверь металлическая
+                    </td>
+                    <td class="text-center">
+                      <%= data.complete.door.quantity %>
+                    </td>
+                    <td class="text-right">
+                      <%= (data.complete.door.price).toFixed(2) %>
+                    </td>
+                    <td class="text-right">
+                      <%= (data.complete.door.cost).toFixed(2) %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      Итого
+                    </td>
+                    <td>
+                    </td>
+                    <td>
+                    </td>
+                    <td class="text-right">
+                      <%= (data.complete.subtotal.cost).toFixed(2) %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      Итого с 1 квартиры
+                    </td>
+                    <td>
+                    </td>
+                    <td>
+                    </td>
+                    <td class="text-right">
+                      <%= (data.complete.subtotalForApartment.cost).toFixed(2) %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      Скидка для квартиры
+                    </td>
+                    <td>
+                    </td>
+                    <td>
+                    </td>
+                    <td class="text-right">
+                      <%= (data.complete.discountForApartment.cost).toFixed(2) %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <strong>Итого к оплате</strong>
+                    </td>
+                    <td>
+                    </td>
+                    <td>
+                    </td>
+                    <td class="text-right">
+                      <strong><%= (data.complete.total.cost).toFixed(2) %></strong>
+                    </td>
+                  </tr>
+
+                  <tbody>
+                  </tbody>
+                </table>
+              </div>
+
             </div>
+
+            <div class="col-12">
+              <button type="submit" class="btn btn-success" id="save">Записать</button>
+              <div class="btn-group dropup">
+                <!-- <button type="button" class="btn btn-default dropdown-toggle disabled" data-toggle="dropdown"> -->
+                <button class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                  Действия <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu">
+                  <!-- <li ><a href="#">Сформировать договор на установку</a></li> -->
+                  <!-- <li class="disabled"><a href="#">Сформировать договор на обслуживание</a></li> -->
+                  <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
+                      href="/orders/generate_order_setup/<%= data.id %>">Сформировать договор на установку</a></li>
+                  <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
+                      href="/orders/generate_order_service/<%= data.id %>">Сформировать договор на обслуживание</a>
+                  </li>
+                  <li class="divider"></li>
+                  <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
+                      href="/orders/open_order_setup/<%= data.contractNumber %>">Открыть договор на установку</a>
+                  </li>
+                  <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
+                      href="/orders/open_order_service/<%= data.contractNumber %>">Открыть договор на
+                      обслуживание</a></li>
+                </ul>
+              </div>
+              <button type="button" class="btn btn-info" id="save">Печать квитанций</button>
+            </div>
+
+          </div>
+        </div>
       </form>
     </div>
   </div>
@@ -655,6 +669,100 @@
     </div>
   </div>
 
+  <div class="modal bs-example-modal" id="historyDialog" tabindex="-1" role="dialog"
+    aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+              aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="applicationCapton">История</h4>
+        </div>
+        <div class="modal-body">
+          
+          <div class="card">
+
+            <ul class="nav nav-pills">
+              <li class="active"><a <a data-toggle="tab" href="#payments">Оплаты</a></li>
+              <li><a <a data-toggle="tab" href="#fines">Подключения</a></li>
+              <li><a <a data-toggle="tab" href="#prices">Платы</a></li>
+            </ul>
+
+            <div class="well">
+              <div class="card-body">
+                <div class="tab-content">
+                  <div id="payments" class="tab-pane in active">
+                    <div class="row">
+                      <div class="col-md-12">
+                        <table class="table table-bordered table-hover table-condensed" style="background-color: white;" name="tablePayments" id="tablePayments">
+                          <thead>
+                            <tr class="active">
+                              <th class="col-xs-2 text-center" style="vertical-align: middle">Создано</th>
+                              <th class="col-xs-2 text-center" style="vertical-align: middle">Оплачено</th>
+                              <th class="col-xs-1 text-center" style="vertical-align: middle">ID</th>
+                              <th class="col-xs-1 text-center" style="vertical-align: middle">Месяц</th>
+                              <th class="col-xs-1 text-center" style="vertical-align: middle">Год</th>
+                              <th class="col-xs-2 text-center" style="vertical-align: middle">Сумма</th>
+                              <th class="col-xs-2 text-center" style="vertical-align: middle">Способ</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div id="fines" class="tab-pane">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <table class="table table-bordered table-hover table-condensed" style="background-color: white;" name="tableFines" id="tableFines">
+                          <thead>
+                            <tr class="active">
+                              <th class="col-xs-2 text-center" style="vertical-align: middle">Создано</th>
+                              <th class="col-xs-1 text-center" style="vertical-align: middle">ID</th>
+                              <th class="col-xs-2 text-center" style="vertical-align: middle">Сумма</th>
+                              <th class="col-xs-1 text-center" style="vertical-align: middle">Погашено</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div id="prices" class="tab-pane">
+                    <div class="row">
+                      <div class="col-md-10">
+                        <table class="table table-bordered table-hover table-condensed" style="background-color: white;" name="tablePrices" id="tablePrices">
+                          <thead>
+                            <tr class="active">
+                              <th class="col-xs-2 text-center" style="vertical-align: middle">ТО с</th>
+                              <th class="col-xs-2 text-center" style="vertical-align: middle">ТО по</th>
+                              <th class="col-xs-2 text-right" style="vertical-align: middle">Обычная плата</th>
+                              <th class="col-xs-2 text-right" style="vertical-align: middle">Льгтная плата</th>
+                              <th class="col-xs-2 text-center" style="vertical-align: middle">Отпечатано</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                  
+                </div>
+              </div>
+            </div>
+          </div>
+      </div>
+    </div>
+  </div>
+
   <script src="/bower_components/jquery/dist/jquery.min.js"></script>
   <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
   <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
@@ -667,6 +775,91 @@
   <script>
     var order = <%- JSON.stringify(data) %>;
     var completeRowIndex = 1;
+
+    function showHistory(ev) {
+      // var id = ev.currentTarget.getAttribute('data-uid');
+      var id = ev.currentTarget.parentElement.parentElement.getAttribute('data-uid');
+      ev.stopPropagation();
+
+      axios.post('/orders/payments_history', {
+        id: id,
+        limit: 15
+      }
+      ).then(function (response) {
+          var data = response.data;
+          var body = {
+            payments: '',
+            fines: '',
+            prices: ''
+          };
+          
+          if ((data.payments) && (Array.isArray(data.payments)) && (data.payments.length > 0)) {
+            data.payments.forEach(function(element) {
+              body.payments += '<tr>';
+              body.payments += '<td class="text-center align-middle">' + moment(element.createDate).format('DD.MM.YYYY') + '</td>';
+              body.payments += '<td class="text-center align-middle">' + moment(element.payDate).format('DD.MM.YYYY') + '</td>';
+              body.payments += '<td class="text-center align-middle">' + element.uid + '</td>';
+              body.payments += '<td class="text-center align-middle">' + element.payMonth + '</td>';
+              body.payments += '<td class="text-center align-middle">' + element.payYear + '</td>';
+              body.payments += '<td class="text-right align-middle">' + element.amount.toFixed(2) + '</td>';
+              body.payments += '<td class="text-center align-middle">' + element.organizationName + '</td>';
+              body.payments += '</tr>';
+            });
+          }
+          if (body.payments != '') {
+            var bodyPaymentsRef = document.getElementById('tablePayments').getElementsByTagName('tbody')[0]; 
+            bodyPaymentsRef.innerHTML = body.payments;
+          }
+
+          if ((data.fines) && (Array.isArray(data.fines)) && (data.fines.length > 0)) {
+            data.fines.forEach(function(element) {
+              body.fines += '<tr>';
+              body.fines += '<td class="text-center align-middle">' + moment(element.createDate).format('DD.MM.YYYY') + '</td>';
+              body.fines += '<td class="text-center align-middle">' + element.uid + '</td>';
+              body.fines += '<td class="text-right align-middle">' + element.amount.toFixed(2) + '</td>';
+              body.fines += '<td class="text-center align-middle"><input type="checkbox" class="styled"' + (Number(element.paid) === 1 ? ' checked' : '') + '></td>';
+              body.fines += '</tr>';
+            });
+          }
+          if (body.fines != '') {
+            var bodyFinesRef = document.getElementById('tableFines').getElementsByTagName('tbody')[0]; 
+            bodyFinesRef.innerHTML = body.fines;
+          }
+
+          if ((data.prices) && (Array.isArray(data.prices)) && (data.prices.length > 0)) {
+            data.prices.forEach(function(element) {
+              body.prices += '<tr>';
+              body.prices += '<td class="text-center align-middle">' + moment(element.startService).format('DD.MM.YYYY') + '</td>';
+              body.prices += '<td class="text-center align-middle">' + moment(element.endService).format('DD.MM.YYYY') + '</td>';
+              body.prices += '<td class="text-right align-middle">' + element.normalPayment.toFixed(2) + '</td>';
+              body.prices += '<td class="text-right align-middle">' + element.privilegePayment.toFixed(2) + '</td>';
+              body.prices += '<td class="text-center align-middle">' + moment(element.receiptPrinting).format('DD.MM.YYYY') + '</td>';
+              body.prices += '</tr>';
+            });
+          }
+          if (body.prices != '') {
+            var bodyPricesRef = document.getElementById('tablePrices').getElementsByTagName('tbody')[0]; 
+            bodyPricesRef.innerHTML = body.prices;
+          }
+
+          $('#historyDialog').modal();
+
+      }).catch(function (error) {
+        console.log(error);
+      });
+    }
+
+    function editApartment(ev) {
+      var id = ev.currentTarget.parentElement.parentElement.getAttribute('data-uid');
+      ev.stopPropagation();
+      alert('editApartment::id = ' + id);
+    }
+
+    function removeApartment(ev) {
+      var id = ev.currentTarget.parentElement.parentElement.getAttribute('data-uid');
+      ev.stopPropagation();
+      alert('removeApartment::id = ' + id);
+    }
 
     // Original code: https://www.w3schools.com/howto/howto_js_sort_table.asp
     // Code modify
@@ -681,8 +874,8 @@
         rows = table.rows;
         for (var ind = 2; ind < (rows.length - 1); ind++) {
           shouldSwitch = false;
-          var x = rows[ind].getElementsByTagName('td')[0];
-          var y = rows[ind + 1].getElementsByTagName('td')[0];
+          var x = rows[ind].getElementsByTagName('td')[1];
+          var y = rows[ind + 1].getElementsByTagName('td')[1];
           if (dir == "asc") {
             if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
               shouldSwitch = true;
@@ -782,7 +975,7 @@
       
       if ((rows instanceof HTMLCollection) && (rows.length > 0)) {
         for (ind = 0; ind < rows.length; ind++) {
-          var td = rows[ind].getElementsByTagName("td")[0];
+          var td = rows[ind].getElementsByTagName("td")[1];
           if (td) {
             var value = td.textContent || td.innerText;
             if (value.trim().toLowerCase().indexOf(filter, 0) === 0) {
@@ -1316,9 +1509,6 @@
       calculateComplete(completeRowIndex);
       $('#completeDialog').modal('hide');
     });
-
-
-
 
     // var gridComplete = document.getElementById('tableComplete');
     // gridComplete.onclick = function (e) {

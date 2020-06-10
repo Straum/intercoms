@@ -19,6 +19,96 @@ var fs = require('fs');
 
 require('shelljs/global');
 
+function getPayments(id) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        ' SELECT' +
+        ' a.payment_id AS uid,' +
+        ' a.create_date AS createDate,' +
+        ' a.pay_month AS payMonth,' +
+        ' a.pay_year AS payYear,' +
+        ' a.pay_date AS payDate,' +
+        ' a.amount,' +
+        ' a.`mode`,' +
+        ' a.privilege,' +
+        ' b.name as organizationName' +
+        ' FROM payments a' +
+        ' LEFT JOIN organizations b ON b.organization_id = a.mode' +
+        ' WHERE' +
+        ' a.apartment_id = ?' +
+        ' ORDER BY' +
+        ' a.pay_date DESC', [id],
+          function (err, rows) {
+            connection.release();
+            if (err) {
+              reject();
+            }
+            else {
+              resolve(rows);
+            }      
+          });
+    });
+  });
+}
+
+function getFines(id) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        ' SELECT' +
+        ' a.fine_id AS uid,' +
+        ' a.create_dt AS createDate,' +
+        ' a.amount_of_fine AS amount,' +
+        ' a.remark,' +
+        ' a.paid' +
+        ' FROM fines a' +
+        ' WHERE' +
+        ' a.apartment_id = ?' +
+        ' ORDER BY' +
+        ' a.create_dt DESC', [id],
+          function (err, rows) {
+            connection.release();
+            if (err) {
+              reject();
+            }
+            else {
+              resolve(rows);
+            }      
+          });
+    });
+  });
+}
+
+function getPrices(id) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        ' SELECT' +
+        ' a.start_service AS startService,' +
+        ' a.end_service AS endService,' + 
+        ' a.normal_payment AS normalPayment,' + 
+        ' a.privilege_payment As privilegePayment,' + 
+        ' a.receipt_printing AS receiptPrinting' + 
+        ' FROM' +
+        ' cards_history a' +
+        ' INNER JOIN apartments b ON b.card_id = a.card_id' +
+        ' WHERE' + 
+        ' b.apartment_id = ?' +
+        ' ORDER BY a.start_service DESC', [id],
+          function (err, rows) {
+            connection.release();
+            if (err) {
+              reject();
+            }
+            else {
+              resolve(rows);
+            }      
+          });
+    });
+  });
+}
+
 function updateOrder(data) {
   return new Promise(function (resolve, reject) {
     db.get().getConnection(function (err, connection) {
@@ -869,7 +959,7 @@ module.exports = function () {
                     moment: moment,
                     utils: utils,
                     errors: {},
-                    apartments: apartments,
+                    // apartments: apartments,
                     user: req.session.userName
                   });
                 }
@@ -889,7 +979,7 @@ module.exports = function () {
       moment: moment,
       utils: utils,
       errors: {},
-      apartments: [],
+      // apartments: [],
       user: req.session.userName
     });
   });
@@ -1494,6 +1584,39 @@ module.exports = function () {
       };
       common.filterClients(params, function (err, rows) {
         res.status(200).send(rows);
+      });
+    }
+    else {
+      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    }
+  });
+
+  router.post('/payments_history', function (req, res) {
+    var data = req.body;
+    var out = {
+      payments: [],
+      fines: [],
+      prices: []
+    };
+    if ((data) && (typeof (data) === 'object') && ('id' in data)) {
+      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+
+      getPayments(data.id)
+      .then(function(payments) {
+        out.payments = payments;
+        return getFines(data.id);
+      })
+      .then(function(fines) {
+        out.fines = fines;
+        return getPrices(data.id);
+      })
+      .then(function(prices) {
+        out.prices = prices;
+        res.status(200).send(out);
+      })
+      .catch(function (error) {
+        console.log(error.message);
+        res.status(500).send(error.message);
       });
     }
     else {
