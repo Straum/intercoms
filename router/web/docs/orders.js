@@ -16,6 +16,7 @@ var models = require('../../models/order');
 var PizZip = require('pizzip');
 var Docxtemplater = require('docxtemplater');
 var fs = require('fs');
+const { isArray } = require('util');
 
 require('shelljs/global');
 
@@ -216,6 +217,44 @@ function updateOrder(data) {
   }); 
 }
 
+function updateApartments(data) {
+  return new Promise(function (resolve, reject) {
+
+    var queries = '';
+
+    var existingApartments = data.apartments.table;
+    if (isArray(existingApartments) && (existingApartments.length > 0)) {
+      existingApartments.forEach(function(item) {
+        queries += 'UPDATE apartments SET paid = ' + item.paid + ', privilege = ' + item.privilege + ', exempt = ' + item.exempt + ', locked = ' + item.locked + ' WHERE apartment_id = ' + item.uid + ';';
+      });
+    }
+
+    var deletedApartments = data.apartments.isDeleted;
+    if (isArray(deletedApartments) && (deletedApartments.length > 0)) {
+      deletedApartments.forEach(function(item) {
+        queries += 'DELETE FROM apartments WHERE apartment_id = ' + item + ';';
+      });
+    }
+
+    if (queries !== '') {
+      db.get().getConnection(function (err, connection) {
+      connection.query(queries, [], function (err) {
+              connection.release();
+              if (err) {
+                reject();
+              }
+              else {
+                resolve();
+              }      
+        });
+      });
+    }
+    else {
+      resolve();
+    }
+  }); 
+}
+
 function saveOrder(data) {
   return new Promise(function (resolve, reject) {
     db.get().getConnection(function (err, connection) {
@@ -224,7 +263,7 @@ function saveOrder(data) {
       ' contract_number, create_date, equipment_id, end_contract, credit_to, repaid, city_id, street_id, house_id, porch, numeration,' +
       ' client_id, is_one_person, m_client_id,' +
       ' m_contract_number, start_service, end_service, maintenance_contract, m_start_apartment, m_end_apartment,' +
-      ' normal_payment, privilege_payment, receipt_prnting,' +
+      ' normal_payment, privilege_payment, receipt_printing,' +
       ' contract_info, service_info,' +
       ' equipment_quantity, equipment_price, equipment_cost,' +
       ' mounting_quantity, mounting_price, mounting_cost,' +
@@ -1323,6 +1362,7 @@ module.exports = function () {
       orderModel.client = JSON.parse(req.body.client);
       orderModel.address = JSON.parse(req.body.address);
       orderModel.complete = JSON.parse(req.body.complete);
+      orderModel.apartments = JSON.parse(req.body.apartments);
     } catch (error) {
       console.log(error);
     }
@@ -1357,6 +1397,9 @@ module.exports = function () {
     if (! errors) {
       if (orderModel.id != 0) {
         updateOrder(orderModel)
+        .then(function() {
+          return updateApartments(orderModel);
+        })
         .then(function() {
           res.redirect('/orders');
         })

@@ -25,13 +25,13 @@
     <div class="form-header">
       <h3><%= title %></h3>
       <% if (Object.keys(errors).length > 0) { %>
-        <h3><span class="text-danger">Выявлены ошибки:</span></h3>
-        <ul>
-          <% for (var key in errors) { %>
-          <li><span class="text-danger"><%= errors[key].msg %></span></li>
-          <% }; %>
-        </ul>
-        <% } %>
+      <h3><span class="text-danger">Выявлены ошибки:</span></h3>
+      <ul>
+        <% for (var key in errors) { %>
+        <li><span class="text-danger"><%= errors[key].msg %></span></li>
+        <% }; %>
+      </ul>
+      <% } %>
     </div>
 
     <div class="card">
@@ -54,10 +54,12 @@
 
               <div role="tabpanel" class="tab-pane in active" id="core">
                 <input type="text" hidden id="id" name="id" value="<%= data.id %>">
-                <input type="text" hidden id="equipment" name="equipment" value="<%= JSON.stringify(data.equipment) %>"> 
-                <input type="text" hidden id="address" name="address" value="<%= JSON.stringify(data.address) %>"> 
-                <input type="text" hidden id="client" name="client" value="<%= JSON.stringify(data.client) %>"> 
+                <input type="text" hidden id="equipment" name="equipment" value="<%= JSON.stringify(data.equipment) %>">
+                <input type="text" hidden id="address" name="address" value="<%= JSON.stringify(data.address) %>">
+                <input type="text" hidden id="client" name="client" value="<%= JSON.stringify(data.client) %>">
                 <input type="text" hidden id="complete" name="complete" value="<%= JSON.stringify(data.complete) %>">
+                <input type="text" hidden id="apartments" name="apartments"
+                  value="<%= JSON.stringify(data.apartments) %>">
                 <div class="row">
                   <div class="col-md-2">
                     <div class="form-group">
@@ -182,7 +184,7 @@
                     <div class="col-md-3">
                       <div class="form-group">
                         <label for="clientContractPhones">Телефоны</label>
-                        <input type="text" class="form-control" id="clientContractPhones" name="clientContractPhones" 
+                        <input type="text" class="form-control" id="clientContractPhones" name="clientContractPhones"
                           value="<%= data.client.contract.phones %>" readonly>
                       </div>
                     </div>
@@ -347,14 +349,24 @@
 
                     <div id="dsTable" style="padding: 0px 0px;">
 
-                      <table class="table table-bordered table-hover table-condensed" style="background-color: white;" name="tableApartments" id="tableApartments">
+                      <table class="table table-bordered table-hover table-condensed" style="background-color: white;"
+                        name="tableApartments" id="tableApartments">
                         <thead>
                           <tr class="active">
-                            <th class="col-xs-2 text-center" colspan="2" onclick="sortApartments(0)">Кв-ра <span class="badge"><%= data.apartments.table.length %></span></th>
-                            <th class="col-xs-1 text-center" style="vertical-align: middle" rowspan="2" onclick="sortTable(2)">Опл-но <span class="badge"><%= data.apartments.stat.paid %></span></th>
-                            <th class="col-xs-1 text-center" style="vertical-align: middle" rowspan="2" onclick="sortTable(3)">Льготник <span class="badge"><%= data.apartments.stat.privilege %></span></th>
-                            <th class="col-xs-1 text-center" style="vertical-align: middle" rowspan="2" onclick="sortTable(4)">Освоб. <span class="badge"><%= data.apartments.stat.exempt %></span></th>
-                            <th class="col-xs-1 text-center" style="vertical-align: middle" rowspan="2" onclick="sortTable(5)">Забл-ван <span class="badge"><%= data.apartments.stat.locked %></span></th>
+                            <th class="col-xs-2 text-center" colspan="2" onclick="sortApartments()">Кв-ра <span
+                                class="badge" id="statApartments"><%= data.apartments.table.length %></span></th>
+                            <th class="col-xs-1 text-center" style="vertical-align: middle" rowspan="2"
+                              onclick="sortTable(2)">Опл-но <span class="badge" id="statPaid"><%= data.apartments.stat.paid %></span>
+                            </th>
+                            <th class="col-xs-1 text-center" style="vertical-align: middle" rowspan="2"
+                              onclick="sortTable(3)">Льготник <span
+                                class="badge" id="statPrivilege"><%= data.apartments.stat.privilege %></span></th>
+                            <th class="col-xs-1 text-center" style="vertical-align: middle" rowspan="2"
+                              onclick="sortTable(4)">Освоб. <span
+                                class="badge" id="statExempt"><%= data.apartments.stat.exempt %></span></th>
+                            <th class="col-xs-1 text-center" style="vertical-align: middle" rowspan="2"
+                              onclick="sortTable(5)">Забл-ван <span
+                                class="badge" id="statLocked"><%= data.apartments.stat.locked %></span></th>
                             <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Дата</th>
                             <th class="col-xs-1 text-center" style="vertical-align: middle" rowspan="2">Действия</th>
                           </tr>
@@ -366,7 +378,8 @@
                                     <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                                   </button>
                                 </span>
-                                <input type="text" class="form-control" name="findApartment" id="findApartment" value="">
+                                <input type="text" class="form-control" name="findApartment" id="findApartment"
+                                  value="">
                               </div>
                             </th>
                           </tr>
@@ -376,15 +389,15 @@
                           <% for (var cnt = 0, max = data.apartments.table.length; cnt < max; cnt++) {%>
 
                           <% _class = '' %>
-                          <% if ((+data.apartments.table[cnt].paid == 1) && (+data.apartments.table[cnt].half_paid == 2)) { %>
+                          <% if ((+data.apartments.table[cnt].paid == 1) && (+data.apartments.table[cnt].halfPaid == 2)) { %>
                           <% _class = 'primary' %>
                           <% } %>
 
-                          <% if ((+data.apartments.table[cnt].paid == 1) && (+data.apartments.table[cnt].half_paid == 1)) { %>
+                          <% if ((+data.apartments.table[cnt].paid == 1) && (+data.apartments.table[cnt].halfPaid == 1)) { %>
                           <% _class = 'warning' %>
                           <% } %>
 
-                          <% if ((+data.apartments.table[cnt].paid == 1) && (+data.apartments.table[cnt].half_paid == 0)) { %>
+                          <% if ((+data.apartments.table[cnt].paid == 1) && (+data.apartments.table[cnt].halfPaid == 0)) { %>
                           <% _class = 'success' %>
                           <% } %>
 
@@ -402,30 +415,33 @@
                               <%= data.apartments.table[cnt].number %>
                             </td>
                             <td class="col-xs-1 text-center align-middle">
-                              <input type="checkbox" class="styled" <%= data.apartments.table[cnt].paid == 1 ? ' checked' : '' %>>
+                              <input type="checkbox" class="styled" onclick="checkApartment(event, 0)"
+                                <%= data.apartments.table[cnt].paid == 1 ? ' checked' : '' %>>
                             </td>
                             <td class="col-xs-1 text-center align-middle">
-                              <input type="checkbox" class="styled"
+                              <input type="checkbox" class="styled" onclick="checkApartment(event, 1)"
                                 <%= data.apartments.table[cnt].privilege == 1 ? ' checked' : '' %>>
                             </td>
                             <td class="col-xs-1 text-center align-middle">
-                              <input type="checkbox" class="styled"
+                              <input type="checkbox" class="styled" onclick="checkApartment(event, 2)"
                                 <%= data.apartments.table[cnt].exempt == 1 ? ' checked' : '' %>>
                             </td>
                             <td class="col-xs-1 text-center align-middle">
-                              <input type="checkbox" class="styled"
+                              <input type="checkbox" class="styled" onclick="checkApartment(event, 3)"
                                 <%= data.apartments.table[cnt].locked == 1 ? ' checked' : '' %>>
                             </td>
                             <td class="col-xs-2 text-center align-middle">
-                              <%= data.apartments.table[cnt].paid_dt ? moment(data.apartments.table[cnt].paid_dt).format( 'DD.MM.YYYY HH:mm:ss') : '\u00A0' %>
+                              <%= data.apartments.table[cnt].paidDT ? moment(data.apartments.table[cnt].paidDT).format( 'DD.MM.YYYY HH:mm:ss') : '\u00A0' %>
                             </td>
                             <td class="col-xs-1 text-center align-middle">
-                              <button type="button" class="btn btn-info btn-xs" onclick="editApartment(event)" data-uid="<%= data.apartments.table[cnt].uid %>">
+                              <button type="button" class="btn btn-info btn-xs" onclick="editApartment(event)"
+                                data-uid="<%= data.apartments.table[cnt].uid %>">
                                 <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
                               </button>
-                              <button type="button" class="btn btn-danger btn-xs" onclick="removeApartment(event)" data-uid="<%= data.apartments.table[cnt].uid %>">
+                              <button type="button" class="btn btn-danger btn-xs" onclick="removeApartment(event)"
+                                data-uid="<%= data.apartments.table[cnt].uid %>">
                                 <span class="glyphicon glyphicon-minus" aria-hidden="true"></span>
-                              </button>  
+                              </button>
                             </td>
                           </tr>
                           <%}%>
@@ -441,187 +457,187 @@
                 <div class="form-group">
                   <label for="contract_info">Информация по договору</label>
                   <textarea class="form-control" name="contractInfo" rows="7"><%= data.contractInfo %></textarea>
+                    </div>
+                    <div class="form-group">
+                      <label for="service_info">Информация по обслуживанию</label>
+                      <textarea class="form-control" name="serviceInfo" rows="7"><%= data.serviceInfo %></textarea>
+                    </div>
+                  </div>
+
+                  <div role="tabpanel" class="tab-pane" id="completePackage">
+                    <table class="table table-bordered table-hover table-condensed" style="background-color: white;"
+                      id="tableComplete">
+                      <thead>
+                        <tr class="active">
+                          <th class="col-xs-6 text-center">
+                            Описание
+                          </th>
+                          <th class="col-xs-2 text-center" style="vertical-align: middle">
+                            Кол-во, шт.
+                          </th>
+                          <th class="col-xs-2 text-center" style="vertical-align: middle">
+                            Цена
+                          </th>
+                          <th class="col-xs-2 text-center" style="vertical-align: middle">
+                            Общая стоимость
+                          </th>
+                        </tr>
+                      </thead>
+                      <tr>
+                        <td>
+                          Оборудование общего назначения с панелью
+                        </td>
+                        <td class="text-center">
+                          <%= data.complete.equipment.quantity %>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.equipment.price).toFixed(2) %>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.equipment.cost).toFixed(2) %>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          Монтажные и пуско-наладочные работы
+                        </td>
+                        <td class="text-center">
+                          <%= data.complete.mounting.quantity %>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.mounting.price).toFixed(2) %>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.mounting.cost).toFixed(2) %>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          Абонентское устройство
+                        </td>
+                        <td class="text-center">
+                          <%= data.complete.subscriberUnit.quantity %>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.subscriberUnit.price).toFixed(2) %>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.subscriberUnit.cost).toFixed(2) %>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          Ключ/Брелок/Карта
+                        </td>
+                        <td class="text-center">
+                          <%= data.complete.key.quantity %>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.key.price).toFixed(2) %>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.key.cost).toFixed(2) %>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          Дверь металлическая
+                        </td>
+                        <td class="text-center">
+                          <%= data.complete.door.quantity %>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.door.price).toFixed(2) %>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.door.cost).toFixed(2) %>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          Итого
+                        </td>
+                        <td>
+                        </td>
+                        <td>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.subtotal.cost).toFixed(2) %>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          Итого с 1 квартиры
+                        </td>
+                        <td>
+                        </td>
+                        <td>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.subtotalForApartment.cost).toFixed(2) %>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          Скидка для квартиры
+                        </td>
+                        <td>
+                        </td>
+                        <td>
+                        </td>
+                        <td class="text-right">
+                          <%= (data.complete.discountForApartment.cost).toFixed(2) %>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <strong>Итого к оплате</strong>
+                        </td>
+                        <td>
+                        </td>
+                        <td>
+                        </td>
+                        <td class="text-right">
+                          <strong><%= (data.complete.total.cost).toFixed(2) %></strong>
+                        </td>
+                      </tr>
+
+                      <tbody>
+                      </tbody>
+                    </table>
+                  </div>
+
                 </div>
-                <div class="form-group">
-                  <label for="service_info">Информация по обслуживанию</label>
-                  <textarea class="form-control" name="serviceInfo" rows="7"><%= data.serviceInfo %></textarea>
+
+                <div class="col-12">
+                  <button type="submit" class="btn btn-success" id="save">Записать</button>
+                  <div class="btn-group dropup">
+                    <!-- <button type="button" class="btn btn-default dropdown-toggle disabled" data-toggle="dropdown"> -->
+                    <button class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                      Действия <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" role="menu">
+                      <!-- <li ><a href="#">Сформировать договор на установку</a></li> -->
+                      <!-- <li class="disabled"><a href="#">Сформировать договор на обслуживание</a></li> -->
+                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
+                          href="/orders/generate_order_setup/<%= data.id %>">Сформировать договор на установку</a></li>
+                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
+                          href="/orders/generate_order_service/<%= data.id %>">Сформировать договор на обслуживание</a>
+                      </li>
+                      <li class="divider"></li>
+                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
+                          href="/orders/open_order_setup/<%= data.contractNumber %>">Открыть договор на установку</a>
+                      </li>
+                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
+                          href="/orders/open_order_service/<%= data.contractNumber %>">Открыть договор на
+                          обслуживание</a></li>
+                    </ul>
+                  </div>
+                  <button type="button" class="btn btn-info" id="save">Печать квитанций</button>
                 </div>
+
               </div>
-
-              <div role="tabpanel" class="tab-pane" id="completePackage">
-                <table class="table table-bordered table-hover table-condensed" style="background-color: white;"
-                  id="tableComplete">
-                  <thead>
-                    <tr class="active">
-                      <th class="col-xs-6 text-center">
-                        Описание
-                      </th>
-                      <th class="col-xs-2 text-center" style="vertical-align: middle">
-                        Кол-во, шт.
-                      </th>
-                      <th class="col-xs-2 text-center" style="vertical-align: middle">
-                        Цена
-                      </th>
-                      <th class="col-xs-2 text-center" style="vertical-align: middle">
-                        Общая стоимость
-                      </th>
-                    </tr>
-                  </thead>
-                  <tr>
-                    <td>
-                      Оборудование общего назначения с панелью
-                    </td>
-                    <td class="text-center">
-                      <%= data.complete.equipment.quantity %>
-                    </td>
-                    <td class="text-right">
-                      <%= (data.complete.equipment.price).toFixed(2) %>
-                    </td>
-                    <td class="text-right">
-                      <%= (data.complete.equipment.cost).toFixed(2) %>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      Монтажные и пуско-наладочные работы
-                    </td>
-                    <td class="text-center">
-                      <%= data.complete.mounting.quantity %>
-                    </td>
-                    <td class="text-right">
-                      <%= (data.complete.mounting.price).toFixed(2) %>
-                    </td>
-                    <td class="text-right">
-                      <%= (data.complete.mounting.cost).toFixed(2) %>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      Абонентское устройство
-                    </td>
-                    <td class="text-center">
-                      <%= data.complete.subscriberUnit.quantity %>
-                    </td>
-                    <td class="text-right">
-                      <%= (data.complete.subscriberUnit.price).toFixed(2) %>
-                    </td>
-                    <td class="text-right">
-                      <%= (data.complete.subscriberUnit.cost).toFixed(2) %>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      Ключ/Брелок/Карта
-                    </td>
-                    <td class="text-center">
-                      <%= data.complete.key.quantity %>
-                    </td>
-                    <td class="text-right">
-                      <%= (data.complete.key.price).toFixed(2) %>
-                    </td>
-                    <td class="text-right">
-                      <%= (data.complete.key.cost).toFixed(2) %>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      Дверь металлическая
-                    </td>
-                    <td class="text-center">
-                      <%= data.complete.door.quantity %>
-                    </td>
-                    <td class="text-right">
-                      <%= (data.complete.door.price).toFixed(2) %>
-                    </td>
-                    <td class="text-right">
-                      <%= (data.complete.door.cost).toFixed(2) %>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      Итого
-                    </td>
-                    <td>
-                    </td>
-                    <td>
-                    </td>
-                    <td class="text-right">
-                      <%= (data.complete.subtotal.cost).toFixed(2) %>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      Итого с 1 квартиры
-                    </td>
-                    <td>
-                    </td>
-                    <td>
-                    </td>
-                    <td class="text-right">
-                      <%= (data.complete.subtotalForApartment.cost).toFixed(2) %>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      Скидка для квартиры
-                    </td>
-                    <td>
-                    </td>
-                    <td>
-                    </td>
-                    <td class="text-right">
-                      <%= (data.complete.discountForApartment.cost).toFixed(2) %>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <strong>Итого к оплате</strong>
-                    </td>
-                    <td>
-                    </td>
-                    <td>
-                    </td>
-                    <td class="text-right">
-                      <strong><%= (data.complete.total.cost).toFixed(2) %></strong>
-                    </td>
-                  </tr>
-
-                  <tbody>
-                  </tbody>
-                </table>
-              </div>
-
             </div>
-
-            <div class="col-12">
-              <button type="submit" class="btn btn-success" id="save">Записать</button>
-              <div class="btn-group dropup">
-                <!-- <button type="button" class="btn btn-default dropdown-toggle disabled" data-toggle="dropdown"> -->
-                <button class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                  Действия <span class="caret"></span>
-                </button>
-                <ul class="dropdown-menu" role="menu">
-                  <!-- <li ><a href="#">Сформировать договор на установку</a></li> -->
-                  <!-- <li class="disabled"><a href="#">Сформировать договор на обслуживание</a></li> -->
-                  <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
-                      href="/orders/generate_order_setup/<%= data.id %>">Сформировать договор на установку</a></li>
-                  <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
-                      href="/orders/generate_order_service/<%= data.id %>">Сформировать договор на обслуживание</a>
-                  </li>
-                  <li class="divider"></li>
-                  <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
-                      href="/orders/open_order_setup/<%= data.contractNumber %>">Открыть договор на установку</a>
-                  </li>
-                  <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
-                      href="/orders/open_order_service/<%= data.contractNumber %>">Открыть договор на
-                      обслуживание</a></li>
-                </ul>
-              </div>
-              <button type="button" class="btn btn-info" id="save">Печать квитанций</button>
-            </div>
-
-          </div>
-        </div>
       </form>
     </div>
   </div>
@@ -669,8 +685,7 @@
     </div>
   </div>
 
-  <div class="modal bs-example-modal" id="historyDialog" tabindex="-1" role="dialog"
-    aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal bs-example-modal" id="historyDialog" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
@@ -679,13 +694,13 @@
           <h4 class="modal-title" id="applicationCapton">История</h4>
         </div>
         <div class="modal-body">
-          
+
           <div class="card">
 
             <ul class="nav nav-pills">
-              <li class="active"><a <a data-toggle="tab" href="#payments">Оплаты</a></li>
-              <li><a <a data-toggle="tab" href="#fines">Подключения</a></li>
-              <li><a <a data-toggle="tab" href="#prices">Платы</a></li>
+              <li class="active"><a data-toggle="tab" href="#payments">Оплаты</a></li>
+              <li><a data-toggle="tab" href="#fines">Подключения</a></li>
+              <li><a data-toggle="tab" href="#prices">Платы</a></li>
             </ul>
 
             <div class="well">
@@ -694,7 +709,8 @@
                   <div id="payments" class="tab-pane in active">
                     <div class="row">
                       <div class="col-md-12">
-                        <table class="table table-bordered table-hover table-condensed" style="background-color: white;" name="tablePayments" id="tablePayments">
+                        <table class="table table-bordered table-hover table-condensed" style="background-color: white;"
+                          name="tablePayments" id="tablePayments">
                           <thead>
                             <tr class="active">
                               <th class="col-xs-2 text-center" style="vertical-align: middle">Создано</th>
@@ -713,11 +729,12 @@
                       </div>
                     </div>
                   </div>
-                  
+
                   <div id="fines" class="tab-pane">
                     <div class="row">
                       <div class="col-md-6">
-                        <table class="table table-bordered table-hover table-condensed" style="background-color: white;" name="tableFines" id="tableFines">
+                        <table class="table table-bordered table-hover table-condensed" style="background-color: white;"
+                          name="tableFines" id="tableFines">
                           <thead>
                             <tr class="active">
                               <th class="col-xs-2 text-center" style="vertical-align: middle">Создано</th>
@@ -733,11 +750,12 @@
                       </div>
                     </div>
                   </div>
-                  
+
                   <div id="prices" class="tab-pane">
                     <div class="row">
                       <div class="col-md-10">
-                        <table class="table table-bordered table-hover table-condensed" style="background-color: white;" name="tablePrices" id="tablePrices">
+                        <table class="table table-bordered table-hover table-condensed" style="background-color: white;"
+                          name="tablePrices" id="tablePrices">
                           <thead>
                             <tr class="active">
                               <th class="col-xs-2 text-center" style="vertical-align: middle">ТО с</th>
@@ -754,14 +772,17 @@
                       </div>
                     </div>
                   </div>
-                  
+
                 </div>
               </div>
             </div>
           </div>
+        </div>
       </div>
     </div>
   </div>
+
+  <% include ../../common/warning_window.ejs %>
 
   <script src="/bower_components/jquery/dist/jquery.min.js"></script>
   <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
@@ -772,753 +793,8 @@
   <script src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
   <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
   <script src="/bower_components/axios/dist/axios.min.js"></script>
-  <script>
-    var order = <%- JSON.stringify(data) %>;
-    var completeRowIndex = 1;
+  <script src="/js/order.js"></script>
 
-    function showHistory(ev) {
-      // var id = ev.currentTarget.getAttribute('data-uid');
-      var id = ev.currentTarget.parentElement.parentElement.getAttribute('data-uid');
-      ev.stopPropagation();
-
-      axios.post('/orders/payments_history', {
-        id: id,
-        limit: 15
-      }
-      ).then(function (response) {
-          var data = response.data;
-          var body = {
-            payments: '',
-            fines: '',
-            prices: ''
-          };
-          
-          if ((data.payments) && (Array.isArray(data.payments)) && (data.payments.length > 0)) {
-            data.payments.forEach(function(element) {
-              body.payments += '<tr>';
-              body.payments += '<td class="text-center align-middle">' + moment(element.createDate).format('DD.MM.YYYY') + '</td>';
-              body.payments += '<td class="text-center align-middle">' + moment(element.payDate).format('DD.MM.YYYY') + '</td>';
-              body.payments += '<td class="text-center align-middle">' + element.uid + '</td>';
-              body.payments += '<td class="text-center align-middle">' + element.payMonth + '</td>';
-              body.payments += '<td class="text-center align-middle">' + element.payYear + '</td>';
-              body.payments += '<td class="text-right align-middle">' + element.amount.toFixed(2) + '</td>';
-              body.payments += '<td class="text-center align-middle">' + element.organizationName + '</td>';
-              body.payments += '</tr>';
-            });
-          }
-          if (body.payments != '') {
-            var bodyPaymentsRef = document.getElementById('tablePayments').getElementsByTagName('tbody')[0]; 
-            bodyPaymentsRef.innerHTML = body.payments;
-          }
-
-          if ((data.fines) && (Array.isArray(data.fines)) && (data.fines.length > 0)) {
-            data.fines.forEach(function(element) {
-              body.fines += '<tr>';
-              body.fines += '<td class="text-center align-middle">' + moment(element.createDate).format('DD.MM.YYYY') + '</td>';
-              body.fines += '<td class="text-center align-middle">' + element.uid + '</td>';
-              body.fines += '<td class="text-right align-middle">' + element.amount.toFixed(2) + '</td>';
-              body.fines += '<td class="text-center align-middle"><input type="checkbox" class="styled"' + (Number(element.paid) === 1 ? ' checked' : '') + '></td>';
-              body.fines += '</tr>';
-            });
-          }
-          if (body.fines != '') {
-            var bodyFinesRef = document.getElementById('tableFines').getElementsByTagName('tbody')[0]; 
-            bodyFinesRef.innerHTML = body.fines;
-          }
-
-          if ((data.prices) && (Array.isArray(data.prices)) && (data.prices.length > 0)) {
-            data.prices.forEach(function(element) {
-              body.prices += '<tr>';
-              body.prices += '<td class="text-center align-middle">' + moment(element.startService).format('DD.MM.YYYY') + '</td>';
-              body.prices += '<td class="text-center align-middle">' + moment(element.endService).format('DD.MM.YYYY') + '</td>';
-              body.prices += '<td class="text-right align-middle">' + element.normalPayment.toFixed(2) + '</td>';
-              body.prices += '<td class="text-right align-middle">' + element.privilegePayment.toFixed(2) + '</td>';
-              body.prices += '<td class="text-center align-middle">' + moment(element.receiptPrinting).format('DD.MM.YYYY') + '</td>';
-              body.prices += '</tr>';
-            });
-          }
-          if (body.prices != '') {
-            var bodyPricesRef = document.getElementById('tablePrices').getElementsByTagName('tbody')[0]; 
-            bodyPricesRef.innerHTML = body.prices;
-          }
-
-          $('#historyDialog').modal();
-
-      }).catch(function (error) {
-        console.log(error);
-      });
-    }
-
-    function editApartment(ev) {
-      var id = ev.currentTarget.parentElement.parentElement.getAttribute('data-uid');
-      ev.stopPropagation();
-      alert('editApartment::id = ' + id);
-    }
-
-    function removeApartment(ev) {
-      var id = ev.currentTarget.parentElement.parentElement.getAttribute('data-uid');
-      ev.stopPropagation();
-      alert('removeApartment::id = ' + id);
-    }
-
-    // Original code: https://www.w3schools.com/howto/howto_js_sort_table.asp
-    // Code modify
-    function sortApartments() {
-      var rows, shouldSwitch;
-      var table = document.getElementById('tableApartments');
-      var switching = true;
-      var dir = "asc";
-      var switchcount = 0;
-      while (switching) {
-        switching = false;
-        rows = table.rows;
-        for (var ind = 2; ind < (rows.length - 1); ind++) {
-          shouldSwitch = false;
-          var x = rows[ind].getElementsByTagName('td')[1];
-          var y = rows[ind + 1].getElementsByTagName('td')[1];
-          if (dir == "asc") {
-            if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
-              shouldSwitch = true;
-              break;
-            }
-          } 
-          else if (dir == "desc") {
-            if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
-              shouldSwitch = true;
-              break;
-            }
-          }
-        }
-
-        if (shouldSwitch) {
-          rows[ind].parentNode.insertBefore(rows[ind + 1], rows[ind]);
-          switching = true;
-          switchcount ++;
-        } 
-      }
-    }
-
-    function sortTable(index) {
-      var rows, shouldSwitch;
-      var table = document.getElementById('tableApartments');
-      var switching = true;
-      var dir = "desc";
-      var switchcount = 0;
-      while (switching) {
-        switching = false;
-        rows = table.rows;
-        for (var ind = 2; ind < (rows.length - 1); ind++) {
-          shouldSwitch = false;
-          var x = rows[ind].getElementsByTagName('td')[index];
-          var y = rows[ind + 1].getElementsByTagName('td')[index];
-          if (dir == "asc") {
-            if (x.firstElementChild.checked > y.firstElementChild.checked) {
-              shouldSwitch = true;
-              break;
-            }
-          } else if (dir == "desc") {
-            if (x.firstElementChild.checked < y.firstElementChild.checked) {
-              shouldSwitch = true;
-              break;
-            }
-          }
-        }
-
-        if (shouldSwitch) {
-          rows[ind].parentNode.insertBefore(rows[ind + 1], rows[ind]);
-          switching = true;
-          switchcount ++;
-        } 
-      }
-    }
-
-    function saveFullAddress(data) {
-      try {
-        var address = JSON.parse(document.getElementById('address').value);
-
-        switch (data.level) {
-          case 0:
-            address.city.key = data.cityId;
-            address.city.value = data.cityName;
-            address.street.key = 0;
-            address.street.value = '';
-            address.house.key = 0;
-            address.house.value = '';
-            break;
-          case 1:
-            address.city.key = data.cityId;
-            address.city.value = data.cityName;
-            address.street.key = data.streetId;
-            address.street.value = data.streetName;
-            address.house.key = 0;
-            address.house.value = '';
-            break;
-          case 2:
-            address.city.key = data.cityId;
-            address.city.value = data.cityName;
-            address.street.key = data.streetId;
-            address.street.value = data.streetName;
-            address.house.key = data.houseId;
-            address.house.value = data.houseNumber;
-            break;
-        }
-        document.getElementById('address').value = JSON.stringify(address);
-      }
-      catch (e) {
-        console.log(e.message);
-      }
-    }
-
-    function filterApartment() {
-      var filter = document.getElementById('findApartment').value.trim().toLowerCase();
-      var rows = document.getElementById('tableApartments').getElementsByTagName('tr');
-      
-      if ((rows instanceof HTMLCollection) && (rows.length > 0)) {
-        for (ind = 0; ind < rows.length; ind++) {
-          var td = rows[ind].getElementsByTagName("td")[1];
-          if (td) {
-            var value = td.textContent || td.innerText;
-            if (value.trim().toLowerCase().indexOf(filter, 0) === 0) {
-              rows[ind].style.display = "";
-            } else {
-              rows[ind].style.display = "none";
-            }
-          }
-        }
-      }
-    }
-
-    $(document).ready(function () {
-      var uid = order.id;
-
-      $('[data-toggle="tooltip"]').tooltip();
-
-      $('#dtCreateDate').datetimepicker({
-        locale: 'ru',
-        format: 'L'
-      });
-
-      $('#dtEndContract').datetimepicker({
-        locale: 'ru',
-        format: 'L'
-      });
-
-      $('#dtCreditTo').datetimepicker({
-        locale: 'ru',
-        format: 'L'
-      });
-
-      $('#dtStartService').datetimepicker({
-        locale: 'ru',
-        format: 'L'
-      });
-
-      $('#dtEndService').datetimepicker({
-        locale: 'ru',
-        format: 'L'
-      });
-
-      $('#dtReceiptPrinting').datetimepicker({
-        locale: 'ru',
-        format: 'L'
-      });
-
-    });
-
-    document.getElementById('clearEquipment').addEventListener('click', function (e) {
-      try {
-        var equipment = JSON.parse(document.getElementById('equipment').value);
-        equipment.key = 0;
-        equipment.value = '';
-        document.getElementById('equipment').value = JSON.stringify(equipment);
-        document.getElementById('equipmentName').value = '';
-        document.getElementById('endContract').value = '';
-      } catch (error) {
-        console.log('clearEquipment Error: ' + error.message);
-      }
-    });
-
-    document.getElementById('clearFullAddress').addEventListener('click', function (e) {
-      try {
-        var address = JSON.parse(document.getElementById('address').value);
-        address.city.key = 0;
-        address.city.value = '';
-
-        address.street.key = 0;
-        address.street.value = '';
-        address.street.cityId = 0;
-
-        address.house.key = 0;
-        address.house.value = '';
-        address.house.streetId = 0;
-
-        document.getElementById('address').value = JSON.stringify(address);
-      } catch (error) {
-        console.log('clearFullAddress Error: ' + error.message);
-      }
-    });
-
-    document.getElementById('clearClientContract').addEventListener('click', function (e) {
-      try {
-        var client = JSON.parse(document.getElementById('client').value);
-        client.contract.key = 0;
-        client.contract.value = '';
-        document.getElementById('client').value = JSON.stringify(client);
-        document.getElementById('clientContractName').value = '';
-        document.getElementById('clientContractPhones').value = '';
-
-        if (document.getElementById('onePerson').checked) {
-          document.getElementById('onePerson').checked = !document.getElementById('onePerson').checked;
-        }
-      } catch (error) {
-        console.log('clearClientContract Error: ' + error.message);
-      }
-    });
-
-    document.getElementById('onePerson').addEventListener('click', function (e) {
-      if (e.currentTarget.checked) {
-        try {
-          var client = JSON.parse(document.getElementById('client').value);
-          if ((client.contract.key > 0) && (client.service.key != client.contract.key)) {
-            client.service = client.contract;
-            document.getElementById('client').value = JSON.stringify(client);
-            document.getElementById('clientServiceName').value = client.service.value;
-            document.getElementById('clientServicePhones').value = document.getElementById('clientContractPhones').value;
-          }
-        } catch (error) {
-          
-        }
-      }
-    });
-
-    document.getElementById('clearClientService').addEventListener('click', function (e) {
-      try {
-        var client = JSON.parse(document.getElementById('client').value);
-        client.service.key = 0;
-        client.service.value = '';
-        document.getElementById('client').value = JSON.stringify(client);
-        document.getElementById('clientServiceName').value = '';
-        document.getElementById('clientServicePhones').value = '';
-
-        if (document.getElementById('onePerson').checked) {
-          document.getElementById('onePerson').checked = !document.getElementById('onePerson').checked;
-        }
-      } catch (error) {
-        console.log('clearClientContract Error: ' + error.message);
-      }
-    });
-
-    document.getElementById('clearApartment').addEventListener('click', function (e) {
-      document.getElementById('findApartment').value = '';
-      document.getElementById('findApartment').focus();
-      filterApartment();
-    });
-
-    document.getElementById('findApartment').addEventListener("keyup", function (e) {
-      filterApartment();      
-    });
-
-    // $('#equipment_name').typeahead({
-    //   items: 15,
-    //   source: function (query, process) {
-    //     var results = [];
-    //     map = {};
-    //     $.ajax({
-    //       'url': '/orders/search_equipment',
-    //       'type': 'POST',
-    //       'contentType': 'application/json',
-    //       'data': JSON.stringify({
-    //         'suggestion': query,
-    //         'limit': 15
-    //       }),
-    //       success: function (datas) {
-    //         $.each(datas, function (i, result) {
-    //           map[result.value] = result;
-    //           results.push(result.value);
-    //         });
-    //         process(results);
-    //       }
-    //     });
-    //   },
-    //   updater: function (element) {
-    //     var equipment = JSON.parse(document.getElementById('equipment').value);
-    //     try {
-    //       equipment.key = map[element].id;
-    //       equipment.value = map[element].value;
-    //       document.getElementById('equipment').value = JSON.stringify(equipment);
-    //     } catch (error) {
-    //       //
-    //     }
-
-    //     return element;
-    //   }
-    // });
-
-    $('#equipmentName').typeahead({
-        items: 15,
-        source: function (query, process) {
-          var results = [];
-          map = {};
-
-          axios.post('/orders/find_equipment', {
-            suggestion: query,
-            limit: 15
-          }
-          ).then(function (response) {
-              var data = response.data;
-              data.forEach( function (item) {
-                map[item.value] = item;
-                results.push(item.value);
-              });
-              process(results);
-          }).catch(function (error) {
-            console.log(error);
-          });
-        },
-        updater: function (element) {
-          try {
-            var equipment = JSON.parse(document.getElementById('equipment').value);
-            equipment.key = map[element].id;
-            equipment.value = map[element].value;
-            var createDate = document.getElementById('createDate').value;
-            if (createDate.trim() != '') {
-              document.getElementById('endContract').value = moment(createDate, 'DD.MM.YYYY').add(map[element].guaranteePeriod, 'years').format('DD.MM.YYYY');
-            }
-
-            document.getElementById('equipment').value = JSON.stringify(equipment);
-          }
-          catch (e) {
-            console.log('equipmentName Error: ' + e.message);
-          }
-          return element;
-        }
-    });
-
-    $('#fullAddress').typeahead({
-        items: 15,
-        source: function (query, process) {
-          var results = [];
-          map = {};
-
-          axios.post('/orders/find_full_address', {
-            suggestion: query,
-            rowsCount: 15
-          })
-          .then(function (response) {
-            var datas = response.data;
-            if ((typeof datas == 'object') && ('items' in datas) && ('level' in datas)) {
-                var level = datas.level;
-                var data = datas.items;
-                var text;
-                if (Array.isArray(data)) {
-                  data.forEach(function (item, index) {
-                    item.level = level;
-                    switch (level) {
-                      case 0:
-                        text = item.cityName;
-                        map[text] = item;
-                        results.push(text);
-                        break;
-                      case 1:
-                        text = item.cityName + ', ' + item.streetName;
-                        if (item.streetName.trim() !== '') {
-                          map[text] = item;
-                          results.push(text);
-                        }
-                        break;
-                      case 2:
-                        text = item.cityName + ', ' + item.streetName + ', ' + item.houseNumber;
-                        if (item.houseNumber.trim() !== '') {
-                          map[text] = item;
-                          results.push(text);
-                        }
-                        break;
-                      default:
-                    }
-                  });
-                }
-              }
-              process(results);
-          })
-            .catch(function (error) {
-            console.log(error);
-          });
-          },
-        updater: function (element) {
-          var selectedElement = map[element];
-
-          switch (selectedElement.level) {
-            case 0:
-              saveFullAddress(selectedElement);
-              return selectedElement.cityName + ', ';
-            case 1:
-              saveFullAddress(selectedElement);
-              return selectedElement.cityName + ', ' + selectedElement.streetName + ', ';
-            case 2:
-              saveFullAddress(selectedElement);
-              return selectedElement.cityName + ', ' + selectedElement.streetName + ', ' + selectedElement.houseNumber;
-            default:
-              saveFullAddress(selectedElement);
-              return selectedElement.cityName;
-          }
-        }
-      });
-
-    $('#clientContractName').typeahead({
-      items: 15,
-      source: function (query, process) {
-        var results = [];
-        map = {};
-
-        axios.post('/orders/find_client', {
-          suggestion: query,
-          limit: 15
-        }
-        ).then(function (response) {
-            var data = response.data;
-            data.forEach( function (item) {
-              map[item.value] = item;
-              results.push(item.value);
-            });
-            process(results);
-        }).catch(function (error) {
-          console.log(error);
-        });
-      },
-      updater: function (element) {
-        try {
-          var client = JSON.parse(document.getElementById('client').value);
-          client.contract.key = map[element].id;
-          client.contract.value = map[element].value;
-          document.getElementById('clientContractPhones').value = map[element].phones;
-          document.getElementById('onePerson').checked = (+client.contract.key === +client.service.key);
-
-          document.getElementById('client').value = JSON.stringify(client);
-        }
-        catch (e) {
-          console.log(e.message);
-        }
-        return element;
-      }
-    });
-
-    $('#clientServiceName').typeahead({
-      items: 15,
-      source: function (query, process) {
-        var results = [];
-        map = {};
-
-        axios.post('/orders/find_client', {
-          suggestion: query,
-          limit: 15
-        }
-        ).then(function (response) {
-            var data = response.data;
-            data.forEach( function (item) {
-              map[item.value] = item;
-              results.push(item.value);
-            });
-            process(results);
-        }).catch(function (error) {
-          console.log(error);
-        });
-      },
-      updater: function (element) {
-        try {
-          var client = JSON.parse(document.getElementById('client').value);
-          client.service.key = map[element].id;
-          client.service.value = map[element].value;
-          document.getElementById('clientServicePhones').value = map[element].phones;
-          
-          document.getElementById('onePerson').checked = (+client.contract.key === +client.service.key);
-          document.getElementById('client').value = JSON.stringify(client);
-        }
-        catch (e) {
-          console.log(e.message);
-        }
-        return element;
-      }
-    });
-
-    $('.select-all').on('focus', function (e) {
-      $(this)
-        .one('mouseup', function () {
-          $(this).select();
-          return false;
-        })
-        .select();
-    });
-
-    function calculateComplete(index) {
-      var row = document.getElementById("tableComplete").rows[index];
-      // row.cells[0].innerText = dataTable[uid].faultName;
-      // row.cells[1].innerText = dataTable[uid].decision;
-      // row.cells[2].innerText = dataTable[uid].workerName;
-
-      var dataTable = [];
-      var data = document.getElementById('complete').value;
-      try {
-        dataTable = JSON.parse(data);
-        switch (index) {
-          case 1:
-            dataTable.equipment.quantity = parseInt(document.getElementById('completeQuantity').value);
-            dataTable.equipment.price = parseFloat(document.getElementById('completePrice').value);
-            dataTable.equipment.cost = dataTable.equipment.quantity * dataTable.equipment.price;
-
-            row.cells[1].innerText = dataTable.equipment.quantity;
-            row.cells[2].innerText = dataTable.equipment.price.toFixed(2);
-            row.cells[3].innerText = dataTable.equipment.cost.toFixed(2);
-            break;
-          case 2:
-            dataTable.mounting.quantity = parseInt(document.getElementById('completeQuantity').value);
-            dataTable.mounting.price = parseFloat(document.getElementById('completePrice').value);
-            dataTable.mounting.cost = dataTable.mounting.quantity * dataTable.mounting.price;
-
-            row.cells[1].innerText = dataTable.mounting.quantity;
-            row.cells[2].innerText = dataTable.mounting.price.toFixed(2);
-            row.cells[3].innerText = dataTable.mounting.cost.toFixed(2);
-            break;
-          case 3:
-            dataTable.subscriberUnit.quantity = parseInt(document.getElementById('completeQuantity').value);
-            dataTable.subscriberUnit.price = parseFloat(document.getElementById('completePrice').value);
-            dataTable.subscriberUnit.cost = dataTable.subscriberUnit.quantity * dataTable.subscriberUnit.price;
-
-            row.cells[1].innerText = dataTable.subscriberUnit.quantity;
-            row.cells[2].innerText = dataTable.subscriberUnit.price.toFixed(2);
-            row.cells[3].innerText = dataTable.subscriberUnit.cost.toFixed(2);
-            break;
-          case 4:
-            dataTable.key.quantity = parseInt(document.getElementById('completeQuantity').value);
-            dataTable.key.price = parseFloat(document.getElementById('completePrice').value);
-            dataTable.key.cost = dataTable.key.quantity * dataTable.key.price;
-
-            row.cells[1].innerText = dataTable.key.quantity;
-            row.cells[2].innerText = dataTable.key.price.toFixed(2);
-            row.cells[3].innerText = dataTable.key.cost.toFixed(2);
-            break;
-          case 5:
-            dataTable.door.quantity = parseInt(document.getElementById('completeQuantity').value);
-            dataTable.door.price = parseFloat(document.getElementById('completePrice').value);
-            dataTable.door.cost = dataTable.door.quantity * dataTable.door.price;
-
-            row.cells[1].innerText = dataTable.door.quantity;
-            row.cells[2].innerText = dataTable.door.price.toFixed(2);
-            row.cells[3].innerText = dataTable.door.cost.toFixed(2);
-            break;
-          case 8:
-            dataTable.discountForApartment.cost = parseFloat(document.getElementById('completeCost').value);
-
-            row.cells[3].innerText = dataTable.discountForApartment.cost.toFixed(2);
-            break;
-        }
-
-        dataTable.subtotal.cost = dataTable.equipment.cost + dataTable.mounting.cost + 
-          dataTable.subscriberUnit.cost + dataTable.key.cost + dataTable.door.cost;
-
-        dataTable.subtotalForApartment.cost = dataTable.subscriberUnit.quantity > 0 ? dataTable.subtotal.cost/dataTable.subscriberUnit.quantity : 0;
-
-        dataTable.total.cost = dataTable.subtotal.cost - dataTable.discountForApartment.cost;
-
-        var rowTotal = document.getElementById("tableComplete").rows[6];
-        rowTotal.cells[3].innerText = dataTable.subtotal.cost.toFixed(2);
-
-        var rowApartment = document.getElementById("tableComplete").rows[7];
-        rowApartment.cells[3].innerText = dataTable.subtotalForApartment.cost.toFixed(2)
-
-        var rowTotal = document.getElementById("tableComplete").rows[9];
-        rowTotal.cells[3].innerText = (dataTable.subtotal.cost - dataTable.discountForApartment.cost).toFixed(2)
-
-        document.getElementById('complete').value = JSON.stringify(dataTable);
-      }
-      catch (e) {
-        //
-      }
-    };
-
-    document.getElementById('tableComplete').addEventListener('click', function (e) {
-      var target = e.target;
-      if (target.closest('td') == null) return;
-
-      //   alert("row" + target.closest('tr').rowIndex + 
-      // " -column" + target.closest('td').cellIndex +  ', value: ' + target.parentElement.children[target.closest('td').cellIndex].innerText);
-      var rowIndex = target.closest('tr').rowIndex;
-      if ((rowIndex == 6) || (rowIndex == 7)) return;
-      if (rowIndex > 8) return;
-
-      completeRowIndex = rowIndex;
-      var show = ((rowIndex >= 1) && (rowIndex <= 5));
-
-      document.getElementById('completeQuantityRow').hidden = !show;
-      document.getElementById('completePriceRow').hidden = !show;
-      document.getElementById('completeCostRow').hidden = show;
-
-      var dataTable = [];
-      var data = $('#complete').val();
-      try {
-        dataTable = JSON.parse(data);
-        switch (rowIndex) {
-          case 1:
-            document.getElementById('completeQuantity').value = dataTable.equipment.quantity;
-            document.getElementById('completePrice').value = dataTable.equipment.price.toFixed(2);
-            document.getElementById('completeCost').value = dataTable.equipment.cost.toFixed(2);
-            break;
-          case 2:
-            document.getElementById('completeQuantity').value = dataTable.mounting.quantity;
-            document.getElementById('completePrice').value = dataTable.mounting.price.toFixed(2);
-            document.getElementById('completeCost').value = dataTable.mounting.cost.toFixed(2);
-            break;
-          case 3:
-            document.getElementById('completeQuantity').value = dataTable.subscriberUnit.quantity;
-            document.getElementById('completePrice').value = dataTable.subscriberUnit.price.toFixed(2);
-            document.getElementById('completeCost').value = dataTable.subscriberUnit.cost.toFixed(2);
-            break;
-          case 4:
-            document.getElementById('completeQuantity').value = dataTable.key.quantity;
-            document.getElementById('completePrice').value = dataTable.key.price.toFixed(2);
-            document.getElementById('completeCost').value = dataTable.key.cost.toFixed(2);
-            break;
-          case 5:
-            document.getElementById('completeQuantity').value = dataTable.door.quantity;
-            document.getElementById('completePrice').value = dataTable.door.price.toFixed(2);
-            document.getElementById('completeCost').value = dataTable.door.cost.toFixed(2);
-            break;
-          case 8:
-            document.getElementById('completeQuantity').value = 1;
-            document.getElementById('completePrice').value = 0.00;
-            document.getElementById('completeCost').value = dataTable.discountForApartment.cost.toFixed(2);
-            break;
-        }
-      }
-      catch (e) {
-        //
-      }
-
-      $('#completeDialog').modal();
-    });
-
-    $('#completeDialog').on('shown.bs.modal', function () {
-      var fieldName = 'completeQuantity';
-      if (completeRowIndex == 8) {
-        fieldName = 'completeCost';
-      }
-      document.getElementById(fieldName).focus();
-    })
-
-
-    document.getElementById('saveComplete').addEventListener('click', function (e) {
-      calculateComplete(completeRowIndex);
-      $('#completeDialog').modal('hide');
-    });
-
-    // var gridComplete = document.getElementById('tableComplete');
-    // gridComplete.onclick = function (e) {
-    //   var tr = $(this).closest('tr');
-    //   var rowIndex = tr.index();
-    //   alert('click!');
-    // };
-
-
-  </script>
 </body>
 
 </html>

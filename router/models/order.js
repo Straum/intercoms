@@ -65,7 +65,8 @@ module.exports.OrderModel = function () {
       exempt: 0,
       locked: 0
     },
-    table: []
+    table: [],
+    isDeleted: []
   },
 
   this.contractInfo = '';
