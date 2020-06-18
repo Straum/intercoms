@@ -78,9 +78,7 @@
                           <span class="glyphicon glyphicon-calendar"></span>
                         </span>
                       </div>
-                      <% if (errors.createDate) { %>
-                      <span class="help-block"><%= errors.createDate.msg  %></span>
-                      <% } %>
+
                     </div>
                   </div>
                   <div class="col-md-6">
@@ -412,7 +410,7 @@
                               </button>
                             </td>
                             <td class="col-xs-1 text-center align-middle">
-                              <%= data.apartments.table[cnt].number %>
+                              <%= data.apartments.table[cnt].fullNumber %>
                             </td>
                             <td class="col-xs-1 text-center align-middle">
                               <input type="checkbox" class="styled" onclick="checkApartment(event, 0)"
@@ -642,8 +640,7 @@
     </div>
   </div>
 
-  <div class="modal bs-example-modal-normal" id="completeDialog" tabindex="-1" role="dialog"
-    aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal bs-example-modal-normal" id="completeDialog" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-sm">
       <div class="modal-content">
         <div class="modal-header">
@@ -652,7 +649,6 @@
           <h4 class="modal-title" id="applicationCapton">Введите значение</h4>
         </div>
         <div class="modal-body">
-          <!-- <input type="number" class="hidden" id="rowIndex"> -->
           <div class="form-group" id="completeQuantityRow">
             <div class="row">
               <div class="col-xs-12">
@@ -777,6 +773,42 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal bs-example-modal-normal" id="changeApartmentDialog" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+              aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="applicationCapton">Квартира</h4>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="apartmentNuber" class="control-label">Номер</label>
+                <input type="text" class="form-control" id="apartmentNumber" />
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="apartmentLetter">Буква</label>
+                <select class="form-control" id="apartmentLetter">
+                  <% utils.enumApartmentLetters.forEach(function(element, index) { %>
+                  <option value="<%= index %>">
+                    <%= element %></option>
+                  <% }); %>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-success" id="saveApartment">&nbsp;Записать&nbsp;</button>
         </div>
       </div>
     </div>

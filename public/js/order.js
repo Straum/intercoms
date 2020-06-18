@@ -3,6 +3,10 @@ var Application = function() {
     uid: 0,
     rowIndex: 0
   },
+  this.editApartment = {
+    uid: 0,
+    rowIndex: 0
+  },
   this.completeRowIndex = 1
 }
 var application = new Application();
@@ -168,11 +172,57 @@ function checkApartment(ev, index) {
   }
 }
 
+$('#changeApartmentDialog').on('shown.bs.modal', function () {
+  document.getElementById('apartmentNumber').focus();
+})
+
 function editApartment(ev) {
   var id = ev.currentTarget.parentElement.parentElement.getAttribute('data-uid');
+  var rowIndex = ev.currentTarget.parentElement.parentElement.rowIndex;
+
+  application.editApartment.uid = id;
+  application.editApartment.rowIndex = rowIndex;
+
   ev.stopPropagation();
-  alert('editApartment::id = ' + id);
+  try {
+    var apartments = JSON.parse(document.getElementById('apartments').value).table;
+    var apartment = apartments.filter(function(item) {
+      return Number(item.uid) === Number(id);
+    });
+    
+    if (apartment.length === 1) {
+      document.getElementById('apartmentNumber').value = apartment[0].number;
+      // document.getElementById('apartmentLetter').children[apartment[0].letter].selected = true;
+      document.getElementById('apartmentLetter').selectedIndex = apartment[0].letter;
+      $('#changeApartmentDialog').modal();
+    }
+  } catch (error) {
+    console.log('editApartment Error: ' + error.message)    
+  }
 }
+
+document.getElementById('saveApartment').addEventListener('click', function (e) {
+  try {
+    var apartments = JSON.parse(document.getElementById('apartments').value);
+    for (var apartment of apartments.table) {
+      if (Number(apartment.uid) === Number(application.editApartment.uid)) {
+        var selectedIndex = document.getElementById('apartmentLetter').selectedIndex;
+        apartment.number = document.getElementById('apartmentNumber').value;
+        apartment.letter = Number(document.getElementById('apartmentLetter').options[selectedIndex].value);
+        apartment.fullNumber = apartment.number.trim() + document.getElementById('apartmentLetter').options[selectedIndex].text;
+
+        var rows = document.getElementById('tableApartments').rows;
+        rows[application.editApartment.rowIndex].getElementsByTagName('td')[1].innerHTML = apartment.fullNumber;
+        document.getElementById('apartments').value = JSON.stringify(apartments);
+        break;
+      }
+    }
+    $('#changeApartmentDialog').modal('hide');
+  } 
+  catch (error) {
+    console.log('saveApartment Click Error: ' + error.message)    
+  }
+});
 
 function removeApartment(ev) {
   var id = ev.currentTarget.parentElement.parentElement.getAttribute('data-uid');
@@ -810,7 +860,6 @@ $('#completeDialog').on('shown.bs.modal', function () {
   }
   document.getElementById(fieldName).focus();
 })
-
 
 document.getElementById('saveComplete').addEventListener('click', function (e) {
   calculateComplete(application.completeRowIndex);

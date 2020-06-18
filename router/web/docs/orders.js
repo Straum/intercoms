@@ -225,7 +225,7 @@ function updateApartments(data) {
     var existingApartments = data.apartments.table;
     if (isArray(existingApartments) && (existingApartments.length > 0)) {
       existingApartments.forEach(function(item) {
-        queries += 'UPDATE apartments SET paid = ' + item.paid + ', privilege = ' + item.privilege + ', exempt = ' + item.exempt + ', locked = ' + item.locked + ' WHERE apartment_id = ' + item.uid + ';';
+        queries += 'UPDATE apartments SET number = ' + item.number + ', letter = ' + item.letter + ', paid = ' + item.paid + ', privilege = ' + item.privilege + ', exempt = ' + item.exempt + ', locked = ' + item.locked + ' WHERE apartment_id = ' + item.uid + ';';
       });
     }
 
@@ -1351,9 +1351,9 @@ module.exports = function () {
     orderModel.maintenanceContract = req.body.maintenanceContract;
     orderModel.startApartment = req.body.startApartment;
     orderModel.endApartment = req.body.endApartment;
-    orderModel.normalPayment = req.body.normalPayment;
-    orderModel.privilegePayment = req.body.privilegePayment;
-    orderModel.receiptPrinting = req.body.receiptPrinting != null ? moment(req.body.receiptPrinting, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
+    orderModel.normalPayment = Number(req.body.normalPayment);
+    orderModel.privilegePayment = Number(req.body.privilegePayment);
+    orderModel.receiptPrinting = ((req.body.receiptPrinting != null) && (req.body.receiptPrinting.trim().length > 0)) ? moment(req.body.receiptPrinting, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
     orderModel.contractInfo = req.body.contractInfo;
     orderModel.serviceInfo = req.body.serviceInfo;
 
