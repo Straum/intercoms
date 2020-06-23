@@ -1,14 +1,24 @@
-var Application = function() {
+const ACTION_ADD_APARTMENT = 0;
+const ACTION_EDIT_APARTMENT = 1;
+
+const ACTION_DIALOG_BUILD_APARTMENTS = 2;
+const ACTION_DIALOG_PROLONG_ORDER = 3;
+const ACTION_DIALOG_DELETE_APARTMENT = 4;
+
+var Application = function () {
   this.deletedApartment = {
     uid: 0,
     rowIndex: 0
   },
-  this.editApartment = {
-    uid: 0,
-    rowIndex: 0
-  },
-  this.completeRowIndex = 1
+    this.editApartment = {
+      uid: 0,
+      rowIndex: 0
+    },
+    this.completeRowIndex = 1,
+    this.actionWithApartment = ACTION_ADD_APARTMENT,
+    this.actionWithDialog = ACTION_DIALOG_BUILD_APARTMENTS
 }
+
 var application = new Application();
 
 $('[data-toggle="tooltip"]').tooltip();
@@ -143,7 +153,7 @@ function checkApartment(ev, index) {
           break;
         }
       }
-      
+
       var stat = {
         paid: 0,
         privilege: 0,
@@ -151,18 +161,10 @@ function checkApartment(ev, index) {
         locked: 0
       };
 
-      document.getElementById('statPaid').innerHTML = apartments.table.filter(function(item) {
-        return Number(item.paid) === 1;
-      }).length;
-      document.getElementById('statPrivilege').innerHTML = apartments.table.filter(function(item) {
-        return Number(item.privilege) === 1;
-      }).length;
-      document.getElementById('statExempt').innerHTML = apartments.table.filter(function(item) {
-        return Number(item.exempt) === 1;
-      }).length;
-      document.getElementById('statLocked').innerHTML = apartments.table.filter(function(item) {
-        return Number(item.locked) === 1;
-      }).length;
+      getPaids(apartments);
+      getPrivileges(apartments);
+      getExemps(apartments);
+      getLockeds(apartments);
 
       document.getElementById('apartments').value = JSON.stringify(apartments);
     }
@@ -171,6 +173,25 @@ function checkApartment(ev, index) {
     console.log('checkApartment Error: ' + error.message);
   }
 }
+
+document.getElementById('addApartment').addEventListener('click', function (e) {
+  application.actionWithApartment = ACTION_ADD_APARTMENT;
+  document.getElementById('apartmentNumber').value = '';
+  document.getElementById('apartmentLetter').selectedIndex = 0;
+  $('#changeApartmentDialog').modal();
+})
+
+document.getElementById('buildApartments').addEventListener('click', function (e) {
+  application.actionWithDialog = ACTION_DIALOG_BUILD_APARTMENTS;
+  document.getElementById('replace-me').innerHTML = "Существующие данные будут перезаписаны. Продолжить построение списка?";
+  $('#modalYesNo').modal();
+})
+
+document.getElementById('prolongOrder').addEventListener('click', function (e) {
+  application.actionWithDialog = ACTION_DIALOG_PROLONG_ORDER;
+  document.getElementById('replace-me').innerHTML = "Пролонгировать договор?";
+  $('#modalYesNo').modal();
+})
 
 $('#changeApartmentDialog').on('shown.bs.modal', function () {
   document.getElementById('apartmentNumber').focus();
@@ -182,45 +203,75 @@ function editApartment(ev) {
 
   application.editApartment.uid = id;
   application.editApartment.rowIndex = rowIndex;
+  application.actionWithApartment = ACTION_EDIT_APARTMENT;
 
   ev.stopPropagation();
+
   try {
     var apartments = JSON.parse(document.getElementById('apartments').value).table;
-    var apartment = apartments.filter(function(item) {
-      return Number(item.uid) === Number(id);
-    });
-    
-    if (apartment.length === 1) {
-      document.getElementById('apartmentNumber').value = apartment[0].number;
-      // document.getElementById('apartmentLetter').children[apartment[0].letter].selected = true;
-      document.getElementById('apartmentLetter').selectedIndex = apartment[0].letter;
+    if ((rowIndex - 2) < apartments.length) {
+      document.getElementById('apartmentNumber').value = apartments[rowIndex - 2].number;
+      document.getElementById('apartmentLetter').selectedIndex = apartments[rowIndex - 2].letter;
       $('#changeApartmentDialog').modal();
     }
   } catch (error) {
-    console.log('editApartment Error: ' + error.message)    
+    console.log('editApartment Error: ' + error.message)
   }
 }
 
 document.getElementById('saveApartment').addEventListener('click', function (e) {
+  // TODO: Добавить проверку квартиру - не пустая и только число + не должно быть дублей
+
+  var selectedIndex = document.getElementById('apartmentLetter').selectedIndex;
+
   try {
     var apartments = JSON.parse(document.getElementById('apartments').value);
-    for (var apartment of apartments.table) {
-      if (Number(apartment.uid) === Number(application.editApartment.uid)) {
-        var selectedIndex = document.getElementById('apartmentLetter').selectedIndex;
-        apartment.number = document.getElementById('apartmentNumber').value;
-        apartment.letter = Number(document.getElementById('apartmentLetter').options[selectedIndex].value);
-        apartment.fullNumber = apartment.number.trim() + document.getElementById('apartmentLetter').options[selectedIndex].text;
 
-        var rows = document.getElementById('tableApartments').rows;
-        rows[application.editApartment.rowIndex].getElementsByTagName('td')[1].innerHTML = apartment.fullNumber;
+    switch (application.actionWithApartment) {
+      case ACTION_ADD_APARTMENT:
+        var newApartment = {};
+        newApartment.uid = 0;
+        newApartment.number = document.getElementById('apartmentNumber').value;
+        newApartment.fullNumber = newApartment.number.trim() + (selectedIndex > 0 ? document.getElementById('apartmentLetter').options[selectedIndex].text : '');
+        newApartment.paid = 0;
+        newApartment.privilege = 0;
+        newApartment.exempt = 0;
+        newApartment.locked = 0;
+        newApartment.halfPaid = 0;
+        newApartment.paidDT = null;
+
+        apartments.table.push(newApartment);
         document.getElementById('apartments').value = JSON.stringify(apartments);
+
+        var newRow = generateNewRowBasedTemplate(newApartment.uid, newApartment.fullNumber);
+        $('#tableApartments tr:last').after(newRow);
+        sortApartments();
+
+        getApartmentsCount(apartments)
         break;
-      }
+      case ACTION_EDIT_APARTMENT:
+        for (var apartment of apartments.table) {
+          if (Number(apartment.uid) === Number(application.editApartment.uid)) {
+            apartment.number = document.getElementById('apartmentNumber').value;
+            apartment.letter = Number(document.getElementById('apartmentLetter').options[selectedIndex].value);
+            apartment.fullNumber = apartment.number.trim() + (selectedIndex > 0 ? document.getElementById('apartmentLetter').options[selectedIndex].text : '');
+
+            var rows = document.getElementById('tableApartments').rows;
+            rows[application.editApartment.rowIndex].getElementsByTagName('td')[1].innerHTML = apartment.fullNumber;
+            document.getElementById('apartments').value = JSON.stringify(apartments);
+            break;
+          }
+        }
+        break;
+      default:
+        break;
     }
+
+
     $('#changeApartmentDialog').modal('hide');
-  } 
+  }
   catch (error) {
-    console.log('saveApartment Click Error: ' + error.message)    
+    console.log('saveApartment Click Error: ' + error.message)
   }
 });
 
@@ -229,28 +280,120 @@ function removeApartment(ev) {
   var rowIndex = ev.currentTarget.parentElement.parentElement.rowIndex;
   ev.stopPropagation();
 
+  application.actionWithDialog = ACTION_DIALOG_DELETE_APARTMENT;
   application.deletedApartment.uid = id;
   application.deletedApartment.rowIndex = rowIndex;
 
   document.getElementById('replace-me').innerHTML = "Удалить квартиру?";
-  $('#modalDeleteRecord').modal();
+  $('#modalYesNo').modal();
 }
 
-document.getElementById('deleteRecord').addEventListener('click', function (e) {
-  $('#modalDeleteRecord').modal('hide');
-  document.getElementById('tableApartments').deleteRow(application.deletedApartment.rowIndex);
-  try {
-    var apartments = JSON.parse(document.getElementById('apartments').value);
-    var newTable = apartments.table.filter(function(item) {
-      return Number(item.uid) != Number(application.deletedApartment.uid);
-    });
-    apartments.table = newTable;
-    apartments.isDeleted.push(application.deletedApartment.uid)
-    document.getElementById('apartments').value = JSON.stringify(apartments);
-    document.getElementById('statApartments').innerHTML = newTable.length;
-  } catch (error) {
-    console.log('deleteRecord Error: ' + error.message);
+document.getElementById('decide').addEventListener('click', function (e) {
+
+  var apartments = JSON.parse(document.getElementById('apartments').value);
+
+  switch (application.actionWithDialog) {
+    case ACTION_DIALOG_BUILD_APARTMENTS:
+      // TODO: Обе квартиры не пустые, только число, start < end
+      var start = document.getElementById('startApartment').value;
+      var end = document.getElementById('endApartment').value;
+
+      var bodyTable = document.getElementById('tableApartments').getElementsByTagName('tbody')[0];
+
+      bodyTable.innerHTML = '';
+      apartments.table.length = 0;
+
+      for (let ind = start; ind <= end; ind++) {
+        apartments.table.push({
+          uid: 0,
+          number: ind,
+          fullNumber: ind,
+          paid: 0,
+          privilege: 0,
+          exempt: 0,
+          locked: 0,
+          halfPaid: 0,
+          paidDT: null
+        });
+        let newRow = generateNewRowBasedTemplate(0, ind);
+        $('#tableApartments tr:last').after(newRow);
+      }
+      document.getElementById('apartments').value = JSON.stringify(apartments);
+
+      getPaids(apartments);
+      getPrivileges(apartments);
+      getExemps(apartments);
+      getLockeds(apartments);
+      getApartmentsCount(apartments);
+      break;
+    case ACTION_DIALOG_PROLONG_ORDER:
+      var rows = document.getElementById('tableApartments').rows;
+      if (rows.length > 0) {
+        for (let ind = 2; ind < rows.length; ind++) {
+          rows[ind].cells[2].children[0].checked = false;
+          rows[ind].cells[3].children[0].checked = false;
+          rows[ind].cells[4].children[0].checked = false;
+          rows[ind].cells[5].children[0].checked = false;
+
+          rows[ind].className = '';
+        }
+      }
+
+      apartments.table.forEach (item => {
+        item.paid = 0;
+        item.privilege = 0;
+        item.exempt = 0;
+        item.locked = 0;
+        item.halfPaid = 0;
+      })
+      document.getElementById('apartments').value = JSON.stringify(apartments);
+
+      getPaids(apartments);
+      getPrivileges(apartments);
+      getExemps(apartments);
+      getLockeds(apartments);
+
+      var start = document.getElementById('startService').value;
+      var end = document.getElementById('endService').value;
+      document.getElementById('startService').value = moment(start, 'DD.MM.YYYY').add(1, 'years').format('DD.MM.YYYY');
+      document.getElementById('endService').value = moment(end, 'DD.MM.YYYY').add(1, 'years').format('DD.MM.YYYY');
+      //
+      break;
+    case ACTION_DIALOG_DELETE_APARTMENT:
+      document.getElementById('tableApartments').deleteRow(application.deletedApartment.rowIndex);
+      if ((application.deletedApartment.rowIndex - 2) < apartments.table.length) {
+        apartments.table.splice(application.deletedApartment.rowIndex - 2,  1);
+      }
+      if (application.deletedApartment.uid > 0) {
+        apartments.isDeleted.push(application.deletedApartment.uid);
+      }
+      try {
+        document.getElementById('apartments').value = JSON.stringify(apartments);
+        document.getElementById('statApartments').innerHTML = apartments.table.length;
+
+        // var newTable = apartments.table.filter(function (item) {
+        //   return Number(item.uid) != Number(application.deletedApartment.uid);
+        // });
+        // apartments.table = newTable;
+        // apartments.isDeleted.push(application.deletedApartment.uid)
+        // document.getElementById('apartments').value = JSON.stringify(apartments);
+        // document.getElementById('statApartments').innerHTML = newTable.length;
+      } catch (error) {
+        console.log('decide Error: ' + error.message);
+      }
+
+      getPaids(apartments);
+      getPrivileges(apartments);
+      getExemps(apartments);
+      getLockeds(apartments);
+      getApartmentsCount(apartments)
+
+      break;
+
+    default:
+      break;
   }
+  $('#modalYesNo').modal('hide');
 });
 
 // Original code: https://www.w3schools.com/howto/howto_js_sort_table.asp
@@ -796,7 +939,7 @@ document.getElementById('tableComplete').addEventListener('click', function (e) 
   var target = e.target;
   if (target.closest('td') == null) return;
 
-  //   alert("row" + target.closest('tr').rowIndex + 
+  //   alert("row" + target.closest('tr').rowIndex +
   // " -column" + target.closest('td').cellIndex +  ', value: ' + target.parentElement.children[target.closest('td').cellIndex].innerText);
   var rowIndex = target.closest('tr').rowIndex;
   if ((rowIndex == 6) || (rowIndex == 7)) return;
@@ -865,3 +1008,71 @@ document.getElementById('saveComplete').addEventListener('click', function (e) {
   calculateComplete(application.completeRowIndex);
   $('#completeDialog').modal('hide');
 });
+
+function generateNewRowBasedTemplate(uid, fullNumber) {
+  var output =
+    `<tr class="" data-uid="${uid}">
+    <td class="col-xs-1 text-center align-middle">
+      <button type="button" class="btn btn-default btn-xs" onclick="showHistory(event)">
+        <span class="glyphicon glyphicon-rub" aria-hidden="true"></span>
+      </button>
+    </td>
+    <td class="col-xs-1 text-center align-middle">
+      ${fullNumber}
+    </td>
+    <td class="col-xs-1 text-center align-middle">
+      <input type="checkbox" class="styled" onclick="checkApartment(event, 0)"
+    </td>
+    <td class="col-xs-1 text-center align-middle">
+      <input type="checkbox" class="styled" onclick="checkApartment(event, 1)"
+    </td>
+    <td class="col-xs-1 text-center align-middle">
+      <input type="checkbox" class="styled" onclick="checkApartment(event, 2)"
+    </td>
+    <td class="col-xs-1 text-center align-middle">
+      <input type="checkbox" class="styled" onclick="checkApartment(event, 3)"
+    </td>
+    <td class="col-xs-2 text-center align-middle">
+      \u00A0
+    </td>
+    <td class="col-xs-1 text-center align-middle">
+      <button type="button" class="btn btn-info btn-xs" onclick="editApartment(event)"
+        data-uid="${uid}">
+        <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
+      </button>
+      <button type="button" class="btn btn-danger btn-xs" onclick="removeApartment(event)"
+        data-uid="${uid}">
+        <span class="glyphicon glyphicon-minus" aria-hidden="true"></span>
+      </button>
+    </td>
+  </tr>`;
+  return output;
+}
+
+function getPaids(apartments) {
+  document.getElementById('statPaid').innerHTML = apartments.table.filter(function (item) {
+    return Number(item.paid) === 1;
+  }).length;
+}
+
+function getPrivileges(apartments) {
+  document.getElementById('statPrivilege').innerHTML = apartments.table.filter(function (item) {
+    return Number(item.privilege) === 1;
+  }).length;
+}
+
+function getExemps(apartments) {
+  document.getElementById('statExempt').innerHTML = apartments.table.filter(function (item) {
+    return Number(item.exempt) === 1;
+  }).length;
+}
+
+function getLockeds(apartments) {
+  document.getElementById('statLocked').innerHTML = apartments.table.filter(function (item) {
+    return Number(item.locked) === 1;
+  }).length;
+}
+
+function getApartmentsCount(apartments) {
+  document.getElementById('statApartments').innerHTML = apartments.table.length;
+}

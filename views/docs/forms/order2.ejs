@@ -318,24 +318,19 @@
 
                 <div class="btn-toolbar" role="toolbar">
                   <div class="btn-group">
-                    <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top"
-                      title="Посторить список">1</button>
+                    <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Вставить квартиру" id="addApartment">
+                      <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                    </button>
                   </div>
                   <div class="btn-group">
-                    <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top"
-                      title="Вставить...">4</button>
-                    <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top"
-                      title="Изменить...">5</button>
-                    <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top"
-                      title="Удалить...">6</button>
-                    <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top"
-                      title="Очистить Оплачено">7</button>
+                    <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Построить список" id="buildApartments">
+                      <span class="glyphicon glyphicon-tasks" aria-hidden="true"></span>
+                    </button>
                   </div>
                   <div class="btn-group">
-                    <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top"
-                      title="Подключение...">8</button>
-                    <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top"
-                      title="История платежей">9</button>
+                    <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Пролонгировать договор" id="prolongOrder">
+                      <span class="glyphicon glyphicon-flash" aria-hidden="true"></span>
+                    </button>
                   </div>
                 </div>
                 <p></p>
@@ -814,7 +809,7 @@
     </div>
   </div>
 
-  <% include ../../common/warning_window.ejs %>
+  <% include ../../common/modal_yes_no.ejs %>
 
   <script src="/bower_components/jquery/dist/jquery.min.js"></script>
   <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
