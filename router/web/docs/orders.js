@@ -9,6 +9,7 @@ var moment = require('moment');
 var utils = require('../../../lib/utils');
 var order = require('../../../lib/order_service');
 const queryOrder = require('../../../queries/orders').getOrder;
+const queryDeleteExistsApartments = require('../../../queries/orders').deleteExistsApartments;
 var common = require('../../common/typeheads');
 var OrderModel = require('../../models/order').OrderModel;
 var models = require('../../models/order');
@@ -40,15 +41,15 @@ function getPayments(id) {
         ' a.apartment_id = ?' +
         ' ORDER BY' +
         ' a.pay_date DESC', [id],
-          function (err, rows) {
-            connection.release();
-            if (err) {
-              reject();
-            }
-            else {
-              resolve(rows);
-            }      
-          });
+        function (err, rows) {
+          connection.release();
+          if (err) {
+            reject();
+          }
+          else {
+            resolve(rows);
+          }
+        });
     });
   });
 }
@@ -68,15 +69,15 @@ function getFines(id) {
         ' a.apartment_id = ?' +
         ' ORDER BY' +
         ' a.create_dt DESC', [id],
-          function (err, rows) {
-            connection.release();
-            if (err) {
-              reject();
-            }
-            else {
-              resolve(rows);
-            }      
-          });
+        function (err, rows) {
+          connection.release();
+          if (err) {
+            reject();
+          }
+          else {
+            resolve(rows);
+          }
+        });
     });
   });
 }
@@ -87,25 +88,25 @@ function getPrices(id) {
       connection.query(
         ' SELECT' +
         ' a.start_service AS startService,' +
-        ' a.end_service AS endService,' + 
-        ' a.normal_payment AS normalPayment,' + 
-        ' a.privilege_payment As privilegePayment,' + 
-        ' a.receipt_printing AS receiptPrinting' + 
+        ' a.end_service AS endService,' +
+        ' a.normal_payment AS normalPayment,' +
+        ' a.privilege_payment As privilegePayment,' +
+        ' a.receipt_printing AS receiptPrinting' +
         ' FROM' +
         ' cards_history a' +
         ' INNER JOIN apartments b ON b.card_id = a.card_id' +
-        ' WHERE' + 
+        ' WHERE' +
         ' b.apartment_id = ?' +
         ' ORDER BY a.start_service DESC', [id],
-          function (err, rows) {
-            connection.release();
-            if (err) {
-              reject();
-            }
-            else {
-              resolve(rows);
-            }      
-          });
+        function (err, rows) {
+          connection.release();
+          if (err) {
+            reject();
+          }
+          else {
+            resolve(rows);
+          }
+        });
     });
   });
 }
@@ -113,108 +114,164 @@ function getPrices(id) {
 function updateOrder(data) {
   return new Promise(function (resolve, reject) {
     db.get().getConnection(function (err, connection) {
-    connection.query(
-      ' UPDATE cards SET ' +
-      ' contract_number = ?,' +
-      ' create_date = ?,' +
-      ' equipment_id = ?,' +
-      ' end_contract = ?,' +
-      ' credit_to = ?,' +
-      ' repaid = ?,' +
-      ' city_id = ?,' +
-      ' street_id = ?,' +
-      ' house_id = ?,' +
-      ' porch = ?,' +
-      ' numeration = ?,' +
-      ' client_id = ?,' +
-      ' is_one_person = ?,' +
-      ' m_client_id = ?,' +
-      ' m_contract_number = ?,' +
-      ' start_service = ?,' +
-      ' end_service = ?,' +
-      ' maintenance_contract = ?,' +
-      ' m_start_apartment = ?,' +
-      ' m_end_apartment = ?,' +
-      ' normal_payment = ?,' +
-      ' privilege_payment = ?,' +
-      ' receipt_printing = ?,' +
-      ' contract_info = ?,' +
-      ' service_info = ?,' +
-      ' equipment_quantity = ?,' +
-      ' equipment_price = ?,' +
-      ' equipment_cost = ?,' +
-      ' mounting_quantity = ?,' +
-      ' mounting_price = ?,' +
-      ' mounting_cost = ?,' +
-      ' subscriber_unit_quantity = ?,' +
-      ' subscriber_unit_price = ?,' +
-      ' subscriber_unit_cost = ?,' +
-      ' key_quantity = ?,' +
-      ' key_price = ?,' +
-      ' key_cost = ?,' +
-      ' door_quantity = ?,' +
-      ' door_price = ?,' +
-      ' door_cost = ?,' +
-      ' subtotal = ?,' +
-      ' subtotal_for_apartment = ?,' +
-      ' discount_for_apartment = ?,' +
-      ' total = ?' +
-      ' WHERE card_id = ?', [
-          data.contractNumber,
-          data.createDate,
-          data.equipment.key,
-          data.endContract,
-          data.creditTo,
-          data.repaid,
-          data.address.city.key,
-          data.address.street.key,
-          data.address.house.key,
-          data.porch,
-          data.numeration,
-          data.client.contract.key,
-          data.onePerson,
-          data.client.service.key,
-          data.serviceNumber,
-          data.startService,
-          data.endService,
-          data.maintenanceContract,
-          data.startApartment,
-          data.endApartment,
-          data.normalPayment,
-          data.privilegePayment,
-          data.receiptPrinting,
-          data.contractInfo,
-          data.serviceInfo,
-          data.complete.equipment.quantity,
-          data.complete.equipment.price,
-          data.complete.equipment.cost,
-          data.complete.mounting.quantity,
-          data.complete.mounting.price,
-          data.complete.mounting.cost,
-          data.complete.subscriberUnit.quantity,
-          data.complete.subscriberUnit.price,
-          data.complete.subscriberUnit.cost,
-          data.complete.key.quantity,
-          data.complete.key.price,
-          data.complete.key.cost,
-          data.complete.door.quantity,
-          data.complete.door.price,
-          data.complete.door.cost,
-          data.complete.subtotal.cost,
-          data.complete.subtotalForApartment.cost,
-          data.complete.discountForApartment.cost,
-          data.complete.total.cost,
-          data.id], function (err) {
-            connection.release();
-            if (err) {
-              reject();
-            }
-            else {
-              resolve();
-            }      
-      });
+      connection.query(
+        ' UPDATE cards SET ' +
+        ' contract_number = ?,' +
+        ' create_date = ?,' +
+        ' equipment_id = ?,' +
+        ' end_contract = ?,' +
+        ' credit_to = ?,' +
+        ' repaid = ?,' +
+        ' city_id = ?,' +
+        ' street_id = ?,' +
+        ' house_id = ?,' +
+        ' porch = ?,' +
+        ' numeration = ?,' +
+        ' client_id = ?,' +
+        ' is_one_person = ?,' +
+        ' m_client_id = ?,' +
+        ' m_contract_number = ?,' +
+        ' start_service = ?,' +
+        ' end_service = ?,' +
+        ' maintenance_contract = ?,' +
+        ' m_start_apartment = ?,' +
+        ' m_end_apartment = ?,' +
+        ' normal_payment = ?,' +
+        ' privilege_payment = ?,' +
+        ' receipt_printing = ?,' +
+        ' contract_info = ?,' +
+        ' service_info = ?,' +
+        ' equipment_quantity = ?,' +
+        ' equipment_price = ?,' +
+        ' equipment_cost = ?,' +
+        ' mounting_quantity = ?,' +
+        ' mounting_price = ?,' +
+        ' mounting_cost = ?,' +
+        ' subscriber_unit_quantity = ?,' +
+        ' subscriber_unit_price = ?,' +
+        ' subscriber_unit_cost = ?,' +
+        ' key_quantity = ?,' +
+        ' key_price = ?,' +
+        ' key_cost = ?,' +
+        ' door_quantity = ?,' +
+        ' door_price = ?,' +
+        ' door_cost = ?,' +
+        ' subtotal = ?,' +
+        ' subtotal_for_apartment = ?,' +
+        ' discount_for_apartment = ?,' +
+        ' total = ?' +
+        ' WHERE card_id = ?', [
+        data.contractNumber,
+        data.createDate,
+        data.equipment.key,
+        data.endContract,
+        data.creditTo,
+        data.repaid,
+        data.address.city.key,
+        data.address.street.key,
+        data.address.house.key,
+        data.porch,
+        data.numeration,
+        data.client.contract.key,
+        data.onePerson,
+        data.client.service.key,
+        data.serviceNumber,
+        data.startService,
+        data.endService,
+        data.maintenanceContract,
+        data.startApartment,
+        data.endApartment,
+        data.normalPayment,
+        data.privilegePayment,
+        data.receiptPrinting,
+        data.contractInfo,
+        data.serviceInfo,
+        data.complete.equipment.quantity,
+        data.complete.equipment.price,
+        data.complete.equipment.cost,
+        data.complete.mounting.quantity,
+        data.complete.mounting.price,
+        data.complete.mounting.cost,
+        data.complete.subscriberUnit.quantity,
+        data.complete.subscriberUnit.price,
+        data.complete.subscriberUnit.cost,
+        data.complete.key.quantity,
+        data.complete.key.price,
+        data.complete.key.cost,
+        data.complete.door.quantity,
+        data.complete.door.price,
+        data.complete.door.cost,
+        data.complete.subtotal.cost,
+        data.complete.subtotalForApartment.cost,
+        data.complete.discountForApartment.cost,
+        data.complete.total.cost,
+        data.id], function (err) {
+          connection.release();
+          if (err) {
+            reject();
+          }
+          else {
+            resolve();
+          }
+        });
     });
-  }); 
+  });
+}
+
+function deleteExistsApartments(data) {
+  return new Promise(function (resolve, reject) {
+    queryDeleteExistsApartments
+    if ((data.id > 0) && (data.apartments.isRebuilt)) {
+      db.get().getConnection(function (err, connection) {
+        connection.query(queryDeleteExistsApartments, [data.id], function (err) {
+          connection.release();
+          if (err) {
+            reject();
+          }
+          else {
+            resolve();
+          }
+        });
+      });
+    }
+    else {
+      resolve();
+    }
+  })
+}
+
+function insertApartments(data) {
+  return new Promise(function (resolve, reject) {
+    var apartments = data.apartments.table;
+    if (isArray(apartments) && (apartments.length > 0) && (data.apartments.isRebuilt)) {
+      var queries = '';
+      apartments.forEach(function (item) {
+        queries += 'INSERT INTO apartments (number, letter, paid, privilege, exempt, locked, card_id) VALUES (' +
+        item.number + ', ' +
+        item.letter + ', '  +
+        item.paid + ', ' +
+        item.privilege + ', ' +
+        item.exempt + ', ' +
+        item.locked + ', ' +
+        data.id + ');';
+      });
+
+      db.get().getConnection(function (err, connection) {
+        connection.query(queries, [], function (err) {
+          connection.release();
+          if (err) {
+            reject();
+          }
+          else {
+            resolve();
+          }
+        });
+      });
+    }
+    else {
+      resolve();
+    }
+  })
 }
 
 function updateApartments(data) {
@@ -224,109 +281,127 @@ function updateApartments(data) {
 
     var existingApartments = data.apartments.table;
     if (isArray(existingApartments) && (existingApartments.length > 0)) {
-      existingApartments.forEach(function(item) {
-        queries += 'UPDATE apartments SET number = ' + item.number + ', letter = ' + item.letter + ', paid = ' + item.paid + ', privilege = ' + item.privilege + ', exempt = ' + item.exempt + ', locked = ' + item.locked + ' WHERE apartment_id = ' + item.uid + ';';
+      existingApartments.forEach(function (item) {
+        if (Number(item.uid) > 0) {
+          queries += 'UPDATE apartments SET number = ' + item.number +
+          ', letter = ' + item.letter +
+          ', paid = ' + item.paid +
+          ', privilege = ' + item.privilege +
+          ', exempt = ' + item.exempt +
+          ', locked = ' + item.locked +
+          ' WHERE apartment_id = ' + item.uid + ';';
+        }
+        else {
+          queries += 'INSERT INTO apartments (number, letter, paid, privilege, exempt, locked, card_id) VALUES (' +
+            item.number + ', ' +
+            item.letter + ', '  +
+            item.paid + ', ' +
+            item.privilege + ', ' +
+            item.exempt + ', ' +
+            item.locked + ', ' +
+            data.id + ');';
+        }
       });
     }
 
     var deletedApartments = data.apartments.isDeleted;
     if (isArray(deletedApartments) && (deletedApartments.length > 0)) {
-      deletedApartments.forEach(function(item) {
+      deletedApartments.forEach(function (item) {
         queries += 'DELETE FROM apartments WHERE apartment_id = ' + item + ';';
       });
     }
 
     if (queries !== '') {
       db.get().getConnection(function (err, connection) {
-      connection.query(queries, [], function (err) {
-              connection.release();
-              if (err) {
-                reject();
-              }
-              else {
-                resolve();
-              }      
+        connection.query(queries, [], function (err) {
+          connection.release();
+          if (err) {
+            reject();
+          }
+          else {
+            resolve();
+          }
         });
       });
     }
     else {
       resolve();
     }
-  }); 
+  });
 }
 
 function saveOrder(data) {
   return new Promise(function (resolve, reject) {
     db.get().getConnection(function (err, connection) {
-    connection.query(
-      ' INSERT INTO cards (' +
-      ' contract_number, create_date, equipment_id, end_contract, credit_to, repaid, city_id, street_id, house_id, porch, numeration,' +
-      ' client_id, is_one_person, m_client_id,' +
-      ' m_contract_number, start_service, end_service, maintenance_contract, m_start_apartment, m_end_apartment,' +
-      ' normal_payment, privilege_payment, receipt_printing,' +
-      ' contract_info, service_info,' +
-      ' equipment_quantity, equipment_price, equipment_cost,' +
-      ' mounting_quantity, mounting_price, mounting_cost,' +
-      ' subscriber_unit_quantity, subscriber_unit_price, subscriber_unit_cost,' +
-      ' key_quantity, key_price, key_cost,' +
-      ' door_quantity, door_price, door_cost,' +
-      ' subtotal, subtotal_for_apartment, discount_for_apartment, total)' +
-      ' VALUES (' + 
-      ' ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [
-          data.contractNumber,
-          data.createDate,
-          data.equipment.key,
-          data.endContract,
-          data.creditTo,
-          data.repaid,
-          data.address.city.key,
-          data.address.street.key,
-          data.address.house.key,
-          data.porch,
-          data.numeration,
-          data.client.contract.key,
-          data.onePerson,
-          data.client.service.key,
-          data.serviceNumber,
-          data.startService,
-          data.endService,
-          data.maintenanceContract,
-          data.startApartment,
-          data.endApartment,
-          data.normalPayment,
-          data.privilegePayment,
-          data.receiptPrinting,
-          data.contractInfo,
-          data.serviceInfo,
-          data.complete.equipment.quantity,
-          data.complete.equipment.price,
-          data.complete.equipment.cost,
-          data.complete.mounting.quantity,
-          data.complete.mounting.price,
-          data.complete.mounting.cost,
-          data.complete.subscriberUnit.quantity,
-          data.complete.subscriberUnit.price,
-          data.complete.subscriberUnit.cost,
-          data.complete.key.quantity,
-          data.complete.key.price,
-          data.complete.key.cost,
-          data.complete.door.quantity,
-          data.complete.door.price,
-          data.complete.door.cost,
-          data.complete.subtotal.cost,
-          data.complete.subtotalForApartment.cost,
-          data.complete.discountForApartment.cost,
-          data.complete.total.cost], function (err, rows) {
-            connection.release();
-            if (err) {
-              reject();
-            }
-            else {
-              resolve(rows.insertId);
-            }      
-      });
+      connection.query(
+        ' INSERT INTO cards (' +
+        ' contract_number, create_date, equipment_id, end_contract, credit_to, repaid, city_id, street_id, house_id, porch, numeration,' +
+        ' client_id, is_one_person, m_client_id,' +
+        ' m_contract_number, start_service, end_service, maintenance_contract, m_start_apartment, m_end_apartment,' +
+        ' normal_payment, privilege_payment, receipt_printing,' +
+        ' contract_info, service_info,' +
+        ' equipment_quantity, equipment_price, equipment_cost,' +
+        ' mounting_quantity, mounting_price, mounting_cost,' +
+        ' subscriber_unit_quantity, subscriber_unit_price, subscriber_unit_cost,' +
+        ' key_quantity, key_price, key_cost,' +
+        ' door_quantity, door_price, door_cost,' +
+        ' subtotal, subtotal_for_apartment, discount_for_apartment, total)' +
+        ' VALUES (' +
+        ' ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [
+        data.contractNumber,
+        data.createDate,
+        data.equipment.key,
+        data.endContract,
+        data.creditTo,
+        data.repaid,
+        data.address.city.key,
+        data.address.street.key,
+        data.address.house.key,
+        data.porch,
+        data.numeration,
+        data.client.contract.key,
+        data.onePerson,
+        data.client.service.key,
+        data.serviceNumber,
+        data.startService,
+        data.endService,
+        data.maintenanceContract,
+        data.startApartment,
+        data.endApartment,
+        data.normalPayment,
+        data.privilegePayment,
+        data.receiptPrinting,
+        data.contractInfo,
+        data.serviceInfo,
+        data.complete.equipment.quantity,
+        data.complete.equipment.price,
+        data.complete.equipment.cost,
+        data.complete.mounting.quantity,
+        data.complete.mounting.price,
+        data.complete.mounting.cost,
+        data.complete.subscriberUnit.quantity,
+        data.complete.subscriberUnit.price,
+        data.complete.subscriberUnit.cost,
+        data.complete.key.quantity,
+        data.complete.key.price,
+        data.complete.key.cost,
+        data.complete.door.quantity,
+        data.complete.door.price,
+        data.complete.door.cost,
+        data.complete.subtotal.cost,
+        data.complete.subtotalForApartment.cost,
+        data.complete.discountForApartment.cost,
+        data.complete.total.cost], function (err, rows) {
+          connection.release();
+          if (err) {
+            reject();
+          }
+          else {
+            resolve(rows.insertId);
+          }
+        });
     });
-  }); 
+  });
 }
 
 function getOrderInfo(orderId) {
@@ -484,7 +559,7 @@ function generateReportForSetup(res, sceleton) {
   doc.setData({
     IDDOC1: sceleton.contractNumber,
     DOCDATE1: sceleton.createDate == null ? '' : moment(sceleton.createDate).format('DD.MM.YYYY'),
-    
+
     CLIENT1: sceleton.client.name,
     POD1: sceleton.porch,
     GOROD2: sceleton.city.name,
@@ -542,7 +617,7 @@ function generateReportForSetup(res, sceleton) {
     if (err) {
       res.send('Нет файла!');
     }
-  });  
+  });
 
 }
 
@@ -947,16 +1022,16 @@ module.exports = function () {
                   orderModel.receiptPrinting = data.receiptPrinting;
 
                   if (apartments.length > 0) {
-                    orderModel.apartments.stat.paid = apartments.filter(function(element) {
+                    orderModel.apartments.stat.paid = apartments.filter(function (element) {
                       return Number(element.paid) === 1;
                     }).length;
-                    orderModel.apartments.stat.privilege = apartments.filter(function(element) {
+                    orderModel.apartments.stat.privilege = apartments.filter(function (element) {
                       return Number(element.privilege) === 1;
                     }).length;
-                    orderModel.apartments.stat.exempt = apartments.filter(function(element) {
+                    orderModel.apartments.stat.exempt = apartments.filter(function (element) {
                       return Number(element.exempt) === 1;
                     }).length;
-                    orderModel.apartments.stat.locked = apartments.filter(function(element) {
+                    orderModel.apartments.stat.locked = apartments.filter(function (element) {
                       return Number(element.locked) === 1;
                     }).length;
                   }
@@ -965,7 +1040,7 @@ module.exports = function () {
                   orderModel.contractInfo = data.contractInfo;
                   orderModel.serviceInfo = data.serviceInfo;
 
-                  // Complete 
+                  // Complete
                   orderModel.complete.equipment.quantity = data.equipmentQuantity;
                   orderModel.complete.equipment.price = data.equipmentPrice;
                   orderModel.complete.equipment.cost = data.equipmentCost;
@@ -973,7 +1048,7 @@ module.exports = function () {
                   orderModel.complete.mounting.quantity = data.mountingQuantity;
                   orderModel.complete.mounting.price = data.mountingPrice;
                   orderModel.complete.mounting.cost = data.mountingCost;
-                  
+
                   orderModel.complete.subscriberUnit.quantity = data.subscriberUnitQuantity;
                   orderModel.complete.subscriberUnit.price = data.subscriberUnitPrice;
                   orderModel.complete.subscriberUnit.cost = data.subscriberUnitCost;
@@ -981,7 +1056,7 @@ module.exports = function () {
                   orderModel.complete.key.quantity = data.keyQuantity;
                   orderModel.complete.key.price = data.keyPrice;
                   orderModel.complete.key.cost = data.keyCost;
-                  
+
                   orderModel.complete.door.quantity = data.doorQuantity;
                   orderModel.complete.door.price = data.doorPrice;
                   orderModel.complete.door.cost = data.doorCost;
@@ -1212,7 +1287,7 @@ module.exports = function () {
 
         return getAddressInfo(sceleton.clientSetupId, 0);
       })
-      .then(function(registeredAddress ) {
+      .then(function (registeredAddress) {
         if ((Array.isArray(registeredAddress)) && (registeredAddress.length === 1)) {
           sceleton.client.registeredAddress.city = registeredAddress[0].cityName;
           sceleton.client.registeredAddress.street = registeredAddress[0].streetName;
@@ -1221,7 +1296,7 @@ module.exports = function () {
         }
         return getAddressInfo(sceleton.clientSetupId, 1);
       })
-      .then(function(actualAddress ) {
+      .then(function (actualAddress) {
         if ((Array.isArray(actualAddress)) && (actualAddress.length === 1)) {
           sceleton.client.actualAddress.city = actualAddress[0].cityName;
           sceleton.client.actualAddress.street = actualAddress[0].streetName;
@@ -1230,7 +1305,7 @@ module.exports = function () {
         }
         return getClientInfo(sceleton.clientSetupId);
       })
-      .then(function(passport) {
+      .then(function (passport) {
         if ((Array.isArray(passport)) && (passport.length === 1)) {
           sceleton.client.name = passport[0].clientName;
           sceleton.client.phones = passport[0].phones;
@@ -1272,7 +1347,7 @@ module.exports = function () {
 
         return getAddressInfo(sceleton.clientServiceId, 0);
       })
-      .then(function(registeredAddress ) {
+      .then(function (registeredAddress) {
         if ((Array.isArray(registeredAddress)) && (registeredAddress.length === 1)) {
           sceleton.client.registeredAddress.city = registeredAddress[0].cityName;
           sceleton.client.registeredAddress.street = registeredAddress[0].streetName;
@@ -1281,7 +1356,7 @@ module.exports = function () {
         }
         return getAddressInfo(sceleton.clientServiceId, 1);
       })
-      .then(function(actualAddress ) {
+      .then(function (actualAddress) {
         if ((Array.isArray(actualAddress)) && (actualAddress.length === 1)) {
           sceleton.client.actualAddress.city = actualAddress[0].cityName;
           sceleton.client.actualAddress.street = actualAddress[0].streetName;
@@ -1290,7 +1365,7 @@ module.exports = function () {
         }
         return getClientInfo(sceleton.clientServiceId);
       })
-      .then(function(passport) {
+      .then(function (passport) {
         if ((Array.isArray(passport)) && (passport.length === 1)) {
           sceleton.client.name = passport[0].clientName;
           sceleton.client.phones = passport[0].phones;
@@ -1341,7 +1416,7 @@ module.exports = function () {
     orderModel.endContract = req.body.endContract != null ? moment(req.body.endContract, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
     orderModel.creditTo = req.body.creditTo != null ? moment(req.body.creditTo, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
     orderModel.repaid = req.body.repaid === 'on' ? 1 : 0;
-    orderModel.fullAddress= req.body.fullAddress;
+    orderModel.fullAddress = req.body.fullAddress;
     orderModel.porch = req.body.porch;
     orderModel.numeration = req.body.numeration;
     orderModel.onePerson = req.body.onePerson === 'on' ? 1 : 0;
@@ -1369,7 +1444,7 @@ module.exports = function () {
 
     req.assert('contractNumber', 'Номер договора не введен').notEmpty();
     req.assert('createDate', 'Дата создания не заполнена').notEmpty();
-    req.assert('equipment', 'Оборудование не заполнено').custom(function(data) {
+    req.assert('equipment', 'Оборудование не заполнено').custom(function (data) {
       var result = false
       try {
         var equipment = JSON.parse(data);
@@ -1380,7 +1455,7 @@ module.exports = function () {
       return result;
     });
     req.assert('creditTo', 'Дата кредита не заполнена').notEmpty();
-    req.assert('address', 'Адрес не заполнен').custom(function(data) {
+    req.assert('address', 'Адрес не заполнен').custom(function (data) {
       var result = false
       try {
         var address = JSON.parse(data);
@@ -1392,29 +1467,36 @@ module.exports = function () {
     });
     req.assert('porch', 'Номер подъезда не заполнен').isNumeric();
     req.assert('numeration', 'Нумерация не заполнена').notEmpty();
-    
+
     var errors = req.validationErrors();
-    if (! errors) {
+    if (!errors) {
       if (orderModel.id != 0) {
         updateOrder(orderModel)
-        .then(function() {
-          return updateApartments(orderModel);
-        })
-        .then(function() {
-          res.redirect('/orders');
-        })
-        .catch(function(error) {
-          console.log(error);
-        });
+          .then(function () {
+            return deleteExistsApartments(orderModel);
+          })
+          .then(function () {
+            return updateApartments(orderModel);
+          })
+          .then(function () {
+            res.redirect('/orders');
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
       }
       else {
         saveOrder(orderModel)
-        .then(function() {
-          res.redirect('/orders');
-        })
-        .catch(function(error) {
-          console.log(error);
-        });
+          .then(function (uid) {
+            orderModel.id = uid;
+            return insertApartments(orderModel);
+          })
+          .then(function () {
+            res.redirect('/orders');
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
       }
     }
     else {
@@ -1645,22 +1727,22 @@ module.exports = function () {
       var rowsCount = 'limit' in data ? data.limit : rowsLimit;
 
       getPayments(data.id)
-      .then(function(payments) {
-        out.payments = payments;
-        return getFines(data.id);
-      })
-      .then(function(fines) {
-        out.fines = fines;
-        return getPrices(data.id);
-      })
-      .then(function(prices) {
-        out.prices = prices;
-        res.status(200).send(out);
-      })
-      .catch(function (error) {
-        console.log(error.message);
-        res.status(500).send(error.message);
-      });
+        .then(function (payments) {
+          out.payments = payments;
+          return getFines(data.id);
+        })
+        .then(function (fines) {
+          out.fines = fines;
+          return getPrices(data.id);
+        })
+        .then(function (prices) {
+          out.prices = prices;
+          res.status(200).send(out);
+        })
+        .catch(function (error) {
+          console.log(error.message);
+          res.status(500).send(error.message);
+        });
     }
     else {
       res.status(500).send({ code: 500, msg: 'Incorrect parameter' });

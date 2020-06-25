@@ -75,3 +75,8 @@ exports.getOrder = `
   LEFT JOIN faces i ON a.m_client_id = i.client_id
   WHERE
     a.card_id = ?`;
+
+  exports.deleteExistsApartments = `
+    DELETE FROM apartments
+    WHERE card_id = ?
+  `;

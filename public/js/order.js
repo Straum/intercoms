@@ -193,7 +193,14 @@ document.getElementById('prolongOrder').addEventListener('click', function (e) {
   $('#modalYesNo').modal();
 })
 
+
+
+$('#modalYesNo').on('shown.bs.modal', function () {
+  document.getElementById('additionalAlert').hidden = true;
+})
+
 $('#changeApartmentDialog').on('shown.bs.modal', function () {
+  document.getElementById('alertApartment').hidden = true;
   document.getElementById('apartmentNumber').focus();
 })
 
@@ -220,18 +227,42 @@ function editApartment(ev) {
 }
 
 document.getElementById('saveApartment').addEventListener('click', function (e) {
-  // TODO: Добавить проверку квартиру - не пустая и только число + не должно быть дублей
-
   var selectedIndex = document.getElementById('apartmentLetter').selectedIndex;
+  var validNumber = document.getElementById('apartmentNumber').value;
+  var validLetter = document.getElementById('apartmentLetter').options[selectedIndex].value;
 
   try {
     var apartments = JSON.parse(document.getElementById('apartments').value);
 
     switch (application.actionWithApartment) {
       case ACTION_ADD_APARTMENT:
+
+        if (!apartmentNumberNotEmpty(validNumber)) {
+          showAlert2(false, '<strong>Внимание!</strong>&nbsp;Квартира не имеет номера!');
+          return;
+        }
+
+        if (!apartmentNumberIsNotNumber(validNumber)) {
+          showAlert2(false, '<strong>Внимание!</strong>&nbsp;Номер квартиры не является числом!');
+          return;
+        }
+
+        var apartmentIsExists = apartments.table.filter(function(item) {
+          return (Number(item.number) === Number(validNumber)) && (Number(item.letter) === Number(validLetter));
+        })
+
+        if ((Array.isArray(apartmentIsExists)) && (apartmentIsExists.length > 0)) {
+          showAlert2(false, '<strong>Внимание!</strong>&nbsp;Такая квартира уже существует!');
+          return;
+        }
+        // TODO: Добавить проверку квартиру - не пустая и только число + не должно быть дублей
+
+        showAlert2(true, '&nbsp;');
+
         var newApartment = {};
         newApartment.uid = 0;
-        newApartment.number = document.getElementById('apartmentNumber').value;
+        newApartment.number = validNumber;
+        newApartment.letter = Number(validLetter);
         newApartment.fullNumber = newApartment.number.trim() + (selectedIndex > 0 ? document.getElementById('apartmentLetter').options[selectedIndex].text : '');
         newApartment.paid = 0;
         newApartment.privilege = 0;
@@ -252,8 +283,8 @@ document.getElementById('saveApartment').addEventListener('click', function (e) 
       case ACTION_EDIT_APARTMENT:
         for (var apartment of apartments.table) {
           if (Number(apartment.uid) === Number(application.editApartment.uid)) {
-            apartment.number = document.getElementById('apartmentNumber').value;
-            apartment.letter = Number(document.getElementById('apartmentLetter').options[selectedIndex].value);
+            apartment.number = validNumber;
+            apartment.letter = Number(validLetter);
             apartment.fullNumber = apartment.number.trim() + (selectedIndex > 0 ? document.getElementById('apartmentLetter').options[selectedIndex].text : '');
 
             var rows = document.getElementById('tableApartments').rows;
@@ -298,6 +329,33 @@ document.getElementById('decide').addEventListener('click', function (e) {
       var start = document.getElementById('startApartment').value;
       var end = document.getElementById('endApartment').value;
 
+      if (!apartmentNumberNotEmpty(start)) {
+        showAlert(false, '<strong>Внимание!</strong>&nbsp;Начальная квартира не имеет номера!');
+        return;
+      }
+
+      if (!apartmentNumberIsNotNumber(start)) {
+        showAlert(false, '<strong>Внимание!</strong>&nbsp;Номер начальной квартиры не является числом!');
+        return;
+      }
+
+      if (!apartmentNumberNotEmpty(end)) {
+        showAlert(false, '<strong>Внимание!</strong>&nbsp;Конечная квартира не имеет номера!');
+        return;
+      }
+
+      if (!apartmentNumberIsNotNumber(start)) {
+        showAlert(false, '<strong>Внимание!</strong>&nbsp;Номер конечной квартиры не является числом!');
+        return;
+      }
+
+      if (!checkNumberingOfApartments(start, end)) {
+        showAlert(false, '<strong>Внимание!</strong>&nbsp;Начальный номер квартиры больше конечного номера квартиры!');
+        return;
+      }
+
+      showAlert(true, '&nbsp;')
+
       var bodyTable = document.getElementById('tableApartments').getElementsByTagName('tbody')[0];
 
       bodyTable.innerHTML = '';
@@ -307,6 +365,7 @@ document.getElementById('decide').addEventListener('click', function (e) {
         apartments.table.push({
           uid: 0,
           number: ind,
+          letter: 0,
           fullNumber: ind,
           paid: 0,
           privilege: 0,
@@ -318,6 +377,7 @@ document.getElementById('decide').addEventListener('click', function (e) {
         let newRow = generateNewRowBasedTemplate(0, ind);
         $('#tableApartments tr:last').after(newRow);
       }
+      apartments.isRebuilt = true;
       document.getElementById('apartments').value = JSON.stringify(apartments);
 
       getPaids(apartments);
@@ -1075,4 +1135,28 @@ function getLockeds(apartments) {
 
 function getApartmentsCount(apartments) {
   document.getElementById('statApartments').innerHTML = apartments.table.length;
+}
+
+function apartmentNumberNotEmpty(data) {
+  return data.trim().length > 0;
+}
+
+function apartmentNumberIsNotNumber(data) {
+  var result = Number(data);
+  if (isNaN(result)) return false;
+  return typeof result === 'number';
+}
+
+function checkNumberingOfApartments(lowNumber, highNumber) {
+  return Number(lowNumber) < Number(highNumber);
+}
+
+function showAlert(hidden, htmlText) {
+  document.getElementById('additionalAlert').hidden = hidden;
+  document.getElementById('additionalAlert').innerHTML = htmlText;
+}
+
+function showAlert2(hidden, htmlText) {
+  document.getElementById('alertApartment').hidden = hidden;
+  document.getElementById('alertApartment').innerHTML = htmlText;
 }

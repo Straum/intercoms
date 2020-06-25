@@ -29,7 +29,7 @@ module.exports.OrderModel = function () {
     }
   },
   this.fullAddress = '';
-  
+
   this.porch = 0;
   this.numeration = '';
 
@@ -66,7 +66,8 @@ module.exports.OrderModel = function () {
       locked: 0
     },
     table: [],
-    isDeleted: []
+    isDeleted: [],
+    isRebuilt: false
   },
 
   this.contractInfo = '';
@@ -134,11 +135,11 @@ module.exports.ReportModel = function () {
   this.porch = 0;
   this.clientSetupId = 0;
   this.clientServiceId = 0;
-  
+
   this.client = {
     name: '',
     phones: '',
-    
+
     registeredAddress: {
       city: '',
       street: '',
@@ -152,7 +153,7 @@ module.exports.ReportModel = function () {
       house: '',
       apartment: ''
     },
-    
+
     certificate: {
       name: '',
       series: '',
@@ -201,6 +202,6 @@ module.exports.ReportModel = function () {
       cost: 0.00
     }
   };
- 
+
   return this;
 };
