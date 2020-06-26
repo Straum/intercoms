@@ -21,6 +21,8 @@ var Application = function () {
 
 var application = new Application();
 
+$('#tableApartments').floatThead();
+
 $('[data-toggle="tooltip"]').tooltip();
 
 $('#dtCreateDate').datetimepicker({
@@ -467,7 +469,7 @@ function sortApartments() {
   while (switching) {
     switching = false;
     rows = table.rows;
-    for (var ind = 2; ind < (rows.length - 1); ind++) {
+    for (var ind = 1; ind < (rows.length - 1); ind++) {
       shouldSwitch = false;
       var x = rows[ind].getElementsByTagName('td')[1];
       var y = rows[ind + 1].getElementsByTagName('td')[1];
@@ -504,7 +506,7 @@ function sortTable(index) {
   while (switching) {
     switching = false;
     rows = table.rows;
-    for (var ind = 2; ind < (rows.length - 1); ind++) {
+    for (var ind = 1; ind < (rows.length - 1); ind++) {
       shouldSwitch = false;
       var x = rows[ind].getElementsByTagName('td')[index];
       var y = rows[ind + 1].getElementsByTagName('td')[index];

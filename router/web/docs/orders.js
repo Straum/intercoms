@@ -735,7 +735,8 @@ var filterBuilder = function (req) {
   var cloneFilters = new Filters();
   var where = '';
 
-  var startDate = moment().startOf('month').toDate();
+  // var startDate = moment().startOf('month').toDate();
+  var startDate = moment('2000-01-01').format('YYYY-MM-DD');
   var endDate = moment().endOf('month').toDate();
 
   if (!('filtersOrders' in req.session)) {

@@ -1,0 +1,7 @@
+﻿table thead th {
+  background-color: #fff;
+  box-shadow: 0.125rem 0 0.1875rem #dee2e6;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
