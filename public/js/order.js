@@ -112,7 +112,7 @@ function showHistory(ev) {
         body.prices += '<td class="text-center align-middle">' + moment(element.endService).format('DD.MM.YYYY') + '</td>';
         body.prices += '<td class="text-right align-middle">' + element.normalPayment.toFixed(2) + '</td>';
         body.prices += '<td class="text-right align-middle">' + element.privilegePayment.toFixed(2) + '</td>';
-        body.prices += '<td class="text-center align-middle">' + moment(element.receiptPrinting).format('DD.MM.YYYY') + '</td>';
+        body.prices += '<td class="text-center align-middle">' + (element.receiptPrinting != null ? moment(element.receiptPrinting).format('DD.MM.YYYY') : '') + '</td>';
         body.prices += '</tr>';
       });
     }
@@ -195,8 +195,6 @@ document.getElementById('prolongOrder').addEventListener('click', function (e) {
   $('#modalYesNo').modal();
 })
 
-
-
 $('#modalYesNo').on('shown.bs.modal', function () {
   document.getElementById('additionalAlert').hidden = true;
 })
@@ -249,7 +247,7 @@ document.getElementById('saveApartment').addEventListener('click', function (e) 
           return;
         }
 
-        var apartmentIsExists = apartments.table.filter(function(item) {
+        var apartmentIsExists = apartments.table.filter(function (item) {
           return (Number(item.number) === Number(validNumber)) && (Number(item.letter) === Number(validLetter));
         })
 
@@ -401,7 +399,7 @@ document.getElementById('decide').addEventListener('click', function (e) {
         }
       }
 
-      apartments.table.forEach (item => {
+      apartments.table.forEach(item => {
         item.paid = 0;
         item.privilege = 0;
         item.exempt = 0;
@@ -424,7 +422,7 @@ document.getElementById('decide').addEventListener('click', function (e) {
     case ACTION_DIALOG_DELETE_APARTMENT:
       document.getElementById('tableApartments').deleteRow(application.deletedApartment.rowIndex);
       if ((application.deletedApartment.rowIndex - 2) < apartments.table.length) {
-        apartments.table.splice(application.deletedApartment.rowIndex - 2,  1);
+        apartments.table.splice(application.deletedApartment.rowIndex - 2, 1);
       }
       if (application.deletedApartment.uid > 0) {
         apartments.isDeleted.push(application.deletedApartment.uid);
@@ -529,6 +527,62 @@ function sortTable(index) {
       switchcount++;
     }
   }
+
+  var data = [];
+  try {
+    var apartments = JSON.parse(document.getElementById('apartments').value);
+    if (Array.isArray(apartments.table) && (apartments.table.length > 0)) {
+
+      data = apartments.table.filter(function (item) {
+        switch (index) {
+          case 2:
+            return item.paid > 0;
+            break;
+          case 3:
+            return item.privilege > 0;
+            break;
+          case 4:
+            return item.exempt > 0;
+            break;
+          case 5:
+            return item.locked > 0;
+            break;
+
+          default:
+            break;
+        }
+      });
+    }
+  } catch (error) {
+    //
+  }
+
+  var aInfo = [];
+  data.forEach(function(item) {
+    aInfo.push(item.fullNumber);
+  });
+
+  var infoInput = document.getElementById('clipBoard');
+  var infoPanel = document.getElementById('clipBoardRow');
+  infoPanel.style.display = 'inline';
+
+  infoInput.value = aInfo.join(', ');
+  infoInput.select();
+  document.execCommand("copy");
+
+  setTimeout(function () {
+    infoPanel.style.display = 'none';
+  }, 30000)
+
+  // if (navigator.clipboard) {
+  //   navigator.clipboard.writeText('Hello Alligator!')
+  //   .then(function() {
+  //     // Получилось!
+  //   })
+  //   .catch(function(err) {
+  //     console.log('Something went wrong', err);
+  //   });
+  // }
 }
 
 function saveFullAddress(data) {

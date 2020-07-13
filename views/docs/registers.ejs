@@ -16,9 +16,9 @@
 <body>
 
     <% include ../common/full_menu.ejs %>
-    
+
     <div class="container-fluid">
-        <div class="row">   
+        <div class="row">
             <div class="col-xs-12">
                 <ol class="breadcrumb">
                     <li><a href="#">Документы</a></li>
@@ -30,7 +30,7 @@
             <a href="/registers/add" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Новый реестр"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
         </form>
         <p>
-        <table class="table table-bordered table-condensed">
+        <table class="table table-bordered table-hover table-condensed">
             <thead>
                 <tr class="active">
                     <th style="width: 12%;" class="text-center align-middle">Дата</th>
@@ -181,7 +181,7 @@
                         alert(data);
                     }
                 });
-                
+
             });
         });
     </script>

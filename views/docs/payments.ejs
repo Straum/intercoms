@@ -2,229 +2,265 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
-    <!-- <link rel="icon" href="../../../../favicon.ico"> -->
-    <title>Home page - <%= title %></title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <!-- <link rel="icon" href="../../../../favicon.ico"> -->
+  <title>Home page - <%= title %></title>
 
-    <% include ../common/bootstrap_css.ejs %>
-    <link href="/theme.css" rel="stylesheet">
+  <% include ../common/bootstrap_css.ejs %>
+  <link href="/theme.css" rel="stylesheet">
 </head>
 
 <body>
 
-    <% include ../common/full_menu.ejs %>
-    
-    <div class="container-fluid">
-        <div class="row">   
-            <div class="col-xs-12">
-                <ol class="breadcrumb">
-                    <li><a href="#">Документы</a></li>
-                    <li><%= title %></li>
-                </ol>
-            </div>
-        </div>
-        <form class="form-inline" role="form">
-            <a href="/payments/add" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Новый платеж"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
-        </form>
-        <p>
-        <table class="table table-bordered table-condensed">
-            <thead>
-                <tr class="active">
-                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Дата</th>
-                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Номер<br> договора</th>
-                    <th rowspan="2" style="width: 10%; vertical-align: middle" class="text-center">Пролонгированный<br>договор</th>
-                    <th style="width: 6%;" class="text-center">Месяц</th>
-                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Льготник</th>
-                    <th style="width: 12%;" class="text-center">Улица</th>
-                    <th style="width: 12%;" class="text-center">Город</th>
-                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Квартира</th>
-                    <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center">Оплачено</th>
-                    <th rowspan="2" style="width: 9%; vertical-align: middle" class="text-center">Сумма</th>
-                    <th rowspan="2" style="width: 9%; vertical-align: middle" class="text-center">Способ<br> оплаты</th>
-                    <th rowspan="2" style="width: 12%; vertical-align: middle" class="text-center">Действия</th>
-                </tr>
-                <tr class="active">
-                    <th class="text-center">Год</th>
-                    <th class="text-center">Дом</th>
-                    <th class="text-center">Подъезд</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% for (var ind = 0, max = data.length; ind < max; ind++) {%>
-                <tr>
-                    <td rowspan="2" class="text-center" style="vertical-align: middle">
-                        <%= moment(data[ind].create_date).format( 'DD.MM.YYYY') %>
-                    </td>
-                    <td rowspan="2" class="text-center" style="vertical-align: middle">
-                        <%= data[ind].contract_number %>
-                    </td>
-                    <td rowspan="2" class="text-center" style="vertical-align: middle">
-                        <%= data[ind].m_contract_number %>
-                    </td>
-                    <td class="text-center align-middle">
-                        <%= data[ind].pay_month %>
-                    </td>
-                    <td rowspan="2" class="text-center" style="vertical-align: middle">
-                        <input type="checkbox" <%= +data[ind].privilege == 1 ? ' checked' : '' %>><label></label>
-                    </td>
-                    <td class="text-left">
-                        <%= data[ind].street_name %>
-                    </td>
-                    <td class="text-left">
-                        <%= data[ind].city_name %>
-                    </td>
-                    <td rowspan="2" class="text-center" style="vertical-align: middle">
-                        <%= data[ind].number + '' + utils.decodeApartmentLetter( data[ind].letter ) %>
-                    </td>
-                    <td rowspan="2" class="text-center" style="vertical-align: middle">
-                        <%= moment(data[ind].pay_date).format( 'DD.MM.YYYY') %>
-                    </td>
-                    <td rowspan="2" class="text-center" style="vertical-align: middle">
-                        <%= data[ind].amount.toFixed(2) %>
-                    </td>
-                    <td rowspan="2" class="text-center" style="vertical-align: middle">
-                        <%= data[ind].org_name %>
-                    </td>
-                    <td rowspan="2" class="text-center" style="vertical-align: middle">
-                        <a href="/payments/edit/<%= data[ind].id %>" class="btn btn-info btn-xs" id="edit">
-                            <span class="glyphicon glyphicon-pencil" aria-hidden="true">
-                            </span>
-                        </a>
-                        <a href="#" onclick="confirmDelete(+<%= data[ind].id %>);" class="btn btn-danger btn-xs" id="orders_info">
-                            <span class="glyphicon glyphicon-minus" aria-hidden="true">
-                            </span>
-                        </a>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="text-center">
-                        <%= data[ind].pay_year %>
-                    </td>
-                    <td class="text-right">
-                        <%= data[ind].house_number %>
-                    </td>
-                    <td class="text-right">
-                        <%= data[ind].porch %>
-                    </td>
-                </tr>
-                <% } %>
-            </tbody>
-        </table>
-        <% if (pageCount > 0) { %>
-            <nav aria-label="...">
-            <ul class="pagination text-center table_pagination">
-                <% if (currentPage == 1) { %>
-                    <li class="page-item disabled">
-                        <span class="page-link">&laquo;</span>
-                    </li>
-                    <% } else { %>
-                        <li class="page-item">
-                            <a class="page-link" href="/payments">&laquo;
-                        </a>
-                    </li>
-                <% } %>
-                <% var i = (Number(currentPage) > 5 ? Number(currentPage) - 4 : 1) %>
-                <% if (i !== 1) { %>
-                    <li class="page-item disabled">
-                        <a class="page-link">...</a>
-                    </li>
-                <% } %>
-                <% for (; i <= (Number(currentPage) + 4) && i <= pageCount; i++) { %>
-                    <% if (i == currentPage) { %>
-                        <li class="page-item active">
-                            <span class="page-link">
-                                <%= i %>
-                                <span class="sr-only">(current)</span>
-                            </span>
-                        </li>
-                    <% } else { %>
-                        <li class="page-item">
-                            <a class="page-link" href="/payments/<%= (i == 1) ? '' : (i - 1) * Number(visibleRows) %>">
-                                <%= i %>
-                            </a>
-                        </li>
-                    <% } %>
-                    <% if (i == Number(currentPage) + 4 && i < pageCount) { %>
-                        <li class="page-item disabled">
-                            <a class="page-link">...</a>
-                        </li>
-                    <% } %>
-                <% } %>
-                <% if (currentPage == pageCount) { %>
-                    <li class="page-item disabled">
-                        <a class="page-link">&raquo;</a>
-                    </li>
-                <% } else { %>
-                    <li class="page-item">
-                        <a class="page-link" href="/payments/<%= (pageCount - 1) * Number(visibleRows) %>">&raquo;</a>
-                    </li>
-                <% } %>
-             </ul>
-             </nav>
-          <% } %>
+  <% include ../common/full_menu.ejs %>
+
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-xs-12">
+        <ol class="breadcrumb">
+          <li><a href="#">Документы</a></li>
+          <li><%= title %></li>
+        </ol>
+      </div>
     </div>
-
-    <div class="modal" id="modalDeleteRecord" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Подтверждение</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <form>
-                        <input type="text" hidden id="deletedUID" name="deletedUID" value="">
-                    </form>
-                    <p>Удалить запись?</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-warning" id="deleteRecord">Удалить</button>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
-                </div>
+    <form class="form-inline" role="form">
+      <a href="/payments/add" class="btn btn-default" data-toggle="tooltip" data-placement="top"
+        title="Новый платеж"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
+      <a href="/payments/load" class="btn btn-default" data-toggle="tooltip" data-placement="top"
+        title="Загрузить платежи" id="outerPayments">
+        <span class="glyphicon glyphicon-share-alt" aria-hidden="true">
+        </span>
+      </a>
+    </form>
+    <p>
+    <table class="table table-bordered table-hover table-condensed">
+      <thead>
+        <tr class="active">
+          <th style="width: 6%; vertical-align: middle" class="text-center" rowspan="2">Дата</th>
+          <th style="width: 9%; vertical-align: middle" class="text-center">Договор</th>
+          <th style="width: 9%; vertical-align: middle" class="text-center">Договор ТО</th>
+          <th style="width: 13%; vertical-align: middle" class="text-center">Город</th>
+          <th style="width: 16%; vertical-align: middle" class="text-center">Улица</th>
+          <th style="width: 8%; vertical-align: middle" class="text-center">Подъезд</th>
+          <th style="width: 9%; vertical-align: middle" class="text-center">Дом</th>
+          <th style="width: 9%; vertical-align: middle" class="text-center">Квартира</th>
+          <th style="width: 6%; vertical-align: middle" class="text-center" rowspan="2">Оплачено</th>
+          <th style="width: 9%; vertical-align: middle" class="text-center" rowspan="2">Сумма</th>
+          <th style="width: 6%; vertical-align: middle" class="text-center" rowspan="2">Действия</th>
+        </tr>
+        <tr class="active">
+          <td>
+            <div class="input-group">
+              <span class="input-group-btn">
+                <button class="btn btn-default" type="button" id="clearOrder">
+                  <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                </button>
+              </span>
+              <input type="text" class="form-control" placeholder="Договор" name="findOrder" id="findOrder"
+                value="">
             </div>
+          </td>
+          <td>
+            <div class="input-group">
+              <span class="input-group-btn">
+                <button class="btn btn-default" type="button" id="clearProlongedOrder">
+                  <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                </button>
+              </span>
+              <input type="text" class="form-control" placeholder="Договор" name="findProlongedOrder" id="findProlongedOrder"
+                value="">
+            </div>
+          </td>
+          <td>
+            <div class="input-group">
+              <span class="input-group-btn">
+                <button class="btn btn-default" type="button" id="clearCity">
+                  <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                </button>
+              </span>
+              <input type="text" class="form-control" placeholder="Город" name="findCity" id="findCity"
+                value="">
+            </div>
+          </td>
+          <td>
+            <div class="input-group">
+              <span class="input-group-btn">
+                <button class="btn btn-default" type="button" id="clearStreet">
+                  <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                </button>
+              </span>
+              <input type="text" class="form-control" placeholder="Улица" name="findStreet" id="findStreet"
+                value="">
+            </div>
+          </td>
+          <td>
+            <div class="input-group">
+              <span class="input-group-btn">
+                <button class="btn btn-default" type="button" id="clearHouse">
+                  <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                </button>
+              </span>
+              <input type="text" class="form-control" placeholder="Дом" name="findHouse" id="findHouse"
+                value="">
+            </div>
+          </td>
+          <td>
+            <div class="input-group">
+              <span class="input-group-btn">
+                <button class="btn btn-default" type="button" id="clearPorch">
+                  <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                </button>
+              </span>
+              <input type="text" class="form-control" placeholder="Подъезд" name="findPorch" id="findPorch"
+                id="filterPorch" value="">
+            </div>
+          </td>
+          <td>
+            <div class="input-group">
+              <span class="input-group-btn">
+                <button class="btn btn-default" type="button" id="clearPorch">
+                  <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                </button>
+              </span>
+              <input type="text" class="form-control" placeholder="Квартира" name="findApartment" id="findApartment"
+                id="filterApartment" value="">
+            </div>
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <% for (var ind = 0, max = data.length; ind < max; ind++) {%>
+        <tr>
+          <td class="text-center" style="vertical-align: middle">
+            <%= moment(data[ind].create_date).format( 'DD.MM.YYYY') %>
+          </td>
+          <td class="text-center" style="vertical-align: middle">
+            <%= data[ind].contract_number %>
+          </td>
+          <td class="text-center" style="vertical-align: middle">
+            <%= data[ind].m_contract_number %>
+          </td>
+          <td class="text-left" style="vertical-align: middle">
+            <%= data[ind].city_name %>
+          </td>
+          <td class="text-left" style="vertical-align: middle">
+            <%= data[ind].street_name %>
+          </td>
+          <td class="text-center" style="vertical-align: middle">
+            <%= data[ind].house_number %>
+          </td>
+          <td class="text-center" style="vertical-align: middle">
+            <%= data[ind].porch %>
+          </td>
+          <td class="text-center" style="vertical-align: middle">
+            <%= data[ind].number + '' + utils.decodeApartmentLetter( data[ind].letter ) %>
+          </td>
+          <td class="text-center" style="vertical-align: middle">
+            <%= moment(data[ind].pay_date).format( 'DD.MM.YYYY') %>
+          </td>
+          <td class="text-center" style="vertical-align: middle">
+            <%= data[ind].amount.toFixed(2) %>
+          </td>
+          <td class="text-center" style="vertical-align: middle">
+            <a href="/payments/edit/<%= data[ind].id %>" class="btn btn-info btn-xs" id="edit">
+              <span class="glyphicon glyphicon-pencil" aria-hidden="true">
+              </span>
+            </a>
+            <a href="#" onclick="confirmDelete(+<%= data[ind].id %>);" class="btn btn-danger btn-xs" id="orders_info">
+              <span class="glyphicon glyphicon-minus" aria-hidden="true">
+              </span>
+            </a>
+          </td>
+        </tr>
+        <% } %>
+      </tbody>
+    </table>
+    <% if (pageCount > 0) { %>
+    <nav aria-label="...">
+      <ul class="pagination text-center table_pagination">
+        <% if (currentPage == 1) { %>
+        <li class="page-item disabled">
+          <span class="page-link">&laquo;</span>
+        </li>
+        <% } else { %>
+        <li class="page-item">
+          <a class="page-link" href="/payments">&laquo;
+          </a>
+        </li>
+        <% } %>
+        <% var i = (Number(currentPage) > 5 ? Number(currentPage) - 4 : 1) %>
+        <% if (i !== 1) { %>
+        <li class="page-item disabled">
+          <a class="page-link">...</a>
+        </li>
+        <% } %>
+        <% for (; i <= (Number(currentPage) + 4) && i <= pageCount; i++) { %>
+        <% if (i == currentPage) { %>
+        <li class="page-item active">
+          <span class="page-link">
+            <%= i %>
+            <span class="sr-only">(current)</span>
+          </span>
+        </li>
+        <% } else { %>
+        <li class="page-item">
+          <a class="page-link" href="/payments/<%= (i == 1) ? '' : (i - 1) * Number(visibleRows) %>">
+            <%= i %>
+          </a>
+        </li>
+        <% } %>
+        <% if (i == Number(currentPage) + 4 && i < pageCount) { %>
+        <li class="page-item disabled">
+          <a class="page-link">...</a>
+        </li>
+        <% } %>
+        <% } %>
+        <% if (currentPage == pageCount) { %>
+        <li class="page-item disabled">
+          <a class="page-link">&raquo;</a>
+        </li>
+        <% } else { %>
+        <li class="page-item">
+          <a class="page-link" href="/payments/<%= (pageCount - 1) * Number(visibleRows) %>">&raquo;</a>
+        </li>
+        <% } %>
+      </ul>
+    </nav>
+    <% } %>
+  </div>
+
+  <div class="modal" id="modalDeleteRecord" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Подтверждение</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
         </div>
+        <div class="modal-body">
+          <form>
+            <input type="text" hidden id="deletedUID" name="deletedUID" value="">
+          </form>
+          <p>Удалить запись?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-warning" id="deleteRecord">Удалить</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <script src="/bower_components/jquery/dist/jquery.min.js"></script>
-    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
-    <script>
-        function confirmDelete(id) {
-            $('#deletedUID').val(id);
-            $('#modalDeleteRecord').modal({'keyboard': true});
-        }
+  <script src="/bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="/bower_components/axios/dist/axios.min.js"></script>
+  <script src="/js/payments.js"></script>
 
-        $(document).ready(function () {
-
-            $('[data-toggle="tooltip"]').tooltip();
-
-            $('#deleteRecord').click(function() {
-                $('#modalDeleteRecord').modal('hide');
-                $.ajax({
-                    type: 'POST',
-                    url: '/payments/delete',
-                    dataType: 'json',
-                    async: true,
-                    data: {
-                        'id': $('#deletedUID').val()
-                    },
-                    success: function (data) {
-                        var path = window.location.origin + '/payments';
-                        window.location.href = path;
-                        return;
-                    },
-                    error: function (data) {
-                        alert(data);
-                    }
-                });
-                
-            });
-        });
-    </script>
 </body>
 
 </html>

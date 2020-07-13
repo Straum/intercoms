@@ -209,6 +209,7 @@ var Filters = function() {
     street: { id: 0, name: '', cityId: 0},
     house: { id: 0, number: '', streetId: 0},
     performer: { id: 0, name: ''},
+    emptyPerformers: false
   };
   this.whereSQL = '';
   this.orderBy = '';
@@ -360,9 +361,15 @@ var filterBuilder = function (req, isDone) {
             streetId: obj.house.streetId
           };
 
-          if (+obj.performer.id > 0) {
-            where += ' AND (a.worker_id = ' + obj.performer.id + ')';
+          if (obj.emptyPerformers) {
+            where += ' AND (a.worker_id = 0)';
           }
+          else {
+            if (+obj.performer.id > 0) {
+              where += ' AND (a.worker_id = ' + obj.performer.id + ')';
+            }
+          }
+          cloneFilters.conditions.emptyPerformers = obj.emptyPerformers;
           cloneFilters.conditions.performer = {
             id: obj.performer.id,
             name: obj.performer.name,
@@ -853,7 +860,7 @@ var applicationsReport = function (req, res) {
     ' SELECT a.application_id AS documentId, DATE_FORMAT(a.create_date, "%d.%m.%Y %H:%i") AS createDate,' +
     ' b.name AS cityName, c.name AS streetName,' +
     ' d.number AS houseNumber, a.porch, a.kind, ' +
-    ' a.phone, ' +
+    ' a.phone, a.completion_date AS completionDate, a.weight, ' +
     ' f.name AS performerName,' +
     ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc' +
     ' FROM applications a' +
@@ -984,7 +991,7 @@ var applicationsReport = function (req, res) {
                       {text: 'Номера', bold:true},
                       {text: 'Телефон', bold: true},
                       {text: 'Проблемы', bold: true},
-                      {text: 'Примечание', bold: true}
+                      {text: 'Примечание', bold: true},
                     ]);
 
                   dataset.forEach(function (item, index) {
@@ -996,13 +1003,15 @@ var applicationsReport = function (req, res) {
                       }
                     });
 
+
+                    var isLineThrough = ((item.completionDate != null) && (item.weight >= 0));
                     tableData.push([
                       {text: index + 1, style: 'normalText'},
                       {text: item.cityName + ', ' + item.streetName, style: 'normalText'},
                       {text: item.houseNumber, style: 'normalText'},
                       {text: (+item.kind === 0 ? 'под. ' : 'кв. ') + item.porch, style: 'normalText'},
                       {text: item.phone, style: 'normalText'},
-                      {text: problem, style: 'normalText'},
+                      isLineThrough ? {text: problem, style: 'normalText', decoration: 'lineThrough'} : {text: problem, style: 'normalText'},
                       ''
                     ]);
                   });
@@ -2240,7 +2249,6 @@ module.exports = function () {
                           res.status(500).send(db.showDatabaseError(500, err));
                         }
                         else {
-                          console.log(rows);
                           rows.forEach(function (item) {
                             for (var ind = 0; ind < dataset.length; ind++) {
                               if (dataset[ind].documentId === item.documentId) {

@@ -1414,7 +1414,7 @@ module.exports = function () {
     orderModel.id = req.body.id;
     orderModel.contractNumber = req.body.contractNumber;
     orderModel.createDate = req.body.createDate == null ? moment(new Date()).format('YYYY-MM-DD') : moment(req.body.createDate, 'DD.MM.YYYY').format('YYYY-MM-DD');
-    orderModel.endContract = req.body.endContract != null ? moment(req.body.endContract, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
+    orderModel.endContract = ((req.body.endContract != null) && (req.body.endContract.trim().length > 0)) ? moment(req.body.endContract, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
     orderModel.creditTo = req.body.creditTo != null ? moment(req.body.creditTo, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
     orderModel.repaid = req.body.repaid === 'on' ? 1 : 0;
     orderModel.fullAddress = req.body.fullAddress;
@@ -1422,11 +1422,11 @@ module.exports = function () {
     orderModel.numeration = req.body.numeration;
     orderModel.onePerson = req.body.onePerson === 'on' ? 1 : 0;
     orderModel.serviceNumber = req.body.serviceNumber;
-    orderModel.startService = req.body.startService != null ? moment(req.body.startService, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
-    orderModel.endService = req.body.endService != null ? moment(req.body.endService, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
+    orderModel.startService = ((req.body.startService != null) && (req.body.startService.trim().length > 0)) ? moment(req.body.startService, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
+    orderModel.endService = ((req.body.endService != null) && (req.body.endService.trim().length > 0)) ? moment(req.body.endService, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
     orderModel.maintenanceContract = req.body.maintenanceContract;
-    orderModel.startApartment = req.body.startApartment;
-    orderModel.endApartment = req.body.endApartment;
+    orderModel.startApartment = req.body.startApartment.trim().length > 0 ? parseInt(req.body.startApartment) : null;
+    orderModel.endApartment = req.body.endApartment.trim().length > 0 ? parseInt(req.body.endApartment) : null;
     orderModel.normalPayment = Number(req.body.normalPayment);
     orderModel.privilegePayment = Number(req.body.privilegePayment);
     orderModel.receiptPrinting = ((req.body.receiptPrinting != null) && (req.body.receiptPrinting.trim().length > 0)) ? moment(req.body.receiptPrinting, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;

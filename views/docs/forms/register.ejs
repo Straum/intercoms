@@ -18,7 +18,7 @@
 <body>
 
     <% include ../../common/full_menu.ejs %>
-    
+
     <div class="container">
         <div class="form-header">
             <h3><%= title %></h3>
@@ -34,7 +34,7 @@
                 </form>
                 <p>
                 <div class="row">
-                    <div class="col-md-3"> 
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label for="createDate" class="control-label">Создано</label>
                             <div class="input-group date" id='datetimepicker_create_date'>
@@ -148,122 +148,8 @@
     <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
     <script src="/bower_components/moment/min/moment-with-locales.min.js"></script>
     <script src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
-    <script>
+    <script src="/js/register.js"></script>
 
-      // Basic foundation
-      // http://carlofontanos.com/nodejs-ajax-pagination-with-mongodb-search-sort-filter/
-
-      var app = {
-        Register: function() {
-          this.init = function() {
-            this.getAllPagination();
-          };
-
-          this.getAllPagination = function() {
-            _this = this;
-
-            if ($('#settings').val()) {
-              data = JSON.parse($('form.post-list input').val());
-              _this.ajaxGetAllItemsPagination(data.page, data.search);
-            } else {
-              _this.ajaxGetAllItemsPagination(1, $('find_contract_number').val());
-            }
-
-            $("#find_contract_number").keyup(function (e) {
-              if (e.keyCode == 13) {
-                _this.ajaxGetAllItemsPagination(1, $('#find_contract_number').val());
-              }
-            });
-
-            $('body').on('click', '#erase_contract', function() {
-              $('#find_contract_number').val('');
-              $('#find_contract_number').focus();
-            });
-
-            $('body').on('click', '#search', function() {
-              _this.ajaxGetAllItemsPagination(1, $('#find_contract_number').val());
-            });
-
-            $('body').on('click', '.pagination .page-link', function() {
-              var page = $(this).text();
-              switch ((typeof page == 'string') && (page.charCodeAt())) {
-                case 171:
-                  page = 1;
-                  break;
-                case 187: 
-                  page = +($('#pages_count').val());
-                  break;
-              }
-              _this.ajaxGetAllItemsPagination(page, $('#find_contract_number').val());
-            });
-
-            _this.ajaxGetAllItemsPagination(1, $('#find_contract_number').val()); 
-          }
-          
-          this.ajaxGetAllItemsPagination = function(page) {
-
-            // $('#pagination').html('<div class="col align-self-center loader"></div>');
-
-            var post_data = {
-              'id': $('#id').val(),
-              'page': page,
-              'search': $('#find_contract_number').val(),
-              'prolonged': $('#prolonged:checkbox:checked').val() === 'on'
-            };
-                
-            $('#settings').val(JSON.stringify(post_data));
-                
-            var data = {
-              action: 'get-register',
-              data: JSON.parse($('#settings').val())
-            };
-
-            $.ajax({
-              url: '/registers/edit',
-              type: 'POST',
-              contentType: 'application/json',
-              data: JSON.stringify(data),
-              success: function(response) {
-                // alert('success!');
-                $('#tbody').html(response.bodyTable);
-                $('#pagination').html(response.pageContent);
-                $("#pages_count").val(response.pagesCount);
-              },
-              error: function( description ) {
-                console.log('error!');
-              }
-            })
-          }
-        }
-      }
-
-      $(function () {
-
-        $('[data-toggle="tooltip"]').tooltip();
-
-        $('#datetimepicker_create_date').datetimepicker({
-          format: 'L',
-          locale: 'ru'
-        });
-
-        $('#datetimepicker_start_date').datetimepicker({
-          format: 'L',
-          locale: 'ru'
-        });
-
-        $('#datetimepicker_end_date').datetimepicker({
-          format: 'L',
-          locale: 'ru'
-        });
-
-        $('#datetimepicker_last_modify_date').datetimepicker({
-          locale: 'ru'
-        });
-
-        var register = new app.Register();
-        register.init();
-      });
-    </script>
-</body>
+  </body>
 
 </html>

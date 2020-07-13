@@ -5,6 +5,28 @@ var db = require('../../../lib/db.js');
 const visibleRows = require('../../../lib/config').config.visibleRows;
 var moment = require('moment');
 var utils = require('../../../lib/utils.js');
+const path = require('path');
+const fs = require('fs');
+var iconvlite = require('iconv-lite');
+let MakePayments = require('../../../lib/make-payments').MakePayments;
+
+function savePaymentsHistory(data) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        'INSERT INTO payments_history (comment) values (?)', [data],
+        function (err, rows) {
+          connection.release();
+          if (err) {
+            reject();
+          }
+          else {
+            resolve(rows);
+          }
+        });
+    });
+  });
+}
 
 module.exports = function () {
   var router = express.Router();
@@ -38,8 +60,7 @@ module.exports = function () {
               ' d.name AS city_name,' +
               ' e.name AS street_name,' +
               ' f.number AS house_number,' +
-              ' c.porch,' +
-              ' g.name AS org_name' +
+              ' c.porch' +
               ' FROM' +
               ' payments a' +
               ' LEFT JOIN apartments b ON b.apartment_id = a.apartment_id' +
@@ -47,7 +68,6 @@ module.exports = function () {
               ' LEFT JOIN cities d ON d.city_id = c.city_id' +
               ' LEFT JOIN streets e ON e.street_id = c.street_id' +
               ' LEFT JOIN houses f ON f.house_id = c.house_id' +
-              ' LEFT JOIN organizations g ON g.organization_id = a.mode' +
               // ' WHERE'
               // ' a.pay_date BETWEEN :start_date AND :end_date' +
               ' ORDER BY' +
@@ -88,9 +108,9 @@ module.exports = function () {
     var id = req.params.id;
     db.get().getConnection(function (err, connection) {
       connection.query(
-        ' SELECT a.payment_id AS id,' + 
+        ' SELECT a.payment_id AS id,' +
         ' a.create_date,' +
-        ' a.apartment_id,' + 
+        ' a.apartment_id,' +
         ' a.pay_month,' +
         ' a.pay_year,' +
         ' a.amount,' +
@@ -183,6 +203,25 @@ module.exports = function () {
     });
   });
 
+  router.get('/load', async function (req, res) {
+    var destination = path.join(__dirname, '../../../public/in/');
+
+    var makePayments = new MakePayments();
+    await makePayments.start(destination, function(error, data) {
+      console.log('callback');
+      savePaymentsHistory()
+      .then(
+        // res.status(200).send({ 'status': 'success' })
+        res.redirect('/payments')
+      )
+      .catch(function (error) {
+        res.status(500).send(error.message);
+      });;
+
+    })
+
+  });
+
   router.get('/:offset', function (req, res) {
     var offset = +req.params.offset;
     var pageCount = 0;
@@ -216,8 +255,7 @@ module.exports = function () {
               ' d.name AS city_name,' +
               ' e.name AS street_name,' +
               ' f.number AS house_number,' +
-              ' c.porch,' +
-              ' g.name AS org_name' +
+              ' c.porch' +
               ' FROM' +
               ' payments a' +
               ' LEFT JOIN apartments b ON b.apartment_id = a.apartment_id' +
@@ -225,7 +263,6 @@ module.exports = function () {
               ' LEFT JOIN cities d ON d.city_id = c.city_id' +
               ' LEFT JOIN streets e ON e.street_id = c.street_id' +
               ' LEFT JOIN houses f ON f.house_id = c.house_id' +
-              ' LEFT JOIN organizations g ON g.organization_id = a.mode' +
               // ' WHERE'
               // ' a.pay_date BETWEEN :start_date AND :end_date' +
               ' ORDER BY' +
@@ -234,11 +271,11 @@ module.exports = function () {
               ' LIMIT ?' +
               ' OFFSET ?', [visibleRows, offset], function (err, rows) {
                 if (err) {
-                  throw err;
-                }
+                //   throw err;
+                // }
                 connection.release();
 
-                if (err) {
+                // if (err) {
                   console.error(err);
                   res.status(500).send({
                     'code': 500,
