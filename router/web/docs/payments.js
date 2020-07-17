@@ -14,7 +14,7 @@ function savePaymentsHistory(data) {
   return new Promise(function (resolve, reject) {
     db.get().getConnection(function (err, connection) {
       connection.query(
-        'INSERT INTO payments_history (comment) values (?)', [data],
+        'INSERT INTO payments_history (create_dt, comment) values (NOW(), ?)', [data],
         function (err, rows) {
           connection.release();
           if (err) {
@@ -207,16 +207,15 @@ module.exports = function () {
     var destination = path.join(__dirname, '../../../public/in/');
 
     var makePayments = new MakePayments();
-    await makePayments.start(destination, function(error, data) {
-      console.log('callback');
-      savePaymentsHistory()
-      .then(
-        // res.status(200).send({ 'status': 'success' })
-        res.redirect('/payments')
-      )
-      .catch(function (error) {
-        res.status(500).send(error.message);
-      });;
+    await makePayments.start(destination, function (error, data) {
+      savePaymentsHistory(data)
+        .then(
+          // res.status(200).send({ 'status': 'success' })
+          res.redirect('/payments')
+        )
+        .catch(function (error) {
+          res.status(500).send(error.message);
+        });;
 
     })
 
@@ -271,11 +270,11 @@ module.exports = function () {
               ' LIMIT ?' +
               ' OFFSET ?', [visibleRows, offset], function (err, rows) {
                 if (err) {
-                //   throw err;
-                // }
-                connection.release();
+                  //   throw err;
+                  // }
+                  connection.release();
 
-                // if (err) {
+                  // if (err) {
                   console.error(err);
                   res.status(500).send({
                     'code': 500,
