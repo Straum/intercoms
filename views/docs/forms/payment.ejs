@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <!-- <link rel="icon" href="../../../../favicon.ico"> -->
+  <title>Home page - <%= title %></title>
+
+  <% include ../../common/bootstrap_css.ejs %>
+  <link href="/theme.css" rel="stylesheet">
+  <link href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css"  rel="stylesheet">
+</head>
+
+<body>
+
+  <% include ../../common/full_menu.ejs %>
+
+  <div class="container">
+    <div class="form-header">
+      <h3><%= title %></h3>
+      <% if (Object.keys(errors).length > 0) { %>
+        <h3><span class="text-danger">Выявлены ошибки:</span></h3>
+        <ul>
+          <% for (var key in errors) { %>
+          <li><span class="text-danger"><%= errors[key].msg %></span></li>
+          <% }; %>
+        </ul>
+        <% } %>
+    </div>
+    <div class="card">
+      <div class="row">
+        <div class="col-xs-3">
+          <ul class="nav nav-pills">
+            <li class="active"><a data-toggle="tab" href="#core">Текущие</a></li>
+            <li><a data-toggle="tab" href="#paymentsHistory">Выполненные</a></li>
+          </ul>
+        </div>
+      </div>
+      <form method="post" action="/payments/save" novalidate>
+        <div class="well">
+          <div class="card-body">
+            <div class="tab-content">
+              <div role="tabpanel" class="tab-pane in active" id="core">
+                <input type="text" hidden id="id" name="id" value="<%= data.id %>">
+                <input type="text" hidden id="apartmentId" name="apartmentId" value="<%= data.apartment.id %>">
+                <input type="text" hidden id="cardId" name="cardId" value="<%= data.contract.id %>">
+
+                <div class="row">
+                  <div class="col-md-2">
+                    <div class="form-group">
+                      <label for="createDate" class="control-label">Создано</label>
+                      <div class="input-group date-picker" id="dtCreateDate">
+                        <input type="text" class="form-control" name="createDate" id="createDate"
+                          value="<%= data.createDate ? moment(data.createDate).format( 'DD.MM.YYYY' ) : moment(new Date()).format( 'DD.MM.YYYY' )  %>">
+                        <span class="input-group-addon">
+                          <span class="glyphicon glyphicon-calendar"></span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-2">
+                    <div class="form-group">
+                      <label for="paymentType">Способ оплаты</label>
+                      <select class="form-control" id="paymentType" name="paymentType">
+                        <% for (var cnt = 0, max = utils.paymentMethod.length; cnt < max; cnt++) { %>
+                        <option value="<%= (cnt + 1) %>"
+                          <%= data ? (+data.mode === (cnt + 1) ? ' selected' : '') : '' %>>
+                          <%= utils.paymentMethod[cnt] %></option>
+                        <% } %>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-md-7">
+                    <div class="form-group">
+                      <label for="barcode">Штрихкод</label>
+                      <input type="text" class="form-control" id="barcode" name="barcode" placeholder="" value="">
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-2">
+                    <div class="form-group">
+                      <label for="contract">Договор</label>
+                      <input type="text" class="form-control" id="contract" name="contract" placeholder=""
+                        value="<%= data.contract.normal %>" readonly>
+                    </div>
+                  </div>
+                  <div class="col-md-2">
+                    <div class="form-group">
+                      <label for="extendedContract">Договор ТО</label>
+                      <input type="text" class="form-control" id="extendedContract" name="extendedContract"
+                        placeholder="" value="<%= data.contract.prolonged %>">
+                    </div>
+                  </div>
+                  <div class="col-md-2">
+                    <div class="form-group">
+                      <label for="dateOfPayment" class="control-label">с</label>
+                      <div class="input-group date-picker" id="dtStartService">
+                        <input type="text" class="form-control" name="startService" id="startService"
+                          value="<%= data.contract.startService ? moment(data.contract.startService).format( 'DD.MM.YYYY' ) : ''  %>" disabled>
+                        <span class="input-group-addon">
+                          <span class="glyphicon glyphicon-calendar"></span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-2">
+                    <div class="form-group">
+                      <label for="dateOfPayment" class="control-label">по</label>
+                      <div class="input-group date-picker" id="dtEndService">
+                        <input type="text" class="form-control" name="endService" id="endService"
+                          value="<%= data.contract.endService ? moment(data.contract.endService).format( 'DD.MM.YYYY' ) : ''  %>" disabled>
+                        <span class="input-group-addon">
+                          <span class="glyphicon glyphicon-calendar"></span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <label for="fullAddress">Полный адрес</label>
+                      <input type="text" class="form-control" id="fullAddress" name="fullAddress" placeholder=""
+                        value="<%= data.fullAddress %>"
+                        readonly>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-1">
+                    <div class="form-group">
+                      <label for="apartment">Квартира</label>
+                      <input type="text" class="form-control" id="apartment" name="apartment" placeholder=""
+                        value="<%= data.apartment.number %>">
+                    </div>
+                  </div>
+                  <div class="col-md-1">
+                    <div class="form-group">
+                      <label for="letter">&nbsp;</label>
+                      <select class="form-control" id="letter" name="letter">
+                        <% for (var cnt = 0, max = utils.enumApartmentLetters.length; cnt < max; cnt++) { %>
+                          <option value="<%= cnt %>"
+                            <%= data ? (+data.apartment.letter === cnt ? ' selected' : '') : '' %>>
+                            <%= utils.enumApartmentLetters[cnt] %></option>
+                          <% } %>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-md-2">
+                    <div class="form-group">
+                      <label for="payment">Сумма к оплате</label>
+                      <input type="text" class="form-control" id="amount" name="amount" placeholder=""
+                        value="<%= data.amount.toFixed(2) %>">
+                    </div>
+                  </div>
+                  <div class="col-md-2">
+                    <div class="form-group">
+                      <label for="dateOfPayment" class="control-label">Оплачено</label>
+                      <div class="input-group date-picker" id="dtDateOfPayment">
+                        <input type="text" class="form-control" name="dateOfPayment" id="dateOfPayment"
+                          value="<%= data.payDate ? moment(data.payDate).format( 'DD.MM.YYYY' ) : moment(new Date()).format( 'DD.MM.YYYY' )  %>">
+                        <span class="input-group-addon">
+                          <span class="glyphicon glyphicon-calendar"></span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div role="tabpanel" class="tab-pane" id="paymentsHistory">
+                <table class="table table-bordered table-condensed" id="paymentsTable" name="paymentsTable"
+                  style="background-color: white;">
+                  <thead>
+                    <tr class="active">
+                      <th style="width: 12%;" class="text-center">Дата<br>создания</th>
+                      <th style="width: 12%;" class="text-center">Дата<br>оплаты</th>
+                      <th style="width: 12%;" class="text-center">Договор<br>(пролонг.)</th>
+                      <th style="width: 12%;" class="text-center">Месяц<br>оплаты</th>
+                      <th style="width: 12%;" class="text-center">Год<br>оплаты</th>
+                      <th style="width: 20%; vertical-align: middle" class="text-center">Сумма
+                      </th>
+                      <th style="width: 20%;" class="text-center">Способ<br>оплаты</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-success" id="save" <%= +data.mode != 2 ? ' disabled' : '' %>>Записать</button>
+          </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
+  <script src="/bower_components/moment/min/moment-with-locales.min.js"></script>
+  <script src="/bower_components/bootstrap/js/transition.js"></script>
+  <script src="/bower_components/bootstrap/js/collapse.js"></script>
+  <script src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
+  <script src="/bower_components/axios/dist/axios.min.js"></script>
+  <script src="/js/payment.js"></script>
+</body>
+
+</html>

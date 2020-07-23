@@ -58,6 +58,7 @@ $('#dtReceiptPrinting').datetimepicker({
 function showHistory(ev) {
   // var id = ev.currentTarget.getAttribute('data-uid');
   var id = ev.currentTarget.parentElement.parentElement.getAttribute('data-uid');
+  var apartmentInfo = ev.currentTarget.parentElement.parentElement.cells[1].innerText;
   ev.stopPropagation();
 
   axios.post('/orders/payments_history', {
@@ -121,6 +122,7 @@ function showHistory(ev) {
       bodyPricesRef.innerHTML = body.prices;
     }
 
+    document.getElementById('historyDialogCapton').textContent = 'История по квартире № ' + apartmentInfo;
     $('#historyDialog').modal();
 
   }).catch(function (error) {

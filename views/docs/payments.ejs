@@ -135,22 +135,22 @@
         <% for (var ind = 0, max = data.length; ind < max; ind++) {%>
         <tr>
           <td class="text-center" style="vertical-align: middle">
-            <%= moment(data[ind].create_date).format( 'DD.MM.YYYY') %>
+            <%= moment(data[ind].createDate).format( 'DD.MM.YYYY') %>
           </td>
           <td class="text-center" style="vertical-align: middle">
-            <%= data[ind].contract_number %>
+            <%= data[ind].contractNumber %>
           </td>
           <td class="text-center" style="vertical-align: middle">
-            <%= data[ind].m_contract_number %>
+            <%= data[ind].prolongedContractNumber %>
           </td>
           <td class="text-left" style="vertical-align: middle">
-            <%= data[ind].city_name %>
+            <%= data[ind].cityName %>
           </td>
           <td class="text-left" style="vertical-align: middle">
-            <%= data[ind].street_name %>
+            <%= data[ind].streetName %>
           </td>
           <td class="text-center" style="vertical-align: middle">
-            <%= data[ind].house_number %>
+            <%= data[ind].houseNumber %>
           </td>
           <td class="text-center" style="vertical-align: middle">
             <%= data[ind].porch %>
@@ -159,7 +159,7 @@
             <%= data[ind].number + '' + utils.decodeApartmentLetter( data[ind].letter ) %>
           </td>
           <td class="text-center" style="vertical-align: middle">
-            <%= moment(data[ind].pay_date).format( 'DD.MM.YYYY') %>
+            <%= moment(data[ind].payDate).format( 'DD.MM.YYYY') %>
           </td>
           <td class="text-center" style="vertical-align: middle">
             <%= data[ind].amount.toFixed(2) %>

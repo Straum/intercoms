@@ -49,6 +49,7 @@ module.exports = function () {
   router.use('/payments', require('./docs/payments')());
   router.use('/applications', require('./docs/applications')());
   router.use('/requests', require('./docs/requests')());
+  router.use('/info', require('./docs/infos')());
 
   // API
   router.use('/api', require('./api/index')());
@@ -62,6 +63,6 @@ module.exports = function () {
     res.statusCode = 404;
     res.end('404!');
   });
-  
+
   return router;
 };

@@ -274,8 +274,14 @@ module.exports.filterOrders = function (orderNumber, rowsCount, callback) {
 module.exports.filterProlongedOrders = function (orderNumber, rowsCount, callback) {
 
   var queryText =
-    ' SELECT a.card_id AS id, a.m_contract_number AS `value`' +
-    ' FROM cards a';
+    ' SELECT a.card_id AS id, a.m_contract_number AS `value`,' +
+    ' a.contract_number AS contractNumber, a.start_service AS startService,' +
+    ' a.end_service AS endService, m_start_apartment AS startApartment, m_end_apartment AS endApartment,' +
+    ' b.`name` AS cityName, c.`name` AS streetName, d.`number` AS houseNumber' +
+    ' FROM cards a' +
+    ' LEFT JOIN cities b ON b.city_id = a.city_id' +
+    ' LEFT JOIN streets c ON c.street_id = a.street_id' +
+    ' LEFT JOIN houses d ON d.house_id = a.house_id';
 
   if (orderNumber.length > 0) {
     queryText += ' WHERE a.m_contract_number LIKE ' + `'` + orderNumber.trim() + '%' + `'`;

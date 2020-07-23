@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <!-- <link rel="icon" href="../../../../favicon.ico"> -->
+  <title>Home page - <%= title %></title>
+
+  <% include ../../common/bootstrap_css.ejs %>
+  <link href="/theme.css" rel="stylesheet">
+</head>
+
+<body>
+
+  <% include ../../common/full_menu.ejs %>
+
+  <div class="container-fluid">
+    <div class="form-header">
+      <h3><%= title %></h3>
+    </div>
+    <div class="card">
+      <form method="post" action="/payments/save" novalidate>
+        <div class="well">
+          <div class="card-body">
+            <div class="form-group">
+              <!-- <label for="contract_info">Информация по платежам</label> -->
+              <textarea class="form-control" name="paymentsInfo" rows="30"><%- data.comment %></textarea>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+
+</body>
+
+</html>
