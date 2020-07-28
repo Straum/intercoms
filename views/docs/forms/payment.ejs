@@ -194,7 +194,8 @@
                 </table>
               </div>
             </div>
-            <button type="submit" class="btn btn-success" id="save" <%= +data.mode != 2 ? ' disabled' : '' %>>Записать</button>
+            <button type="submit" class="btn btn-success" name="save" id="save" <%= +data.mode != 2 ? ' disabled' : '' %>>Записать</button>
+            <button type="submit" class="btn btn-info" name="printReceipt" id="printReceipt">Квитанция</button>
           </div>
       </form>
     </div>

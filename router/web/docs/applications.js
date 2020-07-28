@@ -3,7 +3,7 @@
 const MAX_LENGTH = 60;
 const express = require('express');
 var PDFDocument = require('pdfkit');
-var PDFDoc = require('pdfmake');
+// var PDFDoc = require('pdfmake');
 var db = require('../../../lib/db');
 const visibleRows = require('../../../lib/config').config.visibleRows;
 const rowsLimit = require('../../../lib/config').config.rowsLimit;
