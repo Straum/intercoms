@@ -1,22 +1,88 @@
 'use strict';
 
 const express = require('express');
-var db = require('../../../lib/db.js');
-const visibleRows = require('../../../lib/config').config.visibleRows;
 var moment = require('moment');
-var utils = require('../../../lib/utils.js');
 const path = require('path');
 const fs = require('fs');
 var iconvlite = require('iconv-lite');
-let MakePayments = require('../../../lib/make-payments').MakePayments;
-var common = require('../../common/typeheads');
-const { PaymentModel } = require('../../models/payment.js');
 var PDFDocument = require('pdfkit');
+var SVGtoPDF = require('svg-to-pdfkit');
+var barcode = require('pure-svg-code/barcode');
+var qrcode = require('pure-svg-code/qrcode');
+const { parse } = require('path');
 
-function printReceipt(req, res) {
+var db = require('../../../lib/db.js');
+const visibleRows = require('../../../lib/config').config.visibleRows;
+const daysToPayReceipt = require('../../../lib/config').config.daysToPayReceipt;
+let MakePayments = require('../../../lib/make-payments').MakePayments;
+var firmBankDetails = require('../../../lib/firm_bank_details').firm;
+var utils = require('../../../lib/utils');
+var common = require('../../common/typeheads');
+const { PaymentModel } = require('../../models/payment');
+const { firm } = require('../../../lib/firm_bank_details.js');
 
+function printReceipt(model, res) {
+
+  var fullApartmentNumber = model.apartment.number + utils.decodeApartmentLetter(Number(model.apartment.letter));
+
+  var sum = parseFloat(model.amount) * 100;
+  var amount = parseFloat(model.amount).toString().trim();
+  var subtotal = parseFloat(model.amount) + parseFloat(model.apartment.debt);
+  if (subtotal < 0) {
+    subtotal = 0.00;
+  }
+  var subtotalStr = subtotal.toString().trim();
+  var rpts = 5 - (amount.length);
+  var outSum = (rpts > 0 ? '0'.repeat(rpts) : '') + subtotalStr;
+
+  rpts = 6 - (model.contract.prolonged.trim().length);
+  var outContractNumber = (rpts > 0 ? '0'.repeat(rpts) : '') + model.contract.prolonged.trim();
+
+  rpts = (3 - model.apartment.number.trim().length);
+  var outApartment = (rpts > 0 ? '0'.repeat(rpts) : '') + model.apartment.number.trim();
+
+  // BarCode and QRCode
+  var barCodeData = [];
+  barCodeData.push(firmBankDetails.payeeINN);
+  barCodeData.push(model.payMonth < 10 ? '0' + model.payMonth : model.payMonth.toString());
+  barCodeData.push((Number(model.payYear) - 2000).toString());
+  barCodeData.push(outSum);
+  barCodeData.push('00');
+  barCodeData.push(model.isDuplicate ? '1' : '0');
+  barCodeData.push(outContractNumber);
+  barCodeData.push(model.apartment.letter);
+  barCodeData.push(outApartment);
+  var outBarcode = barCodeData.join('');
+
+  var clientAccountData = [];
+  clientAccountData.push(model.isDuplicate ? '1' : '0');
+  clientAccountData.push(outContractNumber);
+  clientAccountData.push(model.apartment.letter);
+  clientAccountData.push(outApartment);
+  var clientAccount = clientAccountData.join('');
+
+  var contentData = [];
+  contentData.push('ST00012|');
+  contentData.push('Name=' + firmBankDetails.name + '|');
+  contentData.push('PersonalAcc=' + firmBankDetails.personalAcc + '|');
+  contentData.push('BankName=' + firmBankDetails.bankName + '|');
+  contentData.push('BIC=' + firmBankDetails.bic + '|');
+  contentData.push('CorrespAcc=' + firmBankDetails.correspAcc + '|');
+  contentData.push('PersAcc=' + clientAccount + '|');
+  contentData.push('Category=' + firmBankDetails.category + '|');
+  contentData.push('TechCode=' + firmBankDetails.techCode + '|');
+  contentData.push('PayeeINN=' + firmBankDetails.payeeINN + '|');
+
+  contentData.push('Sum=' + sum.toString());
+  var content = contentData.join('');
+
+  var deadline = '';
+  if (model.contract.startService != null) {
+    deadline = moment(model.contract.startService).add(daysToPayReceipt, 'days').format('DD.MM.YYYY');
+  }
+
+  // Generate pdf
   var doc = new PDFDocument();
-  doc.registerFont('Fuh', 'fonts//DejaVuSans.ttf');
   var filename = 'receipt.pdf';
   res.setHeader('Content-disposition', 'attachment; filename="' + filename + '"');
   res.setHeader('Content-type', 'application/pdf');
@@ -50,7 +116,7 @@ function printReceipt(req, res) {
   // First third
 
   doc.font('ArialBold');
-  doc.text('OOO «ДOМОФОН-СЕРВИС»   72-10-10', 134, 28, { align: 'left', width: 183 });
+  doc.text('OOO «ДOМОФОН-СЕРВИС»   ' + model.contract.city.phone, 134, 28, { align: 'left', width: 183 });
 
   doc.font('Arial');
   doc.text('(наименование получателя платежа)', 134, 38, { align: 'left' });
@@ -67,7 +133,7 @@ function printReceipt(req, res) {
   doc.text('045805602', 348, 75, { align: 'center', width: 66 });
 
   doc.text('л/с', 423, 75, { align: 'center', width: 27 });
-  doc.text('00103370254', 450, 75, { align: 'center', width: 69 });
+  doc.text(clientAccount, 450, 75, { align: 'center', width: 69 });
 
   doc.text('(наименование банка получателя платежа)', 134, 85, { align: 'left', width: 183 });
 
@@ -75,7 +141,7 @@ function printReceipt(req, res) {
   doc.text('30101810300000000602', 321, 99, { align: 'center', width: 198 });
 
   doc.font('ArialBold');
-  doc.text('Оплата за ГОДОВОЕ обслуживание домофона с 06.08.2020 по 06.08.2021 г., (Договор № 100337)', 134, 114, { align: 'left', width: 419 });
+  doc.text('Оплата за ГОДОВОЕ обслуживание домофона с ' + moment(model.contract.startService).format('DD.MM.YYYY') + ' по ' + moment(model.contract.endService).format('DD.MM.YYYY') + ' г., (Договор № ' + model.contract.prolonged + ')', 134, 114, { align: 'left', width: 419 });
 
   doc.font('Arial');
   doc.text('(наименование платежа)', 134, 123, { align: 'center', width: 419 });
@@ -84,22 +150,24 @@ function printReceipt(req, res) {
 
   doc.font('ArialBold')
     .fontSize(10)
-    .text('г. ПСКОВ, ул. ТРУДА, д. 50, кв. 254', 218, 137, { align: 'left', width: 335 });
+    .text(model.fullAddress + ', кв. ' + fullApartmentNumber, 218, 137, { align: 'left', width: 335 });
 
   doc.font('Arial')
     .fontSize(11)
     .text('Сумма платежа, руб.', 134, 152, { align: 'left', width: 342 })
-    .text('580.00', 480, 152, { align: 'left', width: 72 })
-    .text('Задолженность за период с 06.08.2019 по 06.08.2020, руб.', 134, 165, { align: 'left', width: 342 })
-    .text('0.00', 480, 165, { align: 'left', width: 72 });
+    .text(parseFloat(model.amount).toFixed(2), 480, 152, { align: 'left', width: 72 });
+
+  doc
+    .text('Задолженность за период с ' + moment(model.contract.startService).subtract(1, 'years').format('DD.MM.YYYY') + ' по ' + moment(model.contract.endService).subtract(1, 'years').format('DD.MM.YYYY') + ', руб.', 134, 165, { align: 'left', width: 342 })
+    .text(parseFloat(model.apartment.debt).toFixed(2), 480, 165, { align: 'left', width: 72 });
 
   doc.font('ArialBold')
     .fontSize(11)
     .text('К оплате, руб.', 134, 178, { align: 'left', width: 342 })
-    .text('580.00', 480, 178, { align: 'left', width: 72 })
+    .text(parseFloat(model.amount + model.apartment.debt).toFixed(2), 480, 178, { align: 'left', width: 72 })
 
     .fontSize(10)
-    .text('vk.com/safetypskov', 150, 193, { align: 'left', width: 108 });
+    .text(model.contract.city.vkAddress, 150, 193, { align: 'left', width: 108 });
 
   doc.font('Arial')
     .fontSize(9)
@@ -110,7 +178,7 @@ function printReceipt(req, res) {
   // Second third
   doc.fontSize(8);
   doc.font('ArialBold');
-  doc.text('OOO «ДOМОФОН-СЕРВИС»   72-10-10', 134, 219, { align: 'left', width: 183 });
+  doc.text('OOO «ДOМОФОН-СЕРВИС»   ' +  model.contract.city.phone, 134, 219, { align: 'left', width: 183 });
 
   doc.font('Arial');
   doc.text('(наименование получателя платежа)', 134, 229, { align: 'left' });
@@ -130,7 +198,7 @@ function printReceipt(req, res) {
   doc.text('045805602', 360, 267, { align: 'center', width: 66 });
 
   doc.text('л/с', 459, 267, { align: 'center', width: 27 });
-  doc.text('00103370254', 489, 267, { align: 'center', width: 66 });
+  doc.text(clientAccount, 489, 267, { align: 'center', width: 66 });
 
   doc.text('(наименование банка получателя платежа)', 134, 277, { align: 'left', width: 195 });
 
@@ -138,7 +206,7 @@ function printReceipt(req, res) {
   doc.text('30101810300000000602', 321, 291, { align: 'center', width: 198 });
 
   doc.font('ArialBold');
-  doc.text('Оплата за ГОДОВОЕ обслуживание домофона с 06.08.2020 по 06.08.2021 г., (Договор № 100337)', 134, 305, { align: 'left', width: 419 });
+  doc.text('Оплата за ГОДОВОЕ обслуживание домофона с ' + moment(model.contract.startService).format('DD.MM.YYYY') + ' по ' + moment(model.contract.endService).format('DD.MM.YYYY') + ' г., (Договор № ' + model.contract.prolonged + ')', 134, 305, { align: 'left', width: 419 });
 
   doc.font('Arial');
   doc.text('(наименование платежа)', 134, 314, { align: 'center', width: 419 });
@@ -147,11 +215,11 @@ function printReceipt(req, res) {
 
   doc.font('ArialBold')
     .fontSize(10)
-    .text('г. ПСКОВ, ул. ТРУДА, д. 50, кв. 254', 218, 323, { align: 'left', width: 335 });
+    .text(model.fullAddress + ', кв. ' + fullApartmentNumber, 218, 323, { align: 'left', width: 335 });
 
   doc.fontSize(8)
     .font('ArialBold')
-    .text('К оплате 580.00, руб.', 134, 337, { align: 'left', width: 255 });
+    .text('К оплате ' + parseFloat(model.amount + model.apartment.debt).toFixed(2) + ', руб.', 134, 337, { align: 'left', width: 255 });
 
   doc.fontSize(9)
     .font('Arial')
@@ -159,7 +227,7 @@ function printReceipt(req, res) {
 
   doc.fontSize(8)
     .font('ArialBold')
-    .text('ОПЛАТИТЬ ДО 20.09.2020 г.', 134, 352, { align: 'left', width: 189 });
+    .text('ОПЛАТИТЬ ДО ' + deadline + ' г.', 134, 352, { align: 'left', width: 189 });
 
   doc
     .moveTo(132, 350)
@@ -175,15 +243,18 @@ function printReceipt(req, res) {
 
   doc.image(vkImage, 134, 369, { width: 12 });
 
+  var y = Number(model.contract.city.printType) === 1 ? 348 : 338;
   doc.font('ArialBold')
     .fontSize(10)
-    .text('vk.com/safetypskov', 149, 369, { align: 'left', width: 108 })
+    .text(model.contract.city.vkAddress, 149, 369, { align: 'left', width: 108 })
 
     .fontSize(16)
-    .text('Тел. 72-10-10', 15, 348, { align: 'center', width: 102 })
+    .text('Тел. ' + model.contract.city.phone, 15, y, { align: 'center', width: 102 })
+    // .text('Тел. ' + model.contract.city.phone, 15, 348, { align: 'center', width: 102 })
 
     .fontSize(11)
-    .text('domofon@mail.ru', 15, 374, { align: 'center', width: 102 });
+    .text('domofon@mail.ru', 15, 378, { align: 'center', width: 102 });
+    // .text('domofon@mail.ru', 15, 374, { align: 'center', width: 102 });
 
   doc.image(adImage, 15, 222, { width: 100 });
 
@@ -211,7 +282,7 @@ function printReceipt(req, res) {
 
   // Горизонтальная большая линия
   doc.moveTo(9, 211) // Подпись плательщика
-    .lineTo(560, 211)
+    .lineTo(564, 211)
     .stroke();
 
   doc.
@@ -270,8 +341,46 @@ function printReceipt(req, res) {
     // .fill('red')
     .stroke();
 
+  var barcodeOptions = { width: 158, height: 20 };
+  var barCode = barcode(outBarcode, 'code128', { width: 158, barWidth: 0.6, barHeight: 20 });
+  SVGtoPDF(doc, barCode, 321, 20, barcodeOptions);
+  doc.fontSize(8)
+    .font('Arial')
+    .text(outBarcode, 321, 40, { align: 'center', width: 158 });
+
+  var qrOptions = { width: 126, height: 126 };
+  var qrCode = qrcode({
+    content: content,
+    padding: 0,
+    width: 126,
+    height: 126,
+    color: "#000000",
+    background: "#ffffff",
+    ecl: "M"
+  });
+
+  SVGtoPDF(doc, qrCode, 16, 56, qrOptions);
+
   doc.pipe(res);
   doc.end();
+}
+
+function getApartmentDebt(apartmentId) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        'CALL find_out_debt(?)', [apartmentId],
+        function (err, rows) {
+          connection.release();
+          if (err) {
+            reject();
+          }
+          else {
+            resolve({ debt: rows[0][0].debt, way: rows[0][0].way });
+          }
+        });
+    });
+  });
 }
 
 function validApartment(number, letter, orderNumber) {
@@ -290,6 +399,24 @@ function validApartment(number, letter, orderNumber) {
           }
           else {
             resolve({ isExists: rows.length > 0, id: rows.length > 0 ? rows[0].id : null });
+          }
+        });
+    });
+  });
+}
+
+function getCityInfo(cardId) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        'CALL get_city_info(?)', [cardId],
+        function (err, rows) {
+          connection.release();
+          if (err) {
+            reject();
+          }
+          else {
+            resolve({ printType: rows[0][0].l_print_type, cityName: rows[0][0].l_city_name.trim(), phone: rows[0][0].l_phone.trim(), vkAddress: rows[0][0].l_vk_address.trim() });
           }
         });
     });
@@ -473,6 +600,8 @@ module.exports = function () {
         ' c.m_contract_number AS prolongedContractNumber,' +
         ' c.start_service AS startService,' +
         ' c.end_service AS endService,' +
+        ' c.m_duplicate AS isDuplicate,' +
+        ' c.receipt_printing AS receiptPrint,' +
         ' d.name AS cityName,' +
         ' e.name AS streetName,' +
         ' f.number AS houseNumber' +
@@ -518,6 +647,7 @@ module.exports = function () {
             paymentModel.contract.prolonged = data.prolongedContractNumber;
             paymentModel.contract.startService = data.startService;
             paymentModel.contract.endService = data.endService;
+            paymentModel.contract.isDuplicate = data.isDuplicate;
             paymentModel.fullAddress =
               data.cityName.trim() +
               (data.streetName.trim() != '' ? (', ' + data.streetName.trim()) : '') +
@@ -683,11 +813,6 @@ module.exports = function () {
 
   router.post('/save', async function (req, res) {
 
-    if ('printReceipt' in req.body) {
-      printReceipt(req, res);
-      return;
-    }
-
     var paymentModel = new PaymentModel();
     paymentModel.id = req.body.id;
     paymentModel.createDate = ((req.body.createDate != null) && (req.body.createDate.trim().length > 0)) ? moment(req.body.createDate, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
@@ -702,6 +827,9 @@ module.exports = function () {
     paymentModel.contract.prolonged = req.body.extendedContract;
     paymentModel.contract.startService = ((req.body.startService != null) && (req.body.startService.trim().length > 0)) ? moment(req.body.startService, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
     paymentModel.contract.endService = ((req.body.endService != null) && (req.body.endService.trim().length > 0)) ? moment(req.body.endService, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
+    paymentModel.contract.isDuplicate = Number(req.body.duplicate);
+    paymentModel.contract.receiptPrint = req.body.receiptPrint;
+    paymentModel.fullAddress = req.body.fullAddress;
 
     req.assert('createDate', 'Дата создания не заполнена').notEmpty();
     req.assert('cardId', 'Договор с таким номером не существует').custom(function (data) {
@@ -726,6 +854,17 @@ module.exports = function () {
         console.log(error);
       })
 
+    await getCityInfo(paymentModel.contract.id)
+      .then(function (result) {
+        paymentModel.contract.city.printType = result.printType;
+        paymentModel.contract.city.name = result.cityName;
+        paymentModel.contract.city.phone = result.phone;
+        paymentModel.contract.city.vkAddress = result.vkAddress;
+      })
+      .catch(function (error) {
+        console.log(error);
+      })
+
     req.assert('amount', 'Сумма оплаты не заполнена').notEmpty();
     req.assert('amount', 'Сумма должна быть ненулевoй').custom(function (data) {
       var out = parseFloat(data);
@@ -741,6 +880,18 @@ module.exports = function () {
 
       paymentModel.payMonth = moment(paymentModel.payDate).month();
       paymentModel.payYear = moment(paymentModel.payDate).year();
+
+      if ('printReceipt' in req.body) {
+        await getApartmentDebt(paymentModel.apartment.id)
+          .then(function (result) {
+            paymentModel.apartment.debt = result.debt;
+            printReceipt(paymentModel, res);
+          })
+          .catch(function (error) {
+            console.log('Error getApartmentDebt: ' + error);
+          })
+        return;
+      }
 
       if (paymentModel.id != 0) {
         updatePayment(paymentModel)

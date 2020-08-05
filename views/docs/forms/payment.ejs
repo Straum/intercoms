@@ -47,6 +47,8 @@
                 <input type="text" hidden id="id" name="id" value="<%= data.id %>">
                 <input type="text" hidden id="apartmentId" name="apartmentId" value="<%= data.apartment.id %>">
                 <input type="text" hidden id="cardId" name="cardId" value="<%= data.contract.id %>">
+                <input type="text" hidden id="duplicate" name="duplicate" value="<%= data.contract.isDuplicate %>">
+                <input type="text" hidden id="receiptPrint" name="receiptPrint" value="<%= data.contract.receiptPrint %>">
 
                 <div class="row">
                   <div class="col-md-2">
@@ -103,7 +105,7 @@
                       <label for="dateOfPayment" class="control-label">с</label>
                       <div class="input-group date-picker" id="dtStartService">
                         <input type="text" class="form-control" name="startService" id="startService"
-                          value="<%= data.contract.startService ? moment(data.contract.startService).format( 'DD.MM.YYYY' ) : ''  %>" disabled>
+                          value="<%= data.contract.startService ? moment(data.contract.startService).format( 'DD.MM.YYYY' ) : ''  %>" readonly>
                         <span class="input-group-addon">
                           <span class="glyphicon glyphicon-calendar"></span>
                         </span>
@@ -115,7 +117,7 @@
                       <label for="dateOfPayment" class="control-label">по</label>
                       <div class="input-group date-picker" id="dtEndService">
                         <input type="text" class="form-control" name="endService" id="endService"
-                          value="<%= data.contract.endService ? moment(data.contract.endService).format( 'DD.MM.YYYY' ) : ''  %>" disabled>
+                          value="<%= data.contract.endService ? moment(data.contract.endService).format( 'DD.MM.YYYY' ) : ''  %>" readonly>
                         <span class="input-group-addon">
                           <span class="glyphicon glyphicon-calendar"></span>
                         </span>

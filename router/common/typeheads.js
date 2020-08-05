@@ -277,6 +277,7 @@ module.exports.filterProlongedOrders = function (orderNumber, rowsCount, callbac
     ' SELECT a.card_id AS id, a.m_contract_number AS `value`,' +
     ' a.contract_number AS contractNumber, a.start_service AS startService,' +
     ' a.end_service AS endService, m_start_apartment AS startApartment, m_end_apartment AS endApartment,' +
+    ' a.m_duplicate AS isDuplicate, a.receipt_printing AS receiptPrint,' +
     ' b.`name` AS cityName, c.`name` AS streetName, d.`number` AS houseNumber' +
     ' FROM cards a' +
     ' LEFT JOIN cities b ON b.city_id = a.city_id' +

@@ -133,6 +133,7 @@ function updateOrder(data) {
         ' m_contract_number = ?,' +
         ' start_service = ?,' +
         ' end_service = ?,' +
+        ' m_prolongation = ?,' +
         ' maintenance_contract = ?,' +
         ' m_start_apartment = ?,' +
         ' m_end_apartment = ?,' +
@@ -177,6 +178,7 @@ function updateOrder(data) {
         data.client.service.key,
         data.serviceNumber,
         data.startService,
+        data.endService,
         data.endService,
         data.maintenanceContract,
         data.startApartment,
@@ -337,7 +339,7 @@ function saveOrder(data) {
         ' INSERT INTO cards (' +
         ' contract_number, create_date, equipment_id, end_contract, credit_to, repaid, city_id, street_id, house_id, porch, numeration,' +
         ' client_id, is_one_person, m_client_id,' +
-        ' m_contract_number, start_service, end_service, maintenance_contract, m_start_apartment, m_end_apartment,' +
+        ' m_contract_number, start_service, end_service, m_prolongation, maintenance_contract, m_start_apartment, m_end_apartment,' +
         ' normal_payment, privilege_payment, receipt_printing,' +
         ' contract_info, service_info,' +
         ' equipment_quantity, equipment_price, equipment_cost,' +
@@ -347,7 +349,7 @@ function saveOrder(data) {
         ' door_quantity, door_price, door_cost,' +
         ' subtotal, subtotal_for_apartment, discount_for_apartment, total)' +
         ' VALUES (' +
-        ' ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [
+        ' ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [
         data.contractNumber,
         data.createDate,
         data.equipment.key,
@@ -364,6 +366,7 @@ function saveOrder(data) {
         data.client.service.key,
         data.serviceNumber,
         data.startService,
+        data.endService,
         data.endService,
         data.maintenanceContract,
         data.startApartment,
