@@ -18,22 +18,23 @@ let MakePayments = require('../../../lib/make-payments').MakePayments;
 var firmBankDetails = require('../../../lib/firm_bank_details').firm;
 var utils = require('../../../lib/utils');
 var common = require('../../common/typeheads');
-const { PaymentModel } = require('../../models/payment');
-const { firm } = require('../../../lib/firm_bank_details.js');
+const { PaymentModel } = require('../../../models/payment');
+const { firm } = require('../../../lib/firm_bank_details');
 
 function printReceipt(model, res) {
 
   var fullApartmentNumber = model.apartment.number + utils.decodeApartmentLetter(Number(model.apartment.letter));
 
-  var sum = parseFloat(model.amount) * 100;
   var amount = parseFloat(model.amount).toString().trim();
   var subtotal = parseFloat(model.amount) + parseFloat(model.apartment.debt);
   if (subtotal < 0) {
     subtotal = 0.00;
   }
   var subtotalStr = subtotal.toString().trim();
-  var rpts = 5 - (amount.length);
+  var rpts = 5 - (subtotalStr.length);
   var outSum = (rpts > 0 ? '0'.repeat(rpts) : '') + subtotalStr;
+
+  var sum = parseInt(parseFloat(subtotal) * 100);
 
   rpts = 6 - (model.contract.prolonged.trim().length);
   var outContractNumber = (rpts > 0 ? '0'.repeat(rpts) : '') + model.contract.prolonged.trim();
@@ -45,7 +46,7 @@ function printReceipt(model, res) {
   var barCodeData = [];
   barCodeData.push(firmBankDetails.payeeINN);
   barCodeData.push(model.payMonth < 10 ? '0' + model.payMonth : model.payMonth.toString());
-  barCodeData.push((Number(model.payYear) - 2000).toString());
+  barCodeData.push((Number(model.payYear) - 2000) < 10 ? '0' + (Number(model.payYear) - 2000) : (Number(model.payYear) - 2000).toString());
   barCodeData.push(outSum);
   barCodeData.push('00');
   barCodeData.push(model.isDuplicate ? '1' : '0');
@@ -97,9 +98,9 @@ function printReceipt(model, res) {
     right: 0
   };
 
-  doc.layout = 'portrait', // 'landscape'
+  doc.layout = 'portrait'; // 'landscape'
 
-    doc.registerFont('Arial', 'fonts//arial.ttf');
+  doc.registerFont('Arial', 'fonts//arial.ttf');
   doc.registerFont('ArialBold', 'fonts//arialbd.ttf');
 
   doc.fontSize(8);
@@ -878,7 +879,7 @@ module.exports = function () {
     var errors = req.validationErrors();
     if (!errors) {
 
-      paymentModel.payMonth = moment(paymentModel.payDate).month();
+      paymentModel.payMonth = moment(paymentModel.payDate).month() + 1;
       paymentModel.payYear = moment(paymentModel.payDate).year();
 
       if ('printReceipt' in req.body) {

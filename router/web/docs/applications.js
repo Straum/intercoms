@@ -12,6 +12,8 @@ var utils = require('../../../lib/utils');
 var isCheckPerformer = false;
 var queryGetCard = require('../../../queries/applications').getCard;
 var common = require('../../common/typeheads');
+const { application } = require('express');
+var ApplicationModel = require('../../../models/application').ApplicationModel;
 
 var generateReport = function (req, res) {
 
@@ -197,7 +199,7 @@ var saveTable = function (id, table, callback) {
   });
 };
 
-var Filters = function() {
+var Filters = function () {
   this.conditions = {
     period: {
       start: '',
@@ -206,9 +208,9 @@ var Filters = function() {
       allRecords: true
     },
     city: { id: 0, name: '' },
-    street: { id: 0, name: '', cityId: 0},
-    house: { id: 0, number: '', streetId: 0},
-    performer: { id: 0, name: ''},
+    street: { id: 0, name: '', cityId: 0 },
+    house: { id: 0, number: '', streetId: 0 },
+    performer: { id: 0, name: '' },
     emptyPerformers: false
   };
   this.whereSQL = '';
@@ -229,7 +231,7 @@ var filterBuilder = function (req, isDone) {
   var _end = '';
 
   if (isDone) {
-    if (! ('filtersDoneApplications' in req.session)) {
+    if (!('filtersDoneApplications' in req.session)) {
       req.session.filtersDoneApplications = filters;
     }
     cloneFilters = req.session.filtersDoneApplications;
@@ -283,7 +285,7 @@ var filterBuilder = function (req, isDone) {
           cloneFilters.conditions.period.sortBy = obj.period.sortBy;
 
           _start = obj.period.start; // YYYY-MM-DD HH:mm
-          if (typeof _start  === 'string') {
+          if (typeof _start === 'string') {
             if (_start.length > 0) {
               cloneFilters.conditions.period.start = _start;
             }
@@ -293,7 +295,7 @@ var filterBuilder = function (req, isDone) {
           }
 
           _end = obj.period.end; // YYYY-MM-DD HH:mm
-          if (typeof _end  === 'string') {
+          if (typeof _end === 'string') {
             if (_end.length > 0) {
               cloneFilters.conditions.period.end = _end;
             }
@@ -302,8 +304,8 @@ var filterBuilder = function (req, isDone) {
             }
           }
 
-          where += ' AND (a.close_date >= ' + '"' + cloneFilters.conditions.period.start  + '")';
-          where += ' AND (a.close_date <= ' + '"' + cloneFilters.conditions.period.end  + '")';
+          where += ' AND (a.close_date >= ' + '"' + cloneFilters.conditions.period.start + '")';
+          where += ' AND (a.close_date <= ' + '"' + cloneFilters.conditions.period.end + '")';
 
           cloneFilters.whereSQL = where;
         }
@@ -318,7 +320,7 @@ var filterBuilder = function (req, isDone) {
 
   }
   else {
-    if (! ('filtersApplications' in req.session)) {
+    if (!('filtersApplications' in req.session)) {
       req.session.filtersApplications = filters;
     }
     cloneFilters = req.session.filtersApplications;
@@ -379,7 +381,7 @@ var filterBuilder = function (req, isDone) {
           cloneFilters.conditions.period.allRecords = obj.period.allRecords;
 
           _start = obj.period.start; // YYYY-MM-DD HH:mm
-          if (typeof _start  === 'string') {
+          if (typeof _start === 'string') {
             if (_start.length > 0) {
               cloneFilters.conditions.period.start = _start;
             }
@@ -389,7 +391,7 @@ var filterBuilder = function (req, isDone) {
           }
 
           _end = obj.period.end; // YYYY-MM-DD HH:mm
-          if (typeof _end  === 'string') {
+          if (typeof _end === 'string') {
             if (_end.length > 0) {
               cloneFilters.conditions.period.end = _end;
             }
@@ -398,9 +400,9 @@ var filterBuilder = function (req, isDone) {
             }
           }
 
-          if (! cloneFilters.conditions.period.allRecords) {
-            where += ' AND (a.create_date >= ' + '"' + cloneFilters.conditions.period.start  + '")';
-            where += ' AND (a.create_date <= ' + '"' + cloneFilters.conditions.period.end  + '")';
+          if (!cloneFilters.conditions.period.allRecords) {
+            where += ' AND (a.create_date >= ' + '"' + cloneFilters.conditions.period.start + '")';
+            where += ' AND (a.create_date <= ' + '"' + cloneFilters.conditions.period.end + '")';
           }
 
           cloneFilters.whereSQL = where;
@@ -637,7 +639,7 @@ var downloadReport = function (req, res) {
     ' LEFT JOIN workers f ON f.worker_id = a.worker_id' +
     ' WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 0)' +
-    ' AND (a.is_deleted = 0)' +  add.whereSQL +
+    ' AND (a.is_deleted = 0)' + add.whereSQL +
     ' ORDER BY f.name , a.create_date ASC';
 
   var doc = new PDFDocument();
@@ -754,7 +756,7 @@ var downloadDoneReport = function (req, res) {
     ' LEFT JOIN workers f ON f.worker_id = a.worker_id' +
     ' WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 1)' +
-    ' AND (a.is_deleted = 0)' +  add.whereSQL +
+    ' AND (a.is_deleted = 0)' + add.whereSQL +
     ' ORDER BY f.name , a.create_date ASC';
 
   var doc = new PDFDocument();
@@ -838,7 +840,7 @@ var downloadDoneReport = function (req, res) {
                       // .text('Всего неисправностей: ' + list.length)
                       .moveDown()
                       .text('Исполнитель: ' + item.performerName)
-                      .text('Выполнено: ' + moment(item.closeDate).format( 'DD.MM.YYYY HH:mm'))
+                      .text('Выполнено: ' + moment(item.closeDate).format('DD.MM.YYYY HH:mm'))
                       .moveDown()
                       .moveDown();
                   });
@@ -870,9 +872,9 @@ var applicationsReport = function (req, res) {
     ' LEFT JOIN workers f ON f.worker_id = a.worker_id' +
     ' WHERE (a.application_id > 0)' +
     ' AND (a.is_done = 0)' +
-    ' AND (a.is_deleted = 0)' +  add.whereSQL +
+    ' AND (a.is_deleted = 0)' + add.whereSQL +
     ' ORDER BY b.name, c.name, d.number ASC';
-    // ' ORDER BY f.name , a.create_date ASC';
+  // ' ORDER BY f.name , a.create_date ASC';
 
   var filename = 'applications.pdf';
   res.setHeader('Content-disposition', 'attachment; filename="' + filename + '"');
@@ -979,19 +981,19 @@ var applicationsReport = function (req, res) {
                 else {
 
                   var header = 'Отчет по всем заявкам';
-                  if (! add.conditions.period.allRecords) {
-                    header = 'Отчет по заявкам с ' + moment(add.conditions.period.start).format( 'DD.MM.YYYY') + ' по ' + moment(add.conditions.period.end).format( 'DD.MM.YYYY');
+                  if (!add.conditions.period.allRecords) {
+                    header = 'Отчет по заявкам с ' + moment(add.conditions.period.start).format('DD.MM.YYYY') + ' по ' + moment(add.conditions.period.end).format('DD.MM.YYYY');
                   }
                   var tableData = [];
                   tableData.push(
                     [
-                      {text: '№', bold: true},
-                      {text: 'Город и улица', bold: true},
-                      {text: 'Дом', bold: true},
-                      {text: 'Номера', bold:true},
-                      {text: 'Телефон', bold: true},
-                      {text: 'Проблемы', bold: true},
-                      {text: 'Примечание', bold: true},
+                      { text: '№', bold: true },
+                      { text: 'Город и улица', bold: true },
+                      { text: 'Дом', bold: true },
+                      { text: 'Номера', bold: true },
+                      { text: 'Телефон', bold: true },
+                      { text: 'Проблемы', bold: true },
+                      { text: 'Примечание', bold: true },
                     ]);
 
                   dataset.forEach(function (item, index) {
@@ -1006,12 +1008,12 @@ var applicationsReport = function (req, res) {
 
                     var isLineThrough = ((item.completionDate != null) && (item.weight >= 0));
                     tableData.push([
-                      {text: index + 1, style: 'normalText'},
-                      {text: item.cityName + ', ' + item.streetName, style: 'normalText'},
-                      {text: item.houseNumber, style: 'normalText'},
-                      {text: (+item.kind === 0 ? 'под. ' : 'кв. ') + item.porch, style: 'normalText'},
-                      {text: item.phone, style: 'normalText'},
-                      isLineThrough ? {text: problem, style: 'normalText', decoration: 'lineThrough'} : {text: problem, style: 'normalText'},
+                      { text: index + 1, style: 'normalText' },
+                      { text: item.cityName + ', ' + item.streetName, style: 'normalText' },
+                      { text: item.houseNumber, style: 'normalText' },
+                      { text: (+item.kind === 0 ? 'под. ' : 'кв. ') + item.porch, style: 'normalText' },
+                      { text: item.phone, style: 'normalText' },
+                      isLineThrough ? { text: problem, style: 'normalText', decoration: 'lineThrough' } : { text: problem, style: 'normalText' },
                       ''
                     ]);
                   });
@@ -1019,17 +1021,17 @@ var applicationsReport = function (req, res) {
                   var dd = {
                     pageSize: 'A4',
                     pageOrientation: 'landscape',
-                    pageMargins: [ 40, 60, 40, 60 ],
+                    pageMargins: [40, 60, 40, 60],
                     content: [
                       {
                         alignment: 'justify',
                         layout: 'lightHorizontalLines', // optional
                         columns: [
                           {
-                             text: header
+                            text: header
                           },
                           {
-                            text: 'Дата печати: ' + moment(new Date()).format( 'DD.MM.YYYY'), alignment: 'right'
+                            text: 'Дата печати: ' + moment(new Date()).format('DD.MM.YYYY'), alignment: 'right'
                           }
                         ],
                       },
@@ -1039,7 +1041,7 @@ var applicationsReport = function (req, res) {
                       {
                         table: {
                           headerRows: 1,
-                          widths: [ 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', '*' ],
+                          widths: ['auto', 'auto', 'auto', 'auto', 'auto', 'auto', '*'],
                           body: tableData
                         }
                       }
@@ -1297,84 +1299,84 @@ var findCompletedRecords = function (req, res) {
 
   db.get().getConnection(function (err, connection) {
     connection.query(countRecordsQuery, [], function (err, rows) {
-        connection.release();
-        countRecords = rows[0].count;
-        pageCount =
-          (countRecords / visibleRows) < 1 ? 0 : Math.ceil(countRecords / visibleRows);
+      connection.release();
+      countRecords = rows[0].count;
+      pageCount =
+        (countRecords / visibleRows) < 1 ? 0 : Math.ceil(countRecords / visibleRows);
 
-        db.get().getConnection(function (err, connection) {
-          connection.query(fullQuery, [], function (err, rows) {
-              if (err) {
-                throw err;
+      db.get().getConnection(function (err, connection) {
+        connection.query(fullQuery, [], function (err, rows) {
+          if (err) {
+            throw err;
+          }
+          connection.release();
+
+          if (err) {
+            console.error(err);
+            res.status(500).send(db.showDatabaseError(500, err));
+          } else {
+            var currentPage = 1;
+
+            var dataset = rows;
+            for (var ind = 0; ind < dataset.length; ind++) {
+              dataset[ind].problemDescription = '';
+            }
+
+            var parameters = '';
+            if (Array.isArray(rows) && (rows.length > 0)) {
+              for (ind = 0; ind < rows.length; ind++) {
+                parameters += rows[ind].documentId + (ind < rows.length - 1 ? ', ' : '');
               }
-              connection.release();
+              parameters = '(' + parameters + ')';
+            }
 
-              if (err) {
-                console.error(err);
-                res.status(500).send(db.showDatabaseError(500, err));
-              } else {
-                var currentPage = 1;
+            db.get().getConnection(function (err, connection) {
+              var stringSQL =
+                ' SELECT a.application_id AS documentId, a.name AS problemDescription' +
+                ' FROM faults a' +
+                ' WHERE a.application_id IN ';
+              if (parameters.trim().length === 0) {
+                parameters = '(-1)';
+              }
+              stringSQL += parameters;
 
-                var dataset = rows;
-                for (var ind = 0; ind < dataset.length; ind++) {
-                  dataset[ind].problemDescription = '';
-                }
+              connection.query(
+                stringSQL, [], function (err, rows) {
+                  connection.release();
 
-                var parameters = '';
-                if (Array.isArray(rows) && (rows.length > 0)) {
-                  for (ind = 0; ind < rows.length; ind++) {
-                    parameters += rows[ind].documentId + (ind < rows.length - 1 ? ', ' : '');
+                  if (err) {
+                    res.status(500).send(db.showDatabaseError(500, err));
                   }
-                  parameters = '(' + parameters + ')';
-                }
-
-                db.get().getConnection(function (err, connection) {
-                  var stringSQL =
-                    ' SELECT a.application_id AS documentId, a.name AS problemDescription' +
-                    ' FROM faults a' +
-                    ' WHERE a.application_id IN ';
-                  if (parameters.trim().length === 0) {
-                    parameters = '(-1)';
-                  }
-                  stringSQL += parameters;
-
-                  connection.query(
-                    stringSQL, [], function (err, rows) {
-                      connection.release();
-
-                      if (err) {
-                        res.status(500).send(db.showDatabaseError(500, err));
-                      }
-                      else {
-                        rows.forEach(function (item) {
-                          for (var ind = 0; ind < dataset.length; ind++) {
-                            if (dataset[ind].documentId === item.documentId) {
-                              dataset[ind].problemDescription += (dataset[ind].problemDescription.trim().length > 0 ? ', ' : '') + item.problemDescription;
-                              if (dataset[ind].problemDescription.length >= MAX_LENGTH) {
-                                dataset[ind].problemDescription = utils.formatStringWithEllipses(dataset[ind].problemDescription, MAX_LENGTH);
-                              }
-                              break;
-                            }
+                  else {
+                    rows.forEach(function (item) {
+                      for (var ind = 0; ind < dataset.length; ind++) {
+                        if (dataset[ind].documentId === item.documentId) {
+                          dataset[ind].problemDescription += (dataset[ind].problemDescription.trim().length > 0 ? ', ' : '') + item.problemDescription;
+                          if (dataset[ind].problemDescription.length >= MAX_LENGTH) {
+                            dataset[ind].problemDescription = utils.formatStringWithEllipses(dataset[ind].problemDescription, MAX_LENGTH);
                           }
-                        });
-
-                        res.render('docs/done_applications.ejs', {
-                          data: dataset,
-                          pageCount: pageCount,
-                          currentPage: currentPage,
-                          visibleRows: visibleRows,
-                          countRecords: countRecords,
-                          moment: moment,
-                          filters: add.conditions,
-                          user: req.session.userName
-                        });
+                          break;
+                        }
                       }
                     });
+
+                    res.render('docs/done_applications.ejs', {
+                      data: dataset,
+                      pageCount: pageCount,
+                      currentPage: currentPage,
+                      visibleRows: visibleRows,
+                      countRecords: countRecords,
+                      moment: moment,
+                      filters: add.conditions,
+                      user: req.session.userName
+                    });
+                  }
                 });
-              }
             });
+          }
         });
       });
+    });
   });
 };
 
@@ -1387,7 +1389,7 @@ module.exports = function () {
 
   router.get('/edit/:id', function (req, res) {
     var id = req.params.id;
-    var data = {};
+    var applicationModel = new ApplicationModel();
 
     db.get().getConnection(function (err, connection) {
       // Load table
@@ -1406,30 +1408,25 @@ module.exports = function () {
           } else {
 
             if ((rows !== undefined) && (rows.length > 0)) {
-              data.faults = rows;
-              data.faults.forEach(function (item) {
+              applicationModel.faults = rows;
+              applicationModel.faults.forEach(function (item) {
                 item.faultName = item.faultName.replace(/\"/g, '\\\"');
               });
             }
-            else {
-              data.faults = '';
-            }
-
-            data.faultsToString = JSON.stringify(data.faults);
 
             // Load Main form
             db.get().getConnection(function (err, connection) {
               connection.query(
-                ' SELECT a.application_id AS documentId, a.is_done AS isDone, a.create_date AS createDate,' +
+                ' SELECT a.application_id AS id, a.is_done AS isDone, a.create_date AS createDate,' +
                 ' a.completion_date AS completionDate, b.name AS cityName, c.name AS streetName,' +
                 ' d.number AS houseNumber, a.porch, a.kind, a.phone,' +
-                ' e.name AS performer,' +
+                ' e.name AS performerName,' +
                 ' b.city_id AS cityId, c.street_id AS streetId, d.house_id AS houseId,' +
                 ' e.worker_id AS performerId,' +
                 ' a.is_done AS isDone, a.close_date AS closeDate,' +
                 ' a.card_id AS cardId,' +
                 ' (SELECT g.contract_number FROM cards g WHERE g.card_id = a.card_id) AS contractNumber,' +
-                ' (SELECT h.m_contract_number FROM cards h WHERE h.card_id = a.card_id) AS mContractNumber,' +
+                ' (SELECT h.m_contract_number FROM cards h WHERE h.card_id = a.card_id) AS prolongedContractNumber,' +
                 ' (SELECT i.maintenance_contract FROM cards i WHERE i.card_id = a.card_id) AS maintenanceContract' +
                 ' FROM applications a' +
                 ' LEFT JOIN cities b ON b.city_id = a.city_id' +
@@ -1445,39 +1442,75 @@ module.exports = function () {
                     res.status(500).send(db.showDatabaseError(500, err));
                   } else {
 
-                    data.documentId = rows[0].documentId;
-                    data.cityId = rows[0].cityId;
-                    data.streetId = rows[0].streetId;
-                    data.houseId = rows[0].houseId;
-                    data.performerId = rows[0].performerId;
+                    applicationModel.id = rows[0].id;
+                    applicationModel.createDate = rows[0].createDate;
+                    applicationModel.completionDate = rows[0].completionDate;
+                    applicationModel.closeDate = rows[0].closeDate;
 
-                    data.createDate = rows[0].createDate;
-                    data.completionDate = rows[0].completionDate;
-                    data.porch = rows[0].porch;
-                    data.kind = rows[0].kind;
-                    data.phone = rows[0].phone;
-                    data.performer = rows[0].performer;
-                    data.isDone = rows[0].isDone;
-                    data.closeDate = rows[0].closeDate;
-                    data.cardId = rows[0].cardId;
-                    data.contractNumber = rows[0].contractNumber;
-                    data.mContractNumber = rows[0].mContractNumber;
-                    data.maintenanceContract = rows[0].maintenanceContract;
-                    data.closeDate = rows[0].closeDate;
+                    applicationModel.address.city.id = rows[0].cityId;
+                    applicationModel.address.street.id = rows[0].streetId;
+                    applicationModel.address.house.id = rows[0].houseId;
+                    applicationModel.address.city.name = rows[0].cityName;
+                    applicationModel.address.street.name = rows[0].streetName
+                    applicationModel.address.house.number = rows[0].houseNumber;
 
-                    data.address = '';
-                    if (rows[0].cityId > 0) {
-                      data.address = rows[0].cityName.trim();
-                      if (rows[0].streetId > 0) {
-                        data.address += ', ' + rows[0].streetName;
-                        if (rows[0].houseId > 0) {
-                          data.address += ', ' + rows[0].houseNumber;
+                    applicationModel.address.number = rows[0].porch;
+                    applicationModel.address.kind = rows[0].kind;
+
+                    if (applicationModel.address.city.id > 0) {
+                      applicationModel.address.full = applicationModel.address.city.name.trim();
+                      if (applicationModel.address.street.id > 0) {
+                        applicationModel.address.full += ', ' + applicationModel.address.street.name.trim();
+                        if (applicationModel.address.house.id > 0) {
+                          applicationModel.address.full += ', ' + applicationModel.address.house.number.trim();
                         }
                       }
                     }
 
+                    applicationModel.phone = rows[0].phone;
+                    applicationModel.performer.id = rows[0].performerId;
+                    applicationModel.performer.name = rows[0].performerName;
+
+                    applicationModel.order.id = rows[0].cardId;
+                    applicationModel.order.contractNumber = rows[0].contractNumber;
+                    applicationModel.order.prolongedContractNumber = rows[0].prolongedContractNumber;
+                    applicationModel.order.maintenanceContract = rows[0].maintenanceContract;
+
+                    applicationModel.isDone = rows[0].isDone;
+
+                    // data.documentId = rows[0].documentId;
+                    // data.cityId = rows[0].cityId;
+                    // data.streetId = rows[0].streetId;
+                    // data.houseId = rows[0].houseId;
+                    // data.performerId = rows[0].performerId;
+
+                    // data.createDate = rows[0].createDate;
+                    // data.completionDate = rows[0].completionDate;
+                    // data.porch = rows[0].porch;
+                    // data.kind = rows[0].kind;
+                    // data.phone = rows[0].phone;
+                    // data.performer = rows[0].performer;
+                    // data.isDone = rows[0].isDone;
+                    // data.closeDate = rows[0].closeDate;
+                    // data.cardId = rows[0].cardId;
+                    // data.contractNumber = rows[0].contractNumber;
+                    // data.mContractNumber = rows[0].mContractNumber;
+                    // data.maintenanceContract = rows[0].maintenanceContract;
+                    // data.closeDate = rows[0].closeDate;
+
+                    // data.address = '';
+                    // if (rows[0].cityId > 0) {
+                    //   data.address = rows[0].cityName.trim();
+                    //   if (rows[0].streetId > 0) {
+                    //     data.address += ', ' + rows[0].streetName;
+                    //     if (rows[0].houseId > 0) {
+                    //       data.address += ', ' + rows[0].houseNumber;
+                    //     }
+                    //   }
+                    // }
+
                     res.render('docs/forms/application.ejs', {
-                      data: data,
+                      data: applicationModel,
                       moment: moment,
                       errors: {},
                       user: req.session.userName
@@ -1492,17 +1525,16 @@ module.exports = function () {
   });
 
   router.get('/edit_done', function (req, res) {
-    res.render('docs/forms/done_application.ejs', {user: req.session.userName});
+    res.render('docs/forms/done_application.ejs', { user: req.session.userName });
   });
 
   router.get('/add', function (req, res) {
+    var applicationModel = new ApplicationModel();
+    applicationModel.createDate = new Date();
     res.render(
       'docs/forms/application.ejs',
       {
-        data: {
-          faults: '',
-          faultsToString: JSON.stringify('')
-        },
+        data: applicationModel,
         moment: moment,
         errors: {},
         user: req.session.userName
@@ -1524,6 +1556,8 @@ module.exports = function () {
 
   router.post('/save', function (req, res) {
 
+    // var tableFaults = [];
+
     if (req.body.generateReport) {
       generateReport(req, res);
       return;
@@ -1534,230 +1568,188 @@ module.exports = function () {
       return;
     }
 
-    var errors = {};
-    var createDate = {
-      'msg': 'Дата создания неверна'
-    };
-    var address = {
-      'msg': 'Заполните адрес'
-    };
-    var porch = {
-      'msg': 'Укажите номер подъезда'
-    };
-    var faults = {
-      'msg': 'Не указана(ы) неисправность(и)'
-    };
-    var performer = {
-      'msg': 'Введите исполнителя'
-    };
+    var applicationModel = new ApplicationModel();
+    applicationModel.id = Number(req.body.documentId);
+    applicationModel.createDate = ((req.body.createDate != null) && (req.body.createDate.trim().length > 0)) ? moment(req.body.createDate, 'DD.MM.YYYY HH:mm').format('YYYY-MM-DD HH:mm') : null;
+    applicationModel.completionDate = ((req.body.completionDate != null) && (req.body.completionDate.trim().length > 0)) ? moment(req.body.completionDate, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
+    applicationModel.address.city.id = Number(req.body.cityId);
+    applicationModel.address.street.id = Number(req.body.streetId);
+    applicationModel.address.house.id = Number(req.body.houseId);
+    applicationModel.address.full = req.body.address;
+    applicationModel.address.number = req.body.porch;
+    applicationModel.address.kind = Number(req.body.kind);
+    applicationModel.phone = req.body.phone;
+    applicationModel.performer.id = Number(req.body.performerId);
+    applicationModel.performer.name = req.body.performer;
+    applicationModel.order.id = Number(req.body.cardId);
+    applicationModel.isDone = Number(req.body.isDone);
 
-    // Validation
-
-    // Verify create datetime
-    var checkDate = new utils.convertDateToMySQLDate(req.body.createDate, false);
-    if (checkDate.isValid()) {
-      // console.log('outputDate: ' + checkDate.outputDate());
-    }
-    else {
-      errors.createDate = createDate;
-    }
-
-    var checkCompletionDate = new utils.convertDateToMySQLDate(req.body.completionDate, false);
-    if (checkCompletionDate.isValid()) {
-      // console.log('outputDate: ' + checkDate.outputDate());
-    }
-    else {
-      // errors.createDate = createCompletionDate;
-    }
-
-    // Verify address
-    var checkAddress =
-      (+req.body.cityId > 0) &&
-      (+req.body.streetId > 0) &&
-      (+req.body.houseId > 0);
-
-    if ((typeof checkAddress !== 'boolean') || ((typeof checkAddress === 'boolean') && (!checkAddress))) {
-      errors.address = address;
-    }
-
-    // Verify porch
-    var checkPorch = ((req.body.porch.trim() !== '') && (Number.isFinite(+req.body.porch) ? (+req.body.porch > 0 ? true : false) : false));
-    if ((typeof checkPorch !== 'boolean') || ((typeof checkPorch === 'boolean') && (!checkPorch))) {
-      errors.porch = porch;
-    }
-
-    // Verify faults
-    var checkFaults = false;
-    var tableFaults;
     try {
-      tableFaults = JSON.parse(req.body.faults);
-      if ((typeof tableFaults === 'object') && (Array.isArray(tableFaults))) {
-        checkFaults = tableFaults.length > 0;
+      applicationModel.faults = JSON.parse(req.body.faults);
+    }
+    catch (error) {
+      console.log(error);
+    }
+
+    req.assert('createDate', 'Дата создания не заполнена').notEmpty();
+    req.assert('address', 'Адрес не заполнен').custom(function (data) {
+      return (applicationModel.address.city.id > 0) && (applicationModel.address.street.id > 0) && (applicationModel.address.house.id > 0);
+    });
+    req.assert('porch', 'Номер подъезда или квартиры не заполнен').isNumeric();
+    req.assert('faults', 'Не указана(ы) неисправность(и)').custom(function (data) {
+      var result = false
+      if ((typeof applicationModel.faults === 'object') && (Array.isArray(applicationModel.faults))) {
+        result = applicationModel.faults.length > 0;
       }
-    } catch (error) {
-      //
-    }
+      return result;
+    });
 
-    if (!checkFaults) {
-      errors.faults = faults;
-    }
+    var errors = req.validationErrors();
+    if (!errors) {
+      // Запись в БД
+      // var workerId = Number(req.body.performerId);
+      // if (workerId.trim() === '') {
+      //   workerId = 0;
+      // }
+      // var weight = 0;
+      // if (workerId > 0) {
+      //   weight = 2;
+      // }
 
-    // Verify performer
-    if (isCheckPerformer) {
-      var checkPerformer = ((req.body.performerId.trim() !== '') && (Number.isFinite(+req.body.performerId) ? (+req.body.performerId > 0 ? true : false) : false));
-      if ((typeof checkPerformer !== 'boolean') || ((typeof checkPerformer === 'boolean') && (!checkPerformer))) {
-        errors.performer = performer;
+      if (applicationModel.performer.id > 0) {
+        // weight = 2;
+        applicationModel.weight = 2;
+      }
+
+      // if (checkCompletionDate.outputDate().length > 0) {
+      //   var dt = moment(checkCompletionDate.outputDate()).startOf('day');
+      //   var now = moment(new Date()).startOf('day');
+      //   var offset = dt - now;
+      //   if (offset <= 0) {
+      //     weight = -1;
+      //   }
+      // }
+      if (applicationModel.completionDate != null) {
+        var dt = moment(applicationModel.completionDate).startOf('day');
+        var now = moment(new Date()).startOf('day');
+        var offset = dt - now;
+        if (offset <= 0) {
+          // weight = -1;
+          applicationModel.weight = -1;
+        }
+      }
+
+      if (applicationModel.id > 0) {
+
+        // var isDone = +req.body.isDone;
+        if ('move' in req.body) {
+          applicationModel.isDone = 0;
+        }
+
+        db.get().getConnection(function (err, connection) {
+          connection.query('DELETE FROM faults WHERE application_id = ?', [applicationModel.id], function () {
+
+            connection.release();
+
+            db.get().getConnection(function (err, connection) {
+              connection.query(
+                ' UPDATE applications SET' +
+                ' create_date = ?,' +
+                ' completion_date = ?,' +
+                ' city_id = ?,' +
+                ' street_id = ?,' +
+                ' house_id = ?,' +
+                ' porch = ?,' +
+                ' kind = ?,' +
+                ' phone = ?,' +
+                ' worker_id = ?,' +
+                ' is_done = ?,' +
+                ' card_id = ?,' +
+                ' weight = ?' +
+                ' WHERE application_id = ?', [
+                applicationModel.createDate,
+                applicationModel.completionDate,
+                applicationModel.address.city.id,
+                applicationModel.address.street.id,
+                applicationModel.address.house.id,
+                applicationModel.address.number,
+                applicationModel.address.kind,
+                applicationModel.phone,
+                applicationModel.performer.id,
+                applicationModel.isDone,
+                applicationModel.order.id,
+                applicationModel.weight,
+                applicationModel.id
+              ], function (err) {
+                connection.release();
+                if (err) {
+                  res.status(500).send(db.showDatabaseError(500, err));
+                } else {
+                  saveTable(applicationModel.id, applicationModel.faults, function (isAccepted) {
+                    if (isAccepted) {
+                      redirectToAccepted(res, applicationModel.id);
+                    }
+                    else {
+                      res.redirect('/applications');
+                    }
+                  });
+                }
+              });
+            });
+          });
+        });
+      }
+      else {
+        db.get().getConnection(function (err, connection) {
+          connection.query(
+            ' INSERT INTO applications (create_date, completion_date, city_id, street_id, house_id, porch, kind, phone, worker_id, card_id, weight)' +
+            ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+            applicationModel.createDate,
+            applicationModel.completionDate,
+            applicationModel.address.city.id,
+            applicationModel.address.street.id,
+            applicationModel.address.house.id,
+            applicationModel.address.number,
+            applicationModel.address.kind,
+            applicationModel.phone,
+            applicationModel.performer.id,
+            applicationModel.order.id,
+            applicationModel.weight
+          ], function (err, rows) {
+            connection.release();
+            if (err) {
+              res.status(500).send(db.showDatabaseError(500, err));
+            } else {
+              saveTable(rows.insertId, applicationModel.faults, function (isAccepted) {
+                if (isAccepted) {
+                  redirectToAccepted(res, rows.insertId);
+                }
+                else {
+                  res.redirect('/applications');
+                }
+              });
+            }
+          }
+          );
+        });
       }
     }
-
-    if (Object.keys(errors).length > 0) {
+    else {
       res.render(
         'docs/forms/application.ejs',
         {
           moment: moment,
-          data: req.body,
+          data: applicationModel,
           errors: errors,
           user: req.session.userName
         }
       );
     }
-    else {
-      // Запись в БД
-      var workerId = req.body.performerId;
-      if (workerId.trim() === '') {
-        workerId = 0;
-      }
-      var weight = 0;
-      if (workerId > 0) {
-        weight = 2;
-      }
-      if (checkCompletionDate.outputDate().length > 0) {
-        var dt = moment(checkCompletionDate.outputDate()).startOf('day');
-        var now = moment(new Date()).startOf('day');
-        var offset = dt - now;
-        if (offset <= 0) {
-          weight = -1;
-        }
-      }
-
-      var cardId = +req.body.cardId;
-
-      db.get().getConnection(function (err, connection) {
-        connection.query(queryGetCard(+req.body.kind, +req.body.houseId, +req.body.porch), [],  function (err, rows) {
-          connection.release();
-          if (err) {
-            res.status(500).send(db.showDatabaseError(500, err));
-          } else {
-
-            if ((Array.isArray(rows)) && (rows.length === 1)) {
-              cardId = rows[0].cardId;
-            }
-
-            if ((req.body.documentId) && (req.body.documentId.trim() !== '') && (isFinite(req.body.documentId))) {
-
-              var isDone = +req.body.isDone;
-              if ('move' in req.body) {
-                isDone = 0;
-                // TODO: close_date = NULL
-                return;
-              }
-
-              db.get().getConnection(function (err, connection) {
-                connection.query('DELETE FROM faults WHERE application_id = ?', [req.body.documentId], function () {
-
-                  connection.release();
-
-                  db.get().getConnection(function (err, connection) {
-                    connection.query(
-                      ' UPDATE applications SET' +
-                      ' create_date = ?,' +
-                      ' completion_date = ?,' +
-                      ' city_id = ?,' +
-                      ' street_id = ?,' +
-                      ' house_id = ?,' +
-                      ' porch = ?,' +
-                      ' kind = ?,' +
-                      ' phone = ?,' +
-                      ' worker_id = ?,' +
-                      ' is_done = ?,' +
-                      ' card_id = ?,' +
-                      ' weight = ?' +
-                      ' WHERE application_id = ?', [
-                      checkDate.outputDate(),
-                      checkCompletionDate.outputDate() === '' ? null : checkCompletionDate.outputDate(),
-                      req.body.cityId,
-                      req.body.streetId,
-                      req.body.houseId,
-                      req.body.porch,
-                      req.body.kind,
-                      req.body.phone,
-                      workerId,
-                      isDone,
-                      cardId,
-                      weight,
-                      req.body.documentId
-                    ], function (err) {
-                      connection.release();
-                      if (err) {
-                        res.status(500).send(db.showDatabaseError(500, err));
-                      } else {
-                        saveTable(req.body.documentId, tableFaults, function (isAccepted) {
-                          if (isAccepted) {
-                            redirectToAccepted(res, req.body.documentId);
-                          }
-                          else {
-                            res.redirect('/applications');
-                          }
-                        });
-                      }
-                    });
-                  });
-                });
-              });
-            }
-            else {
-              db.get().getConnection(function (err, connection) {
-                connection.query(
-                  ' INSERT INTO applications (create_date, completion_date, city_id, street_id, house_id, porch, kind, phone, worker_id, card_id, weight)' +
-                  ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-                  checkDate.outputDate(),
-                  checkCompletionDate.outputDate() === '' ? null : checkCompletionDate.outputDate(),
-                  req.body.cityId,
-                  req.body.streetId,
-                  req.body.houseId,
-                  req.body.porch,
-                  req.body.kind,
-                  req.body.phone,
-                  workerId,
-                  cardId,
-                  weight
-                ], function (err, rows) {
-                  connection.release();
-                  if (err) {
-                    res.status(500).send(db.showDatabaseError(500, err));
-                  } else {
-                    saveTable(rows.insertId, tableFaults, function (isAccepted) {
-                      if (isAccepted) {
-                        redirectToAccepted(res, rows.insertId);
-                      }
-                      else {
-                        res.redirect('/applications');
-                      }
-                    });
-                  }
-                }
-                );
-              });
-            }
-          }
-        });
-      });
-    }
   });
 
   router.post('/find_city', function (req, res) {
     var data = req.body;
-    if ((data) && (typeof(data) === 'object') && ('cityName' in data)) {
+    if ((data) && (typeof (data) === 'object') && ('cityName' in data)) {
       var rowsCount = 'limit' in data ? data.limit : rowsLimit;
       var params = {
         cityName: data.cityName,
@@ -1774,7 +1766,7 @@ module.exports = function () {
 
   router.post('/find_street', function (req, res) {
     var data = req.body;
-    if ((data) && (typeof(data) === 'object') && ('streetName' in data) && ('cityId' in data)) {
+    if ((data) && (typeof (data) === 'object') && ('streetName' in data) && ('cityId' in data)) {
       var rowsCount = 'limit' in data ? data.limit : rowsLimit;
       var params = {
         cityId: data.cityId,
@@ -1792,7 +1784,7 @@ module.exports = function () {
 
   router.post('/find_house', function (req, res) {
     var data = req.body;
-    if ((data) && (typeof(data) === 'object') && ('houseNumber' in data) && ('streetId' in data)) {
+    if ((data) && (typeof (data) === 'object') && ('houseNumber' in data) && ('streetId' in data)) {
       var rowsCount = 'limit' in data ? data.limit : rowsLimit;
       var params = {
         streetId: data.streetId,
@@ -1810,7 +1802,7 @@ module.exports = function () {
 
   router.post('/find_porch', function (req, res) {
     var data = req.body;
-    if ((data) && (typeof(data) === 'object') && ('porch' in data) && ('houseId' in data)) {
+    if ((data) && (typeof (data) === 'object') && ('porch' in data) && ('houseId' in data)) {
       var rowsCount = 'limit' in data ? data.limit : rowsLimit;
       var params = {
         houseId: data.houseId,
@@ -1828,7 +1820,7 @@ module.exports = function () {
 
   router.post('/find_performer', function (req, res) {
     var data = req.body;
-    if ((data) && (typeof(data) === 'object') && ('performerName' in data)) {
+    if ((data) && (typeof (data) === 'object') && ('performerName' in data)) {
       var rowsCount = 'limit' in data ? data.limit : rowsLimit;
       var params = {
         performerName: data.performerName,
@@ -1847,7 +1839,7 @@ module.exports = function () {
   //   var data = req.body;
   //   var suggestion = '';
   //   if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
-    //     suggestion = data.suggestion.trim();
+  //     suggestion = data.suggestion.trim();
 
   //     var queryText =
   //       ' SELECT a.city_id AS id, a.name AS value' +
@@ -2170,33 +2162,33 @@ module.exports = function () {
     var add = filterBuilder(req, false);
 
     var countRecordsQuery =
-    ' SELECT COUNT(*) AS count, ' +
-    ' COUNT(CASE WHEN a.worker_id = 0 THEN 1 END) AS unReleasedData' +
-    ' FROM applications a WHERE (a.application_id > 0)' +
-    ' AND (a.is_done = 0)' +
-    ' AND (a.is_deleted = 0)' + add.whereSQL;
+      ' SELECT COUNT(*) AS count, ' +
+      ' COUNT(CASE WHEN a.worker_id = 0 THEN 1 END) AS unReleasedData' +
+      ' FROM applications a WHERE (a.application_id > 0)' +
+      ' AND (a.is_done = 0)' +
+      ' AND (a.is_deleted = 0)' + add.whereSQL;
 
     var fullQuery =
-    ' SELECT a.application_id AS documentId, a.create_date AS createDate, a.weight, ' +
-    ' a.completion_date AS completionDate, b.name AS cityName, c.name AS streetName,' +
-    ' d.number AS houseNumber, e.name AS performerName,  e.worker_id AS performerId, ' +
-    ' CASE ' +
-    ' WHEN a.kind = 0 THEN CONCAT("под. ", a.porch)' +
-    ' WHEN a.kind = 1 THEN CONCAT("кв. ", a.porch)' +
-    ' END AS numeration, ' +
-    ' a.close_date AS closeData, ' +
-    ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc ' +
-    ' FROM applications a' +
-    ' LEFT JOIN cities b ON b.city_id = a.city_id' +
-    ' LEFT JOIN streets c ON c.street_id = a.street_id' +
-    ' LEFT JOIN houses d ON d.house_id = a.house_id' +
-    ' LEFT JOIN workers e ON e.worker_id = a.worker_id' +
-    ' WHERE (a.application_id > 0)' +
-    ' AND (a.is_done = 0)' +
-    ' AND (a.is_deleted = 0)' + add.whereSQL +
-    ' ORDER BY a.weight ASC, a.create_date ' + add.conditions.period.sortBy +
-    ' LIMIT ' + visibleRows +
-    ' OFFSET ' + offset;
+      ' SELECT a.application_id AS documentId, a.create_date AS createDate, a.weight, ' +
+      ' a.completion_date AS completionDate, b.name AS cityName, c.name AS streetName,' +
+      ' d.number AS houseNumber, e.name AS performerName,  e.worker_id AS performerId, ' +
+      ' CASE ' +
+      ' WHEN a.kind = 0 THEN CONCAT("под. ", a.porch)' +
+      ' WHEN a.kind = 1 THEN CONCAT("кв. ", a.porch)' +
+      ' END AS numeration, ' +
+      ' a.close_date AS closeData, ' +
+      ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc ' +
+      ' FROM applications a' +
+      ' LEFT JOIN cities b ON b.city_id = a.city_id' +
+      ' LEFT JOIN streets c ON c.street_id = a.street_id' +
+      ' LEFT JOIN houses d ON d.house_id = a.house_id' +
+      ' LEFT JOIN workers e ON e.worker_id = a.worker_id' +
+      ' WHERE (a.application_id > 0)' +
+      ' AND (a.is_done = 0)' +
+      ' AND (a.is_deleted = 0)' + add.whereSQL +
+      ' ORDER BY a.weight ASC, a.create_date ' + add.conditions.period.sortBy +
+      ' LIMIT ' + visibleRows +
+      ' OFFSET ' + offset;
 
     db.get().getConnection(function (err, connection) {
       connection.query(
@@ -2286,38 +2278,38 @@ module.exports = function () {
     var pageCount = 0;
     var countRecords = 0;
 
-    var add = filterBuilder(req, true) ;
+    var add = filterBuilder(req, true);
 
     var countRecordsQuery =
-    ' SELECT COUNT(*) AS count' +
-    ' FROM applications a WHERE (a.application_id > 0)' +
-    ' AND (a.is_done = 1)' +
-    ' AND (a.is_deleted = 0)' + add.whereSQL;
+      ' SELECT COUNT(*) AS count' +
+      ' FROM applications a WHERE (a.application_id > 0)' +
+      ' AND (a.is_done = 1)' +
+      ' AND (a.is_deleted = 0)' + add.whereSQL;
 
     var fullQuery =
-    ' SELECT a.application_id AS documentId, a.create_date AS createDate, a.weight, ' +
-    ' b.name AS cityName, c.name AS streetName,' +
-    ' d.number AS houseNumber, e.name AS performerName,' +
-    ' CASE ' +
-    ' WHEN a.kind = 0 THEN CONCAT("под. ", a.porch)' +
-    ' WHEN a.kind = 1 THEN CONCAT("кв. ", a.porch)' +
-    ' END AS numeration, ' +
-    ' a.close_date AS closeDate, ' +
-    ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc,' +
-    ' f.contract_number AS contractNumber, f.m_contract_number AS prolongedContractNumber,' +
-    ' f.maintenance_contract AS maintenanceContract' +
-    ' FROM applications a' +
-    ' LEFT JOIN cities b ON b.city_id = a.city_id' +
-    ' LEFT JOIN streets c ON c.street_id = a.street_id' +
-    ' LEFT JOIN houses d ON d.house_id = a.house_id' +
-    ' LEFT JOIN workers e ON e.worker_id = a.worker_id' +
-    ' LEFT JOIN cards f ON f.card_id = a.card_id' +
-    ' WHERE (a.application_id > 0)' +
-    ' AND (a.is_done = 1)' +
-    ' AND (a.is_deleted = 0)' + add.whereSQL +
-    ' ORDER BY a.create_date DESC' +
-    ' LIMIT ' + visibleRows +
-    ' OFFSET ' + offset;
+      ' SELECT a.application_id AS documentId, a.create_date AS createDate, a.weight, ' +
+      ' b.name AS cityName, c.name AS streetName,' +
+      ' d.number AS houseNumber, e.name AS performerName,' +
+      ' CASE ' +
+      ' WHEN a.kind = 0 THEN CONCAT("под. ", a.porch)' +
+      ' WHEN a.kind = 1 THEN CONCAT("кв. ", a.porch)' +
+      ' END AS numeration, ' +
+      ' a.close_date AS closeDate, ' +
+      ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc,' +
+      ' f.contract_number AS contractNumber, f.m_contract_number AS prolongedContractNumber,' +
+      ' f.maintenance_contract AS maintenanceContract' +
+      ' FROM applications a' +
+      ' LEFT JOIN cities b ON b.city_id = a.city_id' +
+      ' LEFT JOIN streets c ON c.street_id = a.street_id' +
+      ' LEFT JOIN houses d ON d.house_id = a.house_id' +
+      ' LEFT JOIN workers e ON e.worker_id = a.worker_id' +
+      ' LEFT JOIN cards f ON f.card_id = a.card_id' +
+      ' WHERE (a.application_id > 0)' +
+      ' AND (a.is_done = 1)' +
+      ' AND (a.is_deleted = 0)' + add.whereSQL +
+      ' ORDER BY a.create_date DESC' +
+      ' LIMIT ' + visibleRows +
+      ' OFFSET ' + offset;
 
     db.get().getConnection(function (err, connection) {
       connection.query(
@@ -2354,8 +2346,8 @@ module.exports = function () {
 
                   db.get().getConnection(function (err, connection) {
                     var stringSQL =
-                    ' SELECT a.application_id AS documentId, a.name AS problemDescription FROM faults a' +
-                    ' WHERE a.application_id IN ';
+                      ' SELECT a.application_id AS documentId, a.name AS problemDescription FROM faults a' +
+                      ' WHERE a.application_id IN ';
                     if (parameters.trim().length === 0) {
                       parameters = '(-1)';
                     }

@@ -2,6 +2,12 @@
 
 const path = require('path');
 const express = require('express');
+var PizZip = require('pizzip');
+var Docxtemplater = require('docxtemplater');
+var fs = require('fs');
+const { isArray } = require('util');
+var PDFDocument = require('pdfkit');
+
 var db = require('../../../lib/db');
 const visibleRows = require('../../../lib/config').config.visibleRows;
 var rowsLimit = require('../../../lib/config').config.rowsLimit;
@@ -11,15 +17,37 @@ var order = require('../../../lib/order_service');
 const queryOrder = require('../../../queries/orders').getOrder;
 const queryDeleteExistsApartments = require('../../../queries/orders').deleteExistsApartments;
 var common = require('../../common/typeheads');
-var OrderModel = require('../../models/order').OrderModel;
-var models = require('../../models/order');
-
-var PizZip = require('pizzip');
-var Docxtemplater = require('docxtemplater');
-var fs = require('fs');
-const { isArray } = require('util');
+var OrderModel = require('../../../models/order').OrderModel;
+var models = require('../../../models/order');
+var PrintOrderReceipts = require('../../../lib/print_order_receipts').PrintOrderReceipts;
 
 require('shelljs/global');
+
+function printingReceipts(orderId, res) {
+
+  var printOrderReceipts = new PrintOrderReceipts(orderId, res);
+  printOrderReceipts.go();
+
+  // var doc = new PDFDocument();
+  // var filename = 'receipts.pdf';
+  // res.setHeader('Content-disposition', 'attachment; filename="' + filename + '"');
+  // res.setHeader('Content-type', 'application/pdf');
+
+  // var vkImage = path.join(__dirname, '../../../public/images/vk_logo_icon.jpg');
+  // var adImage = path.join(__dirname, '../../../public/images/new_logo_2.jpg');
+
+  // doc.margins = {
+  //   top: 14,
+  //   bottom: 0,
+  //   left: 0,
+  //   right: 0
+  // };
+
+  // doc.layout = 'portrait'; // 'landscape'
+
+  // doc.pipe(res);
+  // doc.end();
+}
 
 function getPayments(id) {
   return new Promise(function (resolve, reject) {
@@ -1474,6 +1502,25 @@ module.exports = function () {
 
     var errors = req.validationErrors();
     if (!errors) {
+
+      if ('printingReceipts' in req.body) {
+        if (Number(OrderModel.id) === 0) {
+          res.status(200);
+          return;
+        }
+        printingReceipts(orderModel.id, res);
+        // await getApartmentDebt(paymentModel.apartment.id)
+        //   .then(function (result) {
+        //     paymentModel.apartment.debt = result.debt;
+        //     printReceipt(paymentModel, res);
+        //   })
+        //   .catch(function (error) {
+        //     console.log('Error getApartmentDebt: ' + error);
+        //   })
+        return;
+      }
+
+
       if (orderModel.id != 0) {
         updateOrder(orderModel)
           .then(function () {

@@ -7,7 +7,7 @@ const rowsLimit = require('../../../lib/config').config.rowsLimit;
 var common = require('../../common/typeheads');
 var moment = require('moment');
 var enumCertificates = require('../../../lib/utils').enumCertificates;
-var ClientModel = require('../../models/client').ClientModel;
+var ClientModel = require('../../../models/client').ClientModel;
 var utils = require('../../../lib/utils');
 
 var Filters = function () {
