@@ -11,7 +11,7 @@ var barcode = require('pure-svg-code/barcode');
 var qrcode = require('pure-svg-code/qrcode');
 const { parse } = require('path');
 
-var db = require('../../../lib/db.js');
+var db = require('../../../lib/db');
 const visibleRows = require('../../../lib/config').config.visibleRows;
 const daysToPayReceipt = require('../../../lib/config').config.daysToPayReceipt;
 let MakePayments = require('../../../lib/make-payments').MakePayments;
@@ -20,6 +20,7 @@ var utils = require('../../../lib/utils');
 var common = require('../../common/typeheads');
 const { PaymentModel } = require('../../../models/payment');
 const { firm } = require('../../../lib/firm_bank_details');
+var PaymentsLogic = require('../../../logic/docs/payments').PaymentsLogic;
 
 function printReceipt(model, res) {
 
@@ -364,6 +365,10 @@ function printReceipt(model, res) {
 
   doc.pipe(res);
   doc.end();
+}
+
+function getOrderInfo(contractNumber, isDuplicate) {
+  // TODO: Дописать
 }
 
 function getApartmentDebt(apartmentId) {
@@ -831,6 +836,7 @@ module.exports = function () {
     paymentModel.contract.isDuplicate = Number(req.body.duplicate);
     paymentModel.contract.receiptPrint = req.body.receiptPrint;
     paymentModel.fullAddress = req.body.fullAddress;
+    paymentModel.barcode = req.body.barcode;
 
     req.assert('createDate', 'Дата создания не заполнена').notEmpty();
     req.assert('cardId', 'Договор с таким номером не существует').custom(function (data) {
@@ -991,6 +997,11 @@ module.exports = function () {
     } else {
       res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
     }
+  });
+
+  router.post('/parse_barcode', async function (req, res) {
+    var paymentsLogic = new PaymentsLogic(req, res);
+    paymentsLogic.parseBarCode(req.body.barcode);
   });
 
   return router;

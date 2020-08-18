@@ -390,30 +390,30 @@ document.getElementById('decide').addEventListener('click', function (e) {
       break;
     case ACTION_DIALOG_PROLONG_ORDER:
       var rows = document.getElementById('tableApartments').rows;
-      if (rows.length > 0) {
-        for (let ind = 2; ind < rows.length; ind++) {
-          rows[ind].cells[2].children[0].checked = false;
-          rows[ind].cells[3].children[0].checked = false;
-          rows[ind].cells[4].children[0].checked = false;
-          rows[ind].cells[5].children[0].checked = false;
+      // if (rows.length > 0) {
+      //   for (let ind = 2; ind < rows.length; ind++) {
+      //     rows[ind].cells[2].children[0].checked = false;
+      //     rows[ind].cells[3].children[0].checked = false;
+      //     rows[ind].cells[4].children[0].checked = false;
+      //     rows[ind].cells[5].children[0].checked = false;
 
-          rows[ind].className = '';
-        }
-      }
+      //     rows[ind].className = '';
+      //   }
+      // }
 
-      apartments.table.forEach(item => {
-        item.paid = 0;
-        item.privilege = 0;
-        item.exempt = 0;
-        item.locked = 0;
-        item.halfPaid = 0;
-      })
-      document.getElementById('apartments').value = JSON.stringify(apartments);
+      // apartments.table.forEach(item => {
+      //   item.paid = 0;
+      //   item.privilege = 0;
+      //   item.exempt = 0;
+      //   item.locked = 0;
+      //   item.halfPaid = 0;
+      // })
+      // document.getElementById('apartments').value = JSON.stringify(apartments);
 
-      getPaids(apartments);
-      getPrivileges(apartments);
-      getExemps(apartments);
-      getLockeds(apartments);
+      // getPaids(apartments);
+      // getPrivileges(apartments);
+      // getExemps(apartments);
+      // getLockeds(apartments);
 
       var start = document.getElementById('startService').value;
       var end = document.getElementById('endService').value;

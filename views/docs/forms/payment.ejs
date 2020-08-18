@@ -81,7 +81,7 @@
                   <div class="col-md-7">
                     <div class="form-group">
                       <label for="barcode">Штрихкод</label>
-                      <input type="text" class="form-control" id="barcode" name="barcode" placeholder="" value="">
+                      <input type="text" class="form-control" id="barcode" name="barcode" placeholder="" value="<%= data.barcode %>">
                     </div>
                   </div>
                 </div>
@@ -196,7 +196,7 @@
                 </table>
               </div>
             </div>
-            <button type="submit" class="btn btn-success" name="save" id="save" <%= +data.mode != 2 ? ' disabled' : '' %>>Записать</button>
+            <button type="submit" class="btn btn-success" name="save" id="save">Записать</button>
             <button type="submit" class="btn btn-info" name="printReceipt" id="printReceipt">Квитанция</button>
           </div>
       </form>

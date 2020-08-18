@@ -6,17 +6,17 @@ const visibleRows = require('../../../lib/config').config.visibleRows;
 var moment = require('moment');
 
 // var generateTable = function( id, page, search, callback) {
-var generateTable = function(data, callback) {  
+var generateTable = function(data, callback) {
 
   var id = data.id;
-  var page = data.page ? (+data.page > 1 ? +data.page : 1) : 1;  
+  var page = data.page ? (+data.page > 1 ? +data.page : 1) : 1;
   var offset = (+page - 1) * visibleRows;
   var pageCount = 0;
   var contract = data.search.trim();
 
   db.get().getConnection(function (err, connection) {
 
-    var queryCount = 
+    var queryCount =
       ' SELECT COUNT(*) AS count' +
       ' FROM' +
       ' lists_registers a';
@@ -26,11 +26,11 @@ var generateTable = function(data, callback) {
     }
 
     queryCount +=
-      ' WHERE' + 
+      ' WHERE' +
       ' a.register_id = ?';
 
     if (contract.length > 0) {
-      queryCount += 
+      queryCount +=
         data.prolonged ? ' AND b.m_contract_number = ' : ' AND b.contract_number = ';
         queryCount += contract;
     }
@@ -48,27 +48,27 @@ var generateTable = function(data, callback) {
         var paginationContent = '';
         if (pageCount > 0) {
           if (page === 1) {
-            paginationContent = 
+            paginationContent =
               '<li class="page-item disabled">' +
                 '<span class="page-link">&laquo;</span>' +
               '</li>';
           }
           else {
-            paginationContent = 
+            paginationContent =
               '<li class="page-item">' +
               '<a class="page-link">&laquo;</a>' +
               '</li>';
           }
           var i = (Number(page) > 5 ? Number(page) - 4 : 1);
           if (i !== 1) {
-            paginationContent += 
+            paginationContent +=
               '<li class="page-item disabled">' +
                 '<a class="page-link">...</a>' +
               '</li>';
           }
           for (; i <= (Number(page) + 4) && i <= pageCount; i++) {
             if (i === page) {
-              paginationContent += 
+              paginationContent +=
                 '<li class="page-item active">' +
                   '<span class="page-link">' +
                   i +
@@ -77,7 +77,7 @@ var generateTable = function(data, callback) {
                 '</li>';
               }
               else {
-                paginationContent += 
+                paginationContent +=
                   '<li class="page-item">' +
                   '<a class="page-link">' +
                   i +
@@ -85,43 +85,43 @@ var generateTable = function(data, callback) {
                   '</li>';
               }
               if ((i === +page + 4) && (i < pageCount)) {
-                paginationContent += 
+                paginationContent +=
                   '<li class="page-item disabled">' +
                   '<a class="page-link">...</a>' +
                   '</li>';
               }
           }
           if (+page === pageCount) {
-            paginationContent += 
+            paginationContent +=
               '<li class="page-item disabled">' +
               '<a class="page-link">&raquo;</a>' +
               '</li>';
           }
           else {
-            paginationContent += 
+            paginationContent +=
               '<li class="page-item">' +
               '<a class="page-link">&raquo;</a>' +
               '</li>';
           }
         }
 
-        var queryRegisters = 
-          ' SELECT' + 
+        var queryRegisters =
+          ' SELECT' +
           ' b.card_id,' +
-          ' b.m_prolongation,' + 
-          ' b.contract_number,' + 
-          ' b.m_contract_number,' + 
+          ' b.m_prolongation,' +
+          ' b.contract_number,' +
+          ' b.m_contract_number,' +
           ` DATE_FORMAT(b.create_date, '%d.%m.%Y') AS create_date,` +
-          ` DATE_FORMAT(b.start_service, '%d.%m.%Y') AS start_service,` + 
-          ` DATE_FORMAT(b.end_service, '%d.%m.%Y') AS end_service` + 
+          ` DATE_FORMAT(b.start_service, '%d.%m.%Y') AS start_service,` +
+          ` DATE_FORMAT(b.end_service, '%d.%m.%Y') AS end_service` +
           ' FROM' +
           ' lists_registers a' +
           ' LEFT JOIN cards b ON b.card_id = a.card_id' +
-          ' WHERE' + 
+          ' WHERE' +
           ' a.register_id = ?';
 
         if (contract.length > 0) {
-          queryRegisters += 
+          queryRegisters +=
             data.prolonged ? ' AND b.m_contract_number = ' : ' AND b.contract_number = ';
           queryRegisters += contract;
         }
@@ -131,7 +131,7 @@ var generateTable = function(data, callback) {
           ' a.list_register_id' +
           ' LIMIT ?' +
           ' OFFSET ?';
-      
+
         db.get().getConnection(function (err, connection) {
           connection.query(
             queryRegisters, [id, 100, +offset], function (err, rows) {
@@ -145,12 +145,12 @@ var generateTable = function(data, callback) {
               if (! err) {
                 var max = rows.length;
                 for (var ind = 0; ind < max; ind++) {
-                  result += 
+                  result +=
                     // '<tr' + (ind % 2 ? ' class="table-info"' : '') + '>' +
                     // '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].contract_number + '</td>' +
                     // '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].m_contract_number + '</td>' +
                     // '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].start_service + '</td>' +
-                    // '</tr>' + 
+                    // '</tr>' +
                     // '<tr' + (ind % 2 ? ' class="table-info"' : '') + '>' +
                     // '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].create_date + '</td>' +
                     // '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].end_service + '</td>' +
@@ -160,7 +160,7 @@ var generateTable = function(data, callback) {
                     '<td class="text-center align-middle">' + rows[ind].contract_number + '</td>' +
                     '<td class="text-center align-middle">' + rows[ind].m_contract_number + '</td>' +
                     '<td class="text-center align-middle">' + rows[ind].start_service + '</td>' +
-                    '</tr>' + 
+                    '</tr>' +
                     '<tr' + (ind % 2 ? ' class="warning"' : '') + '>' +
                     '<td class="text-center align-middle">' + rows[ind].create_date + '</td>' +
                     '<td class="text-center align-middle">' + rows[ind].end_service + '</td>' +
@@ -236,7 +236,6 @@ module.exports = function () {
 
   router.get('/edit', function (req, res) {
     var pageCount = 0;
-    console.log(req.query);
     var id = req.query.id;
     var offset = req.query.offset;
     if (typeof offset === 'undefined') {
@@ -269,26 +268,26 @@ module.exports = function () {
               var tableRows = [];
               db.get().getConnection(function (err, connection) {
                 connection.query(
-                  ' SELECT' + 
+                  ' SELECT' +
                   ' b.card_id,' +
-                  ' b.m_prolongation,' + 
-                  ' b.contract_number,' + 
-                  ' b.m_contract_number,' + 
+                  ' b.m_prolongation,' +
+                  ' b.contract_number,' +
+                  ' b.m_contract_number,' +
                   ` DATE_FORMAT(b.create_date, '%d.%m.%Y') AS create_date,` +
-                  ` DATE_FORMAT(b.start_service, '%d.%m.%Y') AS start_service,` + 
-                  ` DATE_FORMAT(b.end_service, '%d.%m.%Y') AS end_service` + 
+                  ` DATE_FORMAT(b.start_service, '%d.%m.%Y') AS start_service,` +
+                  ` DATE_FORMAT(b.end_service, '%d.%m.%Y') AS end_service` +
                   ' FROM' +
                   ' lists_registers a' +
                   ' LEFT JOIN cards b ON b.card_id=a.card_id' +
-                  ' WHERE' + 
+                  ' WHERE' +
                   ' a.register_id = ?' +
                   ' ORDER BY' +
                   ' a.list_register_id' +
                   ' LIMIT ?' +
                   ' OFFSET ?', [id, 100, +offset], function (err, rows) {
-                    
+
                     connection.release();
-                    
+
                     if (err) {
                       res.status(500).send({
                         'code': 500,
@@ -333,18 +332,18 @@ module.exports = function () {
     var id = req.query.id;
     db.get().getConnection(function (err, connection) {
       connection.query(
-        ' SELECT' + 
+        ' SELECT' +
         ' b.card_id,' +
-        ' b.m_prolongation,' + 
-        ' b.contract_number,' + 
-        ' b.m_contract_number,' + 
+        ' b.m_prolongation,' +
+        ' b.contract_number,' +
+        ' b.m_contract_number,' +
         ` DATE_FORMAT(b.create_date, '%d.%m.%Y') AS create_date,` +
-        ` DATE_FORMAT(b.start_service, '%d.%m.%Y') AS start_service,` + 
-        ` DATE_FORMAT(b.end_service, '%d.%m.%Y') AS end_service` + 
+        ` DATE_FORMAT(b.start_service, '%d.%m.%Y') AS start_service,` +
+        ` DATE_FORMAT(b.end_service, '%d.%m.%Y') AS end_service` +
         ' FROM' +
         ' lists_registers a' +
         ' LEFT JOIN cards b ON b.card_id=a.card_id' +
-        ' WHERE' + 
+        ' WHERE' +
         ' a.register_id = ?' +
         ' ORDER BY' +
         ' a.list_register_id', [id], function (err, rows) {
@@ -489,8 +488,8 @@ module.exports = function () {
 
     // generateTable(data.id, +page, data.search, function(dataTable, pageContent, pagesCount) {
     generateTable(data, function(dataTable, pageContent, pagesCount) {
-      res.status(200).send({ 
-        'result': 'OK', 
+      res.status(200).send({
+        'result': 'OK',
         'bodyTable': dataTable,
         'pageContent': pageContent,
         'pagesCount': pagesCount

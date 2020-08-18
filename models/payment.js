@@ -7,8 +7,8 @@ module.exports.PaymentModel = function () {
     number: '',
     letter: '',
     debt: 0.00
-  },
-    this.amount = 0.00;
+  }
+  this.amount = 0.00;
   this.transaction = '';
   this.payMonth = 0;
   this.payYear = 0;
@@ -34,4 +34,5 @@ module.exports.PaymentModel = function () {
     }
   }
   this.fullAddress = '';
+  this.barcode = '';
 };
