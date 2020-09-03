@@ -1,8 +1,7 @@
 var db = require('../../lib/db');
 
-function PaymentsLogic(req, res) {
+function PaymentsLogic(req) {
   this.req = req;
-  this.res = res
 }
 
 PaymentsLogic.prototype.parseBarCode = async function (barcodeValue) {
@@ -24,7 +23,8 @@ PaymentsLogic.prototype.parseBarCode = async function (barcodeValue) {
       console.log(error);
     })
 
-  this.res.status(200).send({ ...obj, ...orderInfo });
+  return { ...obj, ...orderInfo };
+
 }
 
 PaymentsLogic.prototype.getOrderInfo = function (prolongedContractNumber, isDuplicate) {

@@ -118,7 +118,7 @@ function printReceipt(model, res) {
   // First third
 
   doc.font('ArialBold');
-  doc.text('OOO «ДOМОФОН-СЕРВИС»   ' + model.contract.city.phone, 134, 28, { align: 'left', width: 183 });
+  doc.text('OOO «ДOМОФОН-СЕРВИС»  ' + model.contract.city.phone, 134, 28, { align: 'left', width: 183 });
 
   doc.font('Arial');
   doc.text('(наименование получателя платежа)', 134, 38, { align: 'left' });
@@ -180,7 +180,7 @@ function printReceipt(model, res) {
   // Second third
   doc.fontSize(8);
   doc.font('ArialBold');
-  doc.text('OOO «ДOМОФОН-СЕРВИС»   ' +  model.contract.city.phone, 134, 219, { align: 'left', width: 183 });
+  doc.text('OOO «ДOМОФОН-СЕРВИС»  ' + model.contract.city.phone + '  ' + model.contract.city.office, 134, 219, { align: 'left', width: 360 });
 
   doc.font('Arial');
   doc.text('(наименование получателя платежа)', 134, 229, { align: 'left' });
@@ -256,7 +256,7 @@ function printReceipt(model, res) {
 
     .fontSize(11)
     .text('domofon@mail.ru', 15, 378, { align: 'center', width: 102 });
-    // .text('domofon@mail.ru', 15, 374, { align: 'center', width: 102 });
+  // .text('domofon@mail.ru', 15, 374, { align: 'center', width: 102 });
 
   doc.image(adImage, 15, 222, { width: 100 });
 
@@ -411,6 +411,24 @@ function validApartment(number, letter, orderNumber) {
   });
 }
 
+function getOrderIsActive(cardId) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        'SELECT (a.maintenance_contract = 1) AS isActive FROM cards a WHERE a.card_id = ?', [cardId],
+        function (err, rows) {
+          connection.release();
+          if (err) {
+            reject();
+          }
+          else {
+            rows.length === 0 ? resolve({ isActive: 0 }) : resolve({ isActive: rows[0].isActive === 1 });
+          }
+        });
+    });
+  });
+}
+
 function getCityInfo(cardId) {
   return new Promise(function (resolve, reject) {
     db.get().getConnection(function (err, connection) {
@@ -440,7 +458,8 @@ function updatePayment(data) {
         ' pay_year = ?,' +
         ' amount = ?,' +
         ' pay_date = ?,' +
-        ' `mode` = ?' +
+        ' `mode` = ?,' +
+        ' is_registered = ?' +
         ' WHERE payment_id = ?', [
         data.createDate,
         data.apartment.id,
@@ -449,6 +468,7 @@ function updatePayment(data) {
         data.amount,
         data.payDate,
         data.mode,
+        data.isRegistered,
         data.id
       ],
         function (err, rows) {
@@ -469,16 +489,17 @@ function savePayment(data) {
     db.get().getConnection(function (err, connection) {
       connection.query(
         ' INSERT INTO payments (' +
-        ' create_date, apartment_id, pay_month, pay_year, amount, pay_date, `mode`)' +
+        ' create_date, apartment_id, pay_month, pay_year, amount, pay_date, `mode`, is_registered)' +
         ' VALUES (' +
-        ' ?,?,?,?,?,?,?)', [
+        ' ?,?,?,?,?,?,?,?)', [
         data.createDate,
         data.apartment.id,
         data.payMonth,
         data.payYear,
         data.amount,
         data.payDate,
-        data.mode
+        data.mode,
+        data.isRegistered
       ],
         function (err, rows) {
           connection.release();
@@ -532,6 +553,7 @@ module.exports = function () {
               ' a.amount,' +
               ' a.pay_date AS payDate,' +
               ' a.mode,' +
+              ' a.is_registered AS isRegistered,' +
               ' b.number,' +
               ' b.letter,' +
               ' c.contract_number AS contractNumber,' +
@@ -599,6 +621,7 @@ module.exports = function () {
         ' a.transaction,' +
         ' a.zip_code AS zipCode,' +
         ' a.file_name AS fileName,' +
+        ' a.is_registered AS isRegistered,' +
         ' b.number,' +
         ' b.letter,' +
         ' c.card_id AS cardId,' +
@@ -647,6 +670,7 @@ module.exports = function () {
             paymentModel.mode = data.mode;
             paymentModel.zipCode = data.zipCode;
             paymentModel.fileName = data.fileName;
+            paymentModel.isRegistered = data.isRegistered;
 
             paymentModel.contract.id = data.cardId;
             paymentModel.contract.normal = data.contractNumber;
@@ -764,6 +788,7 @@ module.exports = function () {
               ' a.amount,' +
               ' a.pay_date AS payDate,' +
               ' a.mode,' +
+              ' a.is_registered AS isRegistered,' +
               ' b.number,' +
               ' b.letter,' +
               ' c.card_id AS cardId,' +
@@ -837,6 +862,7 @@ module.exports = function () {
     paymentModel.contract.receiptPrint = req.body.receiptPrint;
     paymentModel.fullAddress = req.body.fullAddress;
     paymentModel.barcode = req.body.barcode;
+    paymentModel.isRegistered = req.body.isRegistered ? 1 : 0;
 
     req.assert('createDate', 'Дата создания не заполнена').notEmpty();
     req.assert('cardId', 'Договор с таким номером не существует').custom(function (data) {
@@ -861,12 +887,25 @@ module.exports = function () {
         console.log(error);
       })
 
+    await getOrderIsActive(paymentModel.contract.id)
+      .then(function (result) {
+        if (!result.isActive) {
+          req.assert('extendedContract', 'Договор не активный!').custom(function () {
+            return result.isActive;
+          });
+        }
+      })
+      .catch(function (error) {
+        console.log(error);
+      })
+
     await getCityInfo(paymentModel.contract.id)
       .then(function (result) {
         paymentModel.contract.city.printType = result.printType;
         paymentModel.contract.city.name = result.cityName;
         paymentModel.contract.city.phone = result.phone;
         paymentModel.contract.city.vkAddress = result.vkAddress;
+        paymentModel.contract.city.office = result.office;
       })
       .catch(function (error) {
         console.log(error);
@@ -878,7 +917,7 @@ module.exports = function () {
       if (isNaN(out)) {
         out = 0;
       }
-      return out > 0;
+      return out != 0;
     });
     req.assert('dateOfPayment', 'Дата оплаты не заполнена').notEmpty();
 
@@ -1000,8 +1039,9 @@ module.exports = function () {
   });
 
   router.post('/parse_barcode', async function (req, res) {
-    var paymentsLogic = new PaymentsLogic(req, res);
-    paymentsLogic.parseBarCode(req.body.barcode);
+    let paymentsLogic = new PaymentsLogic(req, res);
+    let json = await paymentsLogic.parseBarCode(req.body.barcode);
+    res.status(200).send(json);
   });
 
   return router;

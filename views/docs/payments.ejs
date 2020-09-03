@@ -18,6 +18,12 @@
   <% include ../common/full_menu.ejs %>
 
   <div class="container-fluid">
+
+    <div class="progress" id="progress" hidden>
+      <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
+      </div>
+    </div>
+
     <div class="row">
       <div class="col-xs-12">
         <ol class="breadcrumb">
@@ -133,7 +139,7 @@
       </thead>
       <tbody>
         <% for (var ind = 0, max = data.length; ind < max; ind++) {%>
-        <tr>
+        <tr <%- data[ind].isRegistered === 1 ? ' class="warning"' : '' %> >
           <td class="text-center" style="vertical-align: middle">
             <%= moment(data[ind].createDate).format( 'DD.MM.YYYY') %>
           </td>

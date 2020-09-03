@@ -2,154 +2,254 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
-    <!-- <link rel="icon" href="../../../../favicon.ico"> -->
-    <title>Home page - <%= title %>></title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <!-- <link rel="icon" href="../../../../favicon.ico"> -->
+  <title>Home page - <%= title %>></title>
 
-    <% include ../../common/bootstrap_css.ejs %>
-    <link href="/theme.css" rel="stylesheet">
-    <link href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
-    <link href="/scroll_table_double_rows.css" rel="stylesheet">
+  <% include ../../common/bootstrap_css.ejs %>
+  <link href="/theme.css" rel="stylesheet">
+  <link href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css"
+    rel="stylesheet">
 </head>
 
 <body>
 
-    <% include ../../common/full_menu.ejs %>
+  <% include ../../common/full_menu.ejs %>
 
-    <div class="container">
-        <div class="form-header">
-            <h3><%= title %></h3>
-        </div>
-        <div class="well">
-            <div class="card-body">
-                <input type="text" hidden id="id" name="id" value="<%= typeof data != 'undefined' ? data.id : ''  %>">
-                <input type="text" hidden id="settings" value="">
-                <input type="text" hidden id="pages_count" value="">
-                <form class="form-inline" role="form">
-                    <button type="button" id="build_register" class="btn btn-default navbar-btn" data-toggle="tooltip" data-placement="top" title="Сформировать реестр"><span class="glyphicon glyphicon-play"></span></button>
-                    <button type="button" id="download_register" class="btn btn-default navbar-btn" data-toggle="tooltip" data-placement="top" title="Выгрузить реестр"><span class="glyphicon glyphicon-download"></span></button>
-                </form>
-                <p>
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label for="createDate" class="control-label">Создано</label>
-                            <div class="input-group date" id='datetimepicker_create_date'>
-                                <input type="text" class="form-control" name="createDate" id="createDate" readonly value="<%= typeof data != 'undefined' ? moment(data.create_date).format( 'DD.MM.YYYY' ) : ''  %>">
-                                <span class="input-group-addon">
-                                    <span class="glyphicon glyphicon-calendar"></span>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label for="start_date" class="control-label">Период с</label>
-                            <div class="input-group date" id='datetimepicker_start_date'>
-                                <input type="text" class="form-control" name="start_date" id="start_date" value="<%= typeof data != 'undefined' ? moment(data.start_date).format( 'DD.MM.YYYY' ) : ''  %>">
-                                <span class="input-group-addon">
-                                    <span class="glyphicon glyphicon-calendar"></span>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label for="end_date" class="control-label">Период по</label>
-                            <div class="input-group date" id='datetimepicker_end_date'>
-                                <input type="text" class="form-control" name="end_date" id="end_date" value="<%= typeof data != 'undefined' ? moment(data.end_date).format( 'DD.MM.YYYY' ) : ''  %>">
-                                <span class="input-group-addon">
-                                    <span class="glyphicon glyphicon-calendar"></span>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label for="last_modify_date" class="control-label">Последнее изменение</label>
-                            <div class="input-group date" id='datetimepicker_last_modify_date'>
-                                <input type="text" class="form-control" name="last_modify_date" id="last_modify_date" readonly value="<%= typeof data != 'undefined' ? moment(data.last_modify_date).format( 'DD.MM.YYYY HH:mm' ) : ''  %>">
-                                <span class="input-group-addon">
-                                    <span class="glyphicon glyphicon-calendar"></span>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="find_contract_number" name="find_contract_number" placeholder="Номер договора" value="">
-                            <span class="input-group-btn">
-                                <button class="btn btn-default" type="button" id="erase_contract">
-                                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                </button>
-                            </span>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="input-group">
-                            <div class="checkbox">
-                                <label>
-                                    <input type="checkbox" id="prolonged"> Пролонгированный
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-7">
-                        <div class="input-group">
-                            <button type="button" id="search" class="btn btn-info">
-                                <span class="glyphicon glyphicon-search"></span> Искать
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <p>
-                <div class="row">
-                    <div class="col-md-3">
-                        <span class="pull">Договоров&nbsp;&nbsp;</span>
-                        <span class="badge badge-info"><%= tableRowsCount %></span>
-                    </div>
-                </div>
-                <p>
-                <table class="table table-condensed" id="registerTable" name="registerTable">
-                    <thead>
-                        <tr class="active">
-                            <th rowsspan="2" style="width: 33%;" class="text-center align-middle">Номер договора</th>
-                            <th rowsspan="2" style="width: 33%;" class="text-center align-middle">Пролонгированный договор</th>
-                            <th rowsspan="2" style="width: 32%;" class="text-center align-middle">Дата ТО с</th>
-                        </tr>
-                        <tr class="active">
-                            <th class="text-center align-middle">Дата договора</th>
-                            <th class="text-center align-middle">Дата пролонгации</th>
-                            <th class="text-center align-middle">Дата ТО по</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody" style="background-color: white;">
-                    </tbody>
-                </table>
-                    <nav aria-label="...">
-                    <ul class="pagination text-center table_pagination" id="pagination">
-                    </ul>
-                <div class="row">
-                    <div class="col">
-                        <!-- <button type="submit" class="btn btn-success" id="save">Записать</button> -->
-                        <button class="btn btn-success" id="save">Записать</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="container">
+    <div class="form-header">
+      <h3><%= title %></h3>
+      <% if (Object.keys(errors).length > 0) { %>
+      <h3><span class="text-danger">Выявлены ошибки:</span></h3>
+      <ul>
+        <% for (var key in errors) { %>
+        <li><span class="text-danger"><%= errors[key].msg %></span></li>
+        <% }; %>
+      </ul>
+      <% } %>
     </div>
 
-    <script src="/bower_components/jquery/dist/jquery.min.js"></script>
-    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
-    <script src="/bower_components/moment/min/moment-with-locales.min.js"></script>
-    <script src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
-    <script src="/js/register.js"></script>
+    <div class="progress" id="progress" hidden>
+      <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
+      </div>
+    </div>
 
-  </body>
+    <div class="card">
+      <div class="well">
+        <div class="card-body">
+
+          <form method="post" action="/registers/save" id="formRegister">
+            <input type="text" hidden id="id" name="id" value="<%= data.id %>">
+            <input type="text" hidden id="orders" name="orders" value="<%= JSON.stringify(data.contracts) %>">
+            <input type="text" hidden id="payments" name="payments" value="<%= JSON.stringify(data.payments) %>">
+            <div class="dropdown">
+              <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown"
+                aria-haspopup="true" aria-expanded="true">
+                Действия
+                <span class="caret"></span>
+              </button>
+              <ul id="dropdownMenu" class="dropdown-menu" aria-labelledby="dropdownMenu1">
+                <li id="buidRegister"><a href="#">Сформировать реестр</a></li>
+                <li id="uploadRegister"<%- (data.id != 0) ? '' : ' class="disabled"' %> id="unloadRegister"><a href="/registers/upload/<%= data.id %>">Выгрузить реестр</a>
+                </li>
+              </ul>
+            </div>
+            <p>
+            <div class="row">
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label for="createDate" class="control-label">Создано</label>
+                  <div class="input-group date dtp-date" id='dtpCreateDate'>
+                    <input type="text" class="form-control" name="createDate" id="createDate" readonly
+                      value="<%= moment(data.createDate).format( 'DD.MM.YYYY' ) %>">
+                    <span class="input-group-addon">
+                      <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label for="startFrom" class="control-label">Период с</label>
+                  <div class="input-group date dtp-date" id='dtpStartFrom'>
+                    <input type="text" class="form-control" name="startFrom" id="startFrom"
+                      value="<%= moment(data.startFrom).format( 'DD.MM.YYYY' ) %>">
+                    <span class="input-group-addon">
+                      <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label for="endTo" class="control-label">Период по</label>
+                  <div class="input-group date dtp-date" id='dtpEndTo'>
+                    <input type="text" class="form-control" name="endTo" id="endTo"
+                      value="<%= moment(data.endTo).format( 'DD.MM.YYYY' ) %>">
+                    <span class="input-group-addon">
+                      <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label for="latestChange" class="control-label">Последнее изменение</label>
+                  <div class="input-group date dtp-date-time" id='dtpLatestChange'>
+                    <input type="text" class="form-control" name="latestChange" id="latestChange" readonly
+                      value="<%= moment(data.latestChange).format( 'DD.MM.YYYY HH:mm' ) %>">
+                    <span class="input-group-addon">
+                      <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <ul class="nav nav-pills">
+              <li class="active"><a data-toggle="tab" href="#contracts">Договора&nbsp;<span class="badge badge-info" id="orders_count"><%= data.contracts.length %></span></a></li>
+              <li><a data-toggle="tab" href="#payments_for_register">Платежи&nbsp;<span class="badge badge-info" id="payments_count"><%= data.payments.length %></span></a></li>
+            </ul>
+
+            <div class="tab-content">
+
+              <div id="contracts" class="tab-pane in active">
+                <div class="row">
+                  <div class="col-xs-12" style="height: 295px; overflow-y: scroll;">
+                    <div id="dsTable" style="padding: 0px 0px;">
+                      <table class="table table-bordered table-hover table-condensed" style="background-color: white;"
+                        name="tableContracts" id="tableContracts">
+                        <thead>
+                          <tr class="active">
+                            <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Создано</th>
+                            <th class="col-xs-3 text-center">Договор</th>
+                            <th class="col-xs-3 text-center">Договор ТО</th>
+                            <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">ТО с</th>
+                            <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">ТО по</th>
+                          </tr>
+                          <tr class="active">
+                            <th>
+                              <div class="input-group">
+                                <span class="input-group-btn">
+                                  <button class="btn btn-default" type="button" id="clearContract">
+                                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                                  </button>
+                                </span>
+                                <input type="text" class="form-control" name="findContract" id="findContract" value="">
+                              </div>
+                            </th>
+                            <th>
+                              <div class="input-group">
+                                <span class="input-group-btn">
+                                  <button class="btn btn-default" type="button" id="clearProlongedContract">
+                                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                                  </button>
+                                </span>
+                                <input type="text" class="form-control" name="findProlongedContract"
+                                  id="findProlongedContract" value="">
+                              </div>
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <% data.contracts.forEach(function(item, index) {%>
+                          <tr>
+                            <td class="text-center align-middle">
+                              <%= moment(item.createDate).format('DD.MM.YYYY') %>
+                            </td>
+                            <td class="text-center align-middle">
+                              <%= item.contractNumber %>
+                            </td>
+                            <td class="text-center align-middle">
+                              <%= item.prolongedContractNumber %>
+                            </td>
+                            <td class="text-center align-middle">
+                              <%= moment(item.startService).format('DD.MM.YYYY') %>
+                            </td>
+                            <td class="text-center align-middle">
+                              <%= moment(item.endService).format('DD.MM.YYYY') %>
+                            </td>
+                          </tr>
+                          <% })%>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="payments_for_register" class="tab-pane">
+                <div class="row">
+                  <div class="col-xs-12" style="height: 295px; overflow-y: scroll;">
+                    <div id="dsTable2" style="padding: 0px 0px;">
+                      <table class="table table-bordered table-hover table-condensed" style="background-color: white;"
+                        name="tablePayments" id="tablePayments">
+                        <thead>
+                          <tr class="active">
+                            <th class="col-xs-2 text-center" style="vertical-align: middle">Создано</th>
+                            <th class="col-xs-2 text-center" style="vertical-align: middle">Договор ТО</th>
+                            <th class="col-xs-5 text-center" style="vertical-align: middle">Адрес</th>
+                            <th class="col-xs-1 text-center" style="vertical-align: middle">Квартира</th>
+                            <th class="col-xs-2 text-center" style="vertical-align: middle">Сумма</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <% data.payments.forEach(function(item, index) {%>
+                          <tr>
+                            <td class="text-center align-middle">
+                              <%= item.payDate %>
+                            </td>
+                            <td class="text-center align-middle">
+                              <%= item.prolongedContractNumber %>
+                            </td>
+                            <td class="text-left align-middle">
+                              <%= item.address %>
+                            </td>
+                            <td class="text-center align-middle">
+                              <%= item.apartment %>
+                            </td>
+                            <td class="text-center align-middle">
+                              <%= item.amount.toFixed(2) %>
+                            </td>
+                          </tr>
+                          <% })%>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <nav aria-label="...">
+              <ul class="pagination text-center table_pagination" id="pagination">
+              </ul>
+              <div class="row">
+                <div class="col-md-12">
+                  <!-- <button type="submit" class="btn btn-success" id="save">Записать</button> -->
+                  <button type="submit" class="btn btn-success" name="saveAndClose" id="saveAndClose">Записать и выйти</button>
+                  <button type="submit" class="btn btn-success" name="save" id="save">Записать</button>
+                </div>
+              </div>
+            </nav>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="/bower_components/moment/min/moment-with-locales.min.js"></script>
+  <script src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
+  <script src="/bower_components/axios/dist/axios.min.js"></script>
+  <!-- <script src="/js/jquery.floatThead.min.js"></script> -->
+  <script src="/js/register.js"></script>
+
+</body>
 
 </html>

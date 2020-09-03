@@ -21,7 +21,7 @@ var Application = function () {
 
 var application = new Application();
 
-$('#tableApartments').floatThead();
+// $('#tableApartments').floatThead();
 
 $('[data-toggle="tooltip"]').tooltip();
 
@@ -43,6 +43,11 @@ $('#dtCreditTo').datetimepicker({
 $('#dtStartService').datetimepicker({
   locale: 'ru',
   format: 'L'
+});
+
+$('#dtStartService').on("dp.change",function (e) {
+    var start = document.getElementById('startService').value;
+    document.getElementById('endService').value = moment(start, 'DD.MM.YYYY').add(1, 'years').format('DD.MM.YYYY');
 });
 
 $('#dtEndService').datetimepicker({
@@ -259,8 +264,6 @@ document.getElementById('saveApartment').addEventListener('click', function (e) 
         }
         // TODO: Добавить проверку квартиру - не пустая и только число + не должно быть дублей
 
-        showAlert2(true, '&nbsp;');
-
         var newApartment = {};
         newApartment.uid = 0;
         newApartment.number = validNumber;
@@ -356,14 +359,20 @@ document.getElementById('decide').addEventListener('click', function (e) {
         return;
       }
 
-      showAlert(true, '&nbsp;')
+      // showAlert(true, '&nbsp;')
 
       var bodyTable = document.getElementById('tableApartments').getElementsByTagName('tbody')[0];
+      bodyTable.remove();
+      // $("#tableApartments tr").remove();
+      // bodyTable.innerHTML = '';
 
-      bodyTable.innerHTML = '';
+      // document.querySelectorAll("table tbody tr").forEach(function(e){e.remove()})
+
+
       apartments.table.length = 0;
 
-      for (let ind = start; ind <= end; ind++) {
+      var tableContent = [];
+      for (let ind = parseInt(start); ind <= parseInt(end); ind++) {
         apartments.table.push({
           uid: 0,
           number: ind,
@@ -377,8 +386,11 @@ document.getElementById('decide').addEventListener('click', function (e) {
           paidDT: null
         });
         let newRow = generateNewRowBasedTemplate(0, ind);
+        tableContent.push(newRow);
         $('#tableApartments tr:last').after(newRow);
+        // $('#tableApartments tr:last').after(newRow);
       }
+      // $('#tableApartments tbody').append(tableContent.join(''));
       apartments.isRebuilt = true;
       document.getElementById('apartments').value = JSON.stringify(apartments);
 
@@ -390,35 +402,36 @@ document.getElementById('decide').addEventListener('click', function (e) {
       break;
     case ACTION_DIALOG_PROLONG_ORDER:
       var rows = document.getElementById('tableApartments').rows;
-      // if (rows.length > 0) {
-      //   for (let ind = 2; ind < rows.length; ind++) {
-      //     rows[ind].cells[2].children[0].checked = false;
-      //     rows[ind].cells[3].children[0].checked = false;
-      //     rows[ind].cells[4].children[0].checked = false;
-      //     rows[ind].cells[5].children[0].checked = false;
+      if (rows.length > 0) {
+        for (let ind = 2; ind < rows.length; ind++) {
+          rows[ind].cells[2].children[0].checked = false;
+          // rows[ind].cells[3].children[0].checked = false;
+          // rows[ind].cells[4].children[0].checked = false;
+          // rows[ind].cells[5].children[0].checked = false;
 
-      //     rows[ind].className = '';
-      //   }
-      // }
+          rows[ind].className = '';
+        }
+      }
 
-      // apartments.table.forEach(item => {
-      //   item.paid = 0;
-      //   item.privilege = 0;
-      //   item.exempt = 0;
-      //   item.locked = 0;
-      //   item.halfPaid = 0;
-      // })
-      // document.getElementById('apartments').value = JSON.stringify(apartments);
+      apartments.table.forEach(item => {
+        item.paid = 0;
+        // item.privilege = 0;
+        // item.exempt = 0;
+        // item.locked = 0;
+        item.halfPaid = 0;
+      })
+      document.getElementById('apartments').value = JSON.stringify(apartments);
 
-      // getPaids(apartments);
-      // getPrivileges(apartments);
-      // getExemps(apartments);
-      // getLockeds(apartments);
+      getPaids(apartments);
+      getPrivileges(apartments);
+      getExemps(apartments);
+      getLockeds(apartments);
 
       var start = document.getElementById('startService').value;
       var end = document.getElementById('endService').value;
       document.getElementById('startService').value = moment(start, 'DD.MM.YYYY').add(1, 'years').format('DD.MM.YYYY');
       document.getElementById('endService').value = moment(end, 'DD.MM.YYYY').add(1, 'years').format('DD.MM.YYYY');
+      document.getElementById('receiptPrinting').value = moment(new Date()).format('DD.MM.YYYY');
       //
       break;
     case ACTION_DIALOG_DELETE_APARTMENT:
@@ -506,7 +519,7 @@ function sortTable(index) {
   while (switching) {
     switching = false;
     rows = table.rows;
-    for (var ind = 1; ind < (rows.length - 1); ind++) {
+    for (var ind = 2; ind < (rows.length - 1); ind++) {
       shouldSwitch = false;
       var x = rows[ind].getElementsByTagName('td')[index];
       var y = rows[ind + 1].getElementsByTagName('td')[index];
@@ -735,42 +748,6 @@ document.getElementById('clearApartment').addEventListener('click', function (e)
 document.getElementById('findApartment').addEventListener("keyup", function (e) {
   filterApartment();
 });
-
-// $('#equipment_name').typeahead({
-//   items: 15,
-//   source: function (query, process) {
-//     var results = [];
-//     map = {};
-//     $.ajax({
-//       'url': '/orders/search_equipment',
-//       'type': 'POST',
-//       'contentType': 'application/json',
-//       'data': JSON.stringify({
-//         'suggestion': query,
-//         'limit': 15
-//       }),
-//       success: function (datas) {
-//         $.each(datas, function (i, result) {
-//           map[result.value] = result;
-//           results.push(result.value);
-//         });
-//         process(results);
-//       }
-//     });
-//   },
-//   updater: function (element) {
-//     var equipment = JSON.parse(document.getElementById('equipment').value);
-//     try {
-//       equipment.key = map[element].id;
-//       equipment.value = map[element].value;
-//       document.getElementById('equipment').value = JSON.stringify(equipment);
-//     } catch (error) {
-//       //
-//     }
-
-//     return element;
-//   }
-// });
 
 $('#equipmentName').typeahead({
   items: 15,
@@ -1129,7 +1106,7 @@ document.getElementById('saveComplete').addEventListener('click', function (e) {
 
 function generateNewRowBasedTemplate(uid, fullNumber) {
   var output =
-    `<tr class="" data-uid="${uid}">
+    `<tr class="data-uid=${uid}">
     <td class="col-xs-1 text-center align-middle">
       <button type="button" class="btn btn-default btn-xs" onclick="showHistory(event)">
         <span class="glyphicon glyphicon-rub" aria-hidden="true"></span>

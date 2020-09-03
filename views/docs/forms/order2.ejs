@@ -6,15 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <meta name="description" content="">
   <meta name="author" content="">
+  <meta http-equiv="Cache-Control" content="no-cache">
   <!-- <link rel="icon" href="../../../../favicon.ico"> -->
   <title>Home page - <%= title %></title>
 
   <% include ../../common/bootstrap_css.ejs %>
   <link href="/theme.css" rel="stylesheet">
   <link href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css"  rel="stylesheet">
-  <!-- <link href="/fix_header.css" rel="stylesheet"> -->
-  <!-- <link href="/scroll_table.css" rel="stylesheet"> -->
-  <!-- <link href="/scroll_table_double_rows.css" rel="stylesheet"> -->
+  <link href="/css/orders.css" rel="stylesheet">
 </head>
 
 <body>
@@ -73,7 +72,7 @@
                       <label for="createDate" class="control-label">Создано</label>
                       <div class="input-group date" id="dtCreateDate">
                         <input type="text" class="form-control" name="createDate" id="createDate"
-                          value="<%= data.createDate ? moment(data.createDate).format( 'DD.MM.YYYY' ) : moment(new Date()).format( 'DD.MM.YYYY' )  %>">
+                          value="<%= data.createDate ? moment(data.createDate).format( 'DD.MM.YYYY' ) : moment(new Date()).format( 'DD.MM.YYYY' )  %>" readonly>
                         <span class="input-group-addon">
                           <span class="glyphicon glyphicon-calendar"></span>
                         </span>
@@ -254,7 +253,7 @@
                       <label for="endService" class="control-label">по</label>
                       <div class="input-group date" id="dtEndService">
                         <input type="text" class="form-control" name="endService" id="endService"
-                          value="<%= data.endService != null ? moment(data.endService).format( 'DD.MM.YYYY' ) : '' %>">
+                          value="<%= data.endService != null ? moment(data.endService).format( 'DD.MM.YYYY' ) : '' %>" readonly>
                         <span class="input-group-addon">
                           <span class="glyphicon glyphicon-calendar"></span>
                         </span>
@@ -383,19 +382,19 @@
 
                           <% _class = '' %>
                           <% if ((+data.apartments.table[cnt].paid == 1) && (+data.apartments.table[cnt].halfPaid == 2)) { %>
-                          <% _class = 'info' %>
+                          <% _class = 'info2' %>
                           <% } %>
 
                           <% if ((+data.apartments.table[cnt].paid == 1) && (+data.apartments.table[cnt].halfPaid == 1)) { %>
-                          <% _class = 'warning' %>
+                          <% _class = 'warning2' %>
                           <% } %>
 
                           <% if ((+data.apartments.table[cnt].paid == 1) && (+data.apartments.table[cnt].halfPaid == 0)) { %>
-                          <% _class = 'success' %>
+                          <% _class = 'success2' %>
                           <% } %>
 
                           <% if (+data.apartments.table[cnt].exempt == 1) { %>
-                          <% _class = 'danger' %>
+                          <% _class = 'danger2' %>
                           <% } %>
 
                           <tr class="<%= _class %>" data-uid="<%= data.apartments.table[cnt].uid %>">
@@ -609,7 +608,8 @@
                 </div>
 
                 <div class="col-12">
-                  <button type="submit" class="btn btn-success" id="save">Записать</button>
+                  <button type="submit" class="btn btn-success" id="save_and_close" name="save_and_close">Записать и выйти</button>
+                  <button type="submit" class="btn btn-success" id="save" name="save">Записать</button>
                   <div class="btn-group dropup">
                     <!-- <button type="button" class="btn btn-default dropdown-toggle disabled" data-toggle="dropdown"> -->
                     <button class="btn btn-default dropdown-toggle" data-toggle="dropdown">
@@ -830,7 +830,7 @@
   <script src="/bower_components/bootstrap/js/collapse.js"></script>
   <script src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
   <script src="/bower_components/axios/dist/axios.min.js"></script>
-  <script src="/js/jquery.floatThead.min.js"></script>
+  <!-- <script src="/js/jquery.floatThead.min.js"></script> -->
   <script src="/js/order.js"></script>
 
 </body>

@@ -16,6 +16,7 @@ module.exports.PaymentModel = function () {
   this.mode = 0;
   this.zipCode = '';
   this.fileName = '';
+  this.isRegistered = 0;
 
   // Additional info
   this.contract = {
@@ -30,7 +31,8 @@ module.exports.PaymentModel = function () {
       printType: 1,
       name: '',
       phone: '',
-      vkAddress: ''
+      vkAddress: '',
+      office: ''
     }
   }
   this.fullAddress = '';

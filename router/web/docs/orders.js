@@ -23,6 +23,24 @@ var PrintOrderReceipts = require('../../../lib/print_order_receipts').PrintOrder
 
 require('shelljs/global');
 
+function checkOrder(orderId) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        'CALL check_order', [orderId],
+        function (err, rows) {
+          connection.release();
+          if (err) {
+            reject();
+          }
+          else {
+            resolve();
+          }
+        });
+    });
+  });
+}
+
 function printingReceipts(orderId, res) {
 
   var printOrderReceipts = new PrintOrderReceipts(orderId, res);
@@ -1530,7 +1548,13 @@ module.exports = function () {
             return updateApartments(orderModel);
           })
           .then(function () {
-            res.redirect('/orders');
+            // res.redirect('/orders');
+            if ('save_and_close' in req.body) {
+              res.redirect('/orders');
+            }
+            if ('save' in req.body) {
+              res.redirect('/orders/edit/' + orderModel.id);
+            }
           })
           .catch(function (error) {
             console.log(error);
@@ -1543,7 +1567,12 @@ module.exports = function () {
             return insertApartments(orderModel);
           })
           .then(function () {
-            res.redirect('/orders');
+            if ('save_and_close' in req.body) {
+              res.redirect('/orders');
+            }
+            if ('save' in req.body) {
+              res.redirect('/orders/edit/' + orderModel.id);
+            }
           })
           .catch(function (error) {
             console.log(error);

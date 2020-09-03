@@ -1,180 +1,11 @@
 'use strict';
 
 const express = require('express');
-var db = require('../../../lib/db.js');
-const visibleRows = require('../../../lib/config').config.visibleRows;
 var moment = require('moment');
 
-// var generateTable = function( id, page, search, callback) {
-var generateTable = function(data, callback) {
-
-  var id = data.id;
-  var page = data.page ? (+data.page > 1 ? +data.page : 1) : 1;
-  var offset = (+page - 1) * visibleRows;
-  var pageCount = 0;
-  var contract = data.search.trim();
-
-  db.get().getConnection(function (err, connection) {
-
-    var queryCount =
-      ' SELECT COUNT(*) AS count' +
-      ' FROM' +
-      ' lists_registers a';
-
-    if (contract.length > 0) {
-      queryCount += ' LEFT JOIN cards b ON b.card_id = a.card_id';
-    }
-
-    queryCount +=
-      ' WHERE' +
-      ' a.register_id = ?';
-
-    if (contract.length > 0) {
-      queryCount +=
-        data.prolonged ? ' AND b.m_contract_number = ' : ' AND b.contract_number = ';
-        queryCount += contract;
-    }
-
-    connection.query(
-      queryCount, [id], function(err, rows) {
-        connection.release();
-
-        pageCount =
-          (rows[0].count / visibleRows) < 1 ? 0 : Math.ceil(rows[0].count / visibleRows);
-        if ((offset > pageCount * visibleRows)) {
-          offset = (pageCount - 1) * visibleRows;
-        }
-
-        var paginationContent = '';
-        if (pageCount > 0) {
-          if (page === 1) {
-            paginationContent =
-              '<li class="page-item disabled">' +
-                '<span class="page-link">&laquo;</span>' +
-              '</li>';
-          }
-          else {
-            paginationContent =
-              '<li class="page-item">' +
-              '<a class="page-link">&laquo;</a>' +
-              '</li>';
-          }
-          var i = (Number(page) > 5 ? Number(page) - 4 : 1);
-          if (i !== 1) {
-            paginationContent +=
-              '<li class="page-item disabled">' +
-                '<a class="page-link">...</a>' +
-              '</li>';
-          }
-          for (; i <= (Number(page) + 4) && i <= pageCount; i++) {
-            if (i === page) {
-              paginationContent +=
-                '<li class="page-item active">' +
-                  '<span class="page-link">' +
-                  i +
-                  '<span class="sr-only">(current)</span>' +
-                  '</span>' +
-                '</li>';
-              }
-              else {
-                paginationContent +=
-                  '<li class="page-item">' +
-                  '<a class="page-link">' +
-                  i +
-                  '</a>' +
-                  '</li>';
-              }
-              if ((i === +page + 4) && (i < pageCount)) {
-                paginationContent +=
-                  '<li class="page-item disabled">' +
-                  '<a class="page-link">...</a>' +
-                  '</li>';
-              }
-          }
-          if (+page === pageCount) {
-            paginationContent +=
-              '<li class="page-item disabled">' +
-              '<a class="page-link">&raquo;</a>' +
-              '</li>';
-          }
-          else {
-            paginationContent +=
-              '<li class="page-item">' +
-              '<a class="page-link">&raquo;</a>' +
-              '</li>';
-          }
-        }
-
-        var queryRegisters =
-          ' SELECT' +
-          ' b.card_id,' +
-          ' b.m_prolongation,' +
-          ' b.contract_number,' +
-          ' b.m_contract_number,' +
-          ` DATE_FORMAT(b.create_date, '%d.%m.%Y') AS create_date,` +
-          ` DATE_FORMAT(b.start_service, '%d.%m.%Y') AS start_service,` +
-          ` DATE_FORMAT(b.end_service, '%d.%m.%Y') AS end_service` +
-          ' FROM' +
-          ' lists_registers a' +
-          ' LEFT JOIN cards b ON b.card_id = a.card_id' +
-          ' WHERE' +
-          ' a.register_id = ?';
-
-        if (contract.length > 0) {
-          queryRegisters +=
-            data.prolonged ? ' AND b.m_contract_number = ' : ' AND b.contract_number = ';
-          queryRegisters += contract;
-        }
-
-        queryRegisters +=
-          ' ORDER BY' +
-          ' a.list_register_id' +
-          ' LIMIT ?' +
-          ' OFFSET ?';
-
-        db.get().getConnection(function (err, connection) {
-          connection.query(
-            queryRegisters, [id, 100, +offset], function (err, rows) {
-
-              if (err) {
-                throw err;
-              }
-              connection.release();
-
-              var result = '';
-              if (! err) {
-                var max = rows.length;
-                for (var ind = 0; ind < max; ind++) {
-                  result +=
-                    // '<tr' + (ind % 2 ? ' class="table-info"' : '') + '>' +
-                    // '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].contract_number + '</td>' +
-                    // '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].m_contract_number + '</td>' +
-                    // '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].start_service + '</td>' +
-                    // '</tr>' +
-                    // '<tr' + (ind % 2 ? ' class="table-info"' : '') + '>' +
-                    // '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].create_date + '</td>' +
-                    // '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].end_service + '</td>' +
-                    // '<td style="width: 33%;" class="text-center align-middle">' + rows[ind].end_service + '</td>' +
-                    // '</tr>';
-                    '<tr' + (ind % 2 ? ' class="warning"' : '') + '>' +
-                    '<td class="text-center align-middle">' + rows[ind].contract_number + '</td>' +
-                    '<td class="text-center align-middle">' + rows[ind].m_contract_number + '</td>' +
-                    '<td class="text-center align-middle">' + rows[ind].start_service + '</td>' +
-                    '</tr>' +
-                    '<tr' + (ind % 2 ? ' class="warning"' : '') + '>' +
-                    '<td class="text-center align-middle">' + rows[ind].create_date + '</td>' +
-                    '<td class="text-center align-middle">' + rows[ind].end_service + '</td>' +
-                    '<td class="text-center align-middle">' + rows[ind].end_service + '</td>' +
-                    '</tr>';
-                }
-              }
-              // return result;
-              callback(result, paginationContent, pageCount);
-            });
-        });
-      });
-  });
-};
+var db = require('../../../lib/db.js');
+const visibleRows = require('../../../lib/config').config.visibleRows;
+var RegistersLogic = require('../../../logic/docs/registers').RegistersLogic;
 
 module.exports = function () {
   var router = express.Router();
@@ -234,135 +65,33 @@ module.exports = function () {
     });
   });
 
-  router.get('/edit', function (req, res) {
-    var pageCount = 0;
-    var id = req.query.id;
-    var offset = req.query.offset;
-    if (typeof offset === 'undefined') {
-      offset = 0;
-    }
-    var tableRowsCount = 0;
-
-    db.get().getConnection(function (err, connection) {
-      connection.query(
-        ' SELECT a.register_id AS id, a.create_date, a.start_date, a.end_date, a.last_modify_date' +
-        ' FROM registers a' +
-        ' WHERE a.register_id = ?', [id], function (err, rows) {
-          if (err) {
-            throw err;
-          }
-          var data = rows[0];
-
-          db.get().getConnection(function (err, connection) {
-            connection.query(
-              ' SELECT COUNT(*) AS count' +
-              ' FROM' +
-              ' lists_registers a' +
-              ' WHERE a.register_id = ?', [id], function(err, rows) {
-
-              connection.release();
-              tableRowsCount = rows[0].count;
-              pageCount =
-                (rows[0].count / (visibleRows * 5)) < 1 ? 0 : Math.ceil(rows[0].count / (visibleRows * 5));
-
-              var tableRows = [];
-              db.get().getConnection(function (err, connection) {
-                connection.query(
-                  ' SELECT' +
-                  ' b.card_id,' +
-                  ' b.m_prolongation,' +
-                  ' b.contract_number,' +
-                  ' b.m_contract_number,' +
-                  ` DATE_FORMAT(b.create_date, '%d.%m.%Y') AS create_date,` +
-                  ` DATE_FORMAT(b.start_service, '%d.%m.%Y') AS start_service,` +
-                  ` DATE_FORMAT(b.end_service, '%d.%m.%Y') AS end_service` +
-                  ' FROM' +
-                  ' lists_registers a' +
-                  ' LEFT JOIN cards b ON b.card_id=a.card_id' +
-                  ' WHERE' +
-                  ' a.register_id = ?' +
-                  ' ORDER BY' +
-                  ' a.list_register_id' +
-                  ' LIMIT ?' +
-                  ' OFFSET ?', [id, 100, +offset], function (err, rows) {
-
-                    connection.release();
-
-                    if (err) {
-                      res.status(500).send({
-                        'code': 500,
-                        'msg': 'Database error'
-                      });
-                    }
-                    else {
-                      var currentPage = Math.ceil(offset / (visibleRows * 5)) + 1;
-                      tableRows = rows;
-                      res.render('docs/forms/register.ejs', {
-                        'title': 'Реестр',
-                        'data': data,
-                        'moment': moment,
-                        'tableRows': tableRows,
-                        'tableRowsCount': tableRowsCount,
-                        'pageCount': pageCount,
-                        'currentPage': currentPage,
-                        'visibleRows': visibleRows * 5,
-                        user: req.session.userName
-                      });
-                    }
-                  });
-                });
-              });
-            });
-          });
-    });
-  });
-
-  // router.get('/edit/:id&:offset', function (req, res) {
-  //   kk(req, res);
-  // });
-
   router.get('/add', function (req, res) {
-    res.render('docs/forms/equipment.ejs', {
-      'title': 'Реестр',
+    let registersLogic = new RegistersLogic(req, res);
+    let data = registersLogic.addRegister();
+    res.render('docs/forms/register.ejs', {
+      title: 'Реестр',
+      data: data,
+      errors: [],
+      moment: moment,
       user: req.session.userName
     });
   });
 
-  router.get('/table', function (req, res) {
-    var id = req.query.id;
-    db.get().getConnection(function (err, connection) {
-      connection.query(
-        ' SELECT' +
-        ' b.card_id,' +
-        ' b.m_prolongation,' +
-        ' b.contract_number,' +
-        ' b.m_contract_number,' +
-        ` DATE_FORMAT(b.create_date, '%d.%m.%Y') AS create_date,` +
-        ` DATE_FORMAT(b.start_service, '%d.%m.%Y') AS start_service,` +
-        ` DATE_FORMAT(b.end_service, '%d.%m.%Y') AS end_service` +
-        ' FROM' +
-        ' lists_registers a' +
-        ' LEFT JOIN cards b ON b.card_id=a.card_id' +
-        ' WHERE' +
-        ' a.register_id = ?' +
-        ' ORDER BY' +
-        ' a.list_register_id', [id], function (err, rows) {
-          if (err) {
-            throw err;
-          }
-          connection.release();
-
-          if (err) {
-            console.error(err);
-            res.status(500).send({
-              'code': 500,
-              'msg': 'Database error'
-            });
-          } else {
-            res.status(200).send({ 'table': rows });
-          }
-        });
+  router.get('/edit/:id', async function (req, res) {
+    let registersLogic = new RegistersLogic(req, res);
+    let data = await registersLogic.getRegister();
+    res.render('docs/forms/register.ejs', {
+      title: 'Реестр',
+      data: data,
+      errors: [],
+      moment: moment,
+      user: req.session.userName
     });
+  });
+
+  router.get('/upload/:id', function (req, res) {
+    let registersLogic = new RegistersLogic(req, res);
+    registersLogic.upload(req.params.id);
   });
 
   router.get('/:offset', function (req, res) {
@@ -410,12 +139,12 @@ module.exports = function () {
                 } else {
                   var currentPage = Math.ceil(offset / visibleRows) + 1;
                   res.render('docs/registers.ejs', {
-                    'title': 'Реестр',
-                    'data': rows,
-                    'pageCount': pageCount,
-                    'currentPage': currentPage,
-                    'visibleRows': visibleRows,
-                    'moment': moment,
+                    title: 'Реестр',
+                    data: rows,
+                    pageCount: pageCount,
+                    currentPage: currentPage,
+                    visibleRows: visibleRows,
+                    moment: moment,
                     user: req.session.userName
                   });
                 }
@@ -425,53 +154,93 @@ module.exports = function () {
     });
   });
 
-  router.post('/save', function (req, res) {
-    if ((req.body.id) && (isFinite(+req.body.id))) {
-      db.get().getConnection(function (err, connection) {
-        connection.query(
-          ' UPDATE equipments SET name = ?, guarantee_period = ?' +
-          ' WHERE equipment_id = ?', [req.body.name, req.body.years, req.body.id], function (err) {
-            connection.release();
-            if (err) {
-              res.status(500).send({ 'code': 500, 'msg': 'Database Error' });
-            } else {
-              res.redirect('/equipment');
-            }
-          }
-        );
-      });
+  router.post('/save', async function (req, res) {
+
+    let registersLogic = new RegistersLogic(req, res);
+    var data = registersLogic.validate();
+    var errors = req.validationErrors();
+    if (!errors) {
+      await registersLogic.save(data);
+
+      if ('saveAndClose' in req.body) {
+        res.redirect('/registers');
+      }
+      if ('save' in req.body) {
+        res.redirect('/registers/edit/' + data.id);
+      }
     }
     else {
-      db.get().getConnection(function (err, connection) {
-        connection.query(
-          ' INSERT INTO equipments (name, guarantee_period)' +
-          ' VALUE(?, ?)', [req.body.name, req.body.years], function (err) {
-            connection.release();
-            if (err) {
-              res.status(500).send({ 'code': 500, 'msg': 'Database Error' });
-            } else {
-              res.redirect('/equipment');
-            }
-          }
-        );
+      res.render('docs/forms/register.ejs', {
+        title: 'Реестр',
+        data: data,
+        errors: errors,
+        moment: moment,
+        user: req.session.userName
       });
     }
+
+    // var id = parseInt(req.body.id);
+    // var startDate = moment(req.body.startDate, 'DD.MM.YYYY').format('YYYY-MM-DD');
+    // var endDate = moment(req.body.endDate, 'DD.MM.YYYY').format('YYYY-MM-DD');
+
+    // if (id > 0) {
+    //   await registersLogic.clearRegisterData(id);
+    //   await registersLogic.updateRegister(id, startDate, endDate);
+    //   await registersLogic.createRegisterData(id);
+    // }
+    // else {
+    //   id = await registersLogic.createNewRegister();
+    //   await registersLogic.createRegisterData(id);
+    // }
+
+
+
+    // if ((req.body.id) && (isFinite(+req.body.id))) {
+    //   db.get().getConnection(function (err, connection) {
+    //     connection.query(
+    //       ' UPDATE equipments SET name = ?, guarantee_period = ?' +
+    //       ' WHERE equipment_id = ?', [req.body.name, req.body.years, req.body.id], function (err) {
+    //         connection.release();
+    //         if (err) {
+    //           res.status(500).send({ 'code': 500, 'msg': 'Database Error' });
+    //         } else {
+    //           res.redirect('/equipment');
+    //         }
+    //       }
+    //     );
+    //   });
+    // }
+    // else {
+    //   db.get().getConnection(function (err, connection) {
+    //     connection.query(
+    //       ' INSERT INTO equipments (name, guarantee_period)' +
+    //       ' VALUE(?, ?)', [req.body.name, req.body.years], function (err) {
+    //         connection.release();
+    //         if (err) {
+    //           res.status(500).send({ 'code': 500, 'msg': 'Database Error' });
+    //         } else {
+    //           res.redirect('/equipment');
+    //         }
+    //       }
+    //     );
+    //   });
+    // }
   });
 
   router.post('/delete', function (req, res) {
     if ((req.body.id) && (isFinite(+req.body.id))) {
       db.get().getConnection(function (err, connection) {
         connection.query(
-          ' DELETE FROM equipments WHERE equipment_id = ?', [+req.body.id], function (err) {
+          ' DELETE FROM registers WHERE register_id = ?', [+req.body.id], function (err) {
             connection.release();
             if (err) {
               res.status(500).send({
-                'code': 500,
-                'msg': 'Database Error',
-                'err': JSON.stringify(err)
+                code: 500,
+                msg: 'Database Error',
+                err: JSON.stringify(err)
               });
             } else {
-              res.status(200).send({ 'result': 'OK' });
+              res.status(200).send({ result: 'OK' });
             }
           }
         );
@@ -487,14 +256,83 @@ module.exports = function () {
     // var page = data.page ? (data.page > 1 ? data.page : 1) : 1;
 
     // generateTable(data.id, +page, data.search, function(dataTable, pageContent, pagesCount) {
-    generateTable(data, function(dataTable, pageContent, pagesCount) {
+    generateTable(data, function (dataTable, pageContent, pagesCount) {
       res.status(200).send({
-        'result': 'OK',
-        'bodyTable': dataTable,
-        'pageContent': pageContent,
-        'pagesCount': pagesCount
+        result: 'OK',
+        bodyTable: dataTable,
+        pageContent: pageContent,
+        pagesCount: pagesCount
       });
     });
+  });
+
+  router.post('/build_register', async function (req, res) {
+    var data = req.body.name;
+    var startFrom = moment(req.body.startFrom, 'DD.MM.YYYY').format('YYYY-MM-DD');
+    var endTo = moment(req.body.endTo, 'DD.MM.YYYY').format('YYYY-MM-DD');
+
+    let registersLogic = new RegistersLogic(req, res);
+    var orders = await registersLogic.buildRegister(startFrom, endTo);
+    var payments = await registersLogic.buildRegister2(startFrom, endTo);
+
+    // Create content
+    var contentContractsTable = [];
+    if (Array.isArray(orders)) {
+      orders.forEach(function (item) {
+        contentContractsTable.push(
+            `<tr>
+              <td class="text-center align-middle">
+                ${moment(item.createDate).format('DD.MM.YYYY')}
+              </td>
+              <td class="text-center align-middle">
+                ${item.contractNumber}
+              </td>
+              <td class="text-center align-middle">
+                ${item.prolongedContractNumber}
+              </td>
+              <td class="text-center align-middle">
+                ${moment(item.startService).format('DD.MM.YYYY')}
+              </td>
+              <td class="text-center align-middle">
+                ${moment(item.endService).format('DD.MM.YYYY')}
+              </td>
+            </tr>`
+          );
+      });
+    }
+
+    var contentPaymentsTable = [];
+    if (Array.isArray(payments)) {
+      payments.forEach(function (item) {
+        contentPaymentsTable.push(
+            `<tr>
+              <td class="text-center align-middle">
+                ${item.payDate}
+              </td>
+              <td class="text-center align-middle">
+              ${item.prolongedContractNumber}
+              </td>
+              <td class="text-left align-middle">
+                ${item.address}
+              </td>
+              <td class="text-center align-middle">
+                ${item.apartment}
+              </td>
+              <td class="text-center align-middle">
+              ${item.amount.toFixed(2)}
+              </td>
+            </tr>`
+          );
+      });
+    }
+
+    res.status(200).send({
+      result: 'OK',
+      orders: orders,
+      payments: payments,
+      contentContractsTable: contentContractsTable,
+      contentPaymentsTable: contentPaymentsTable,
+    })
   });
 
   return router;

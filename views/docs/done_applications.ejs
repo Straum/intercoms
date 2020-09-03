@@ -459,6 +459,7 @@
             filters.city.id = map[element].id;
             filters.city.name = map[element].value;
             $('#filters').val(JSON.stringify(filters));
+            document.getElementById('findStreet').focus();
           }
           catch (e) {
             console.log(e.message);
@@ -506,6 +507,7 @@
             filters.street.name = map[element].value;
             filters.street.cityId = map[element].cityId;
             $('#filters').val(JSON.stringify(filters));
+            document.getElementById('findHouse').focus();
           }
           catch (e) {
             console.log(e.message);
