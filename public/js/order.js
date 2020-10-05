@@ -91,10 +91,8 @@ function showHistory(ev) {
         body.payments += '</tr>';
       });
     }
-    if (body.payments != '') {
-      var bodyPaymentsRef = document.getElementById('tablePayments').getElementsByTagName('tbody')[0];
-      bodyPaymentsRef.innerHTML = body.payments;
-    }
+    var bodyPaymentsRef = document.getElementById('tablePayments').getElementsByTagName('tbody')[0];
+    bodyPaymentsRef.innerHTML = body.payments;
 
     if ((data.fines) && (Array.isArray(data.fines)) && (data.fines.length > 0)) {
       data.fines.forEach(function (element) {
@@ -106,10 +104,8 @@ function showHistory(ev) {
         body.fines += '</tr>';
       });
     }
-    if (body.fines != '') {
-      var bodyFinesRef = document.getElementById('tableFines').getElementsByTagName('tbody')[0];
-      bodyFinesRef.innerHTML = body.fines;
-    }
+    var bodyFinesRef = document.getElementById('tableFines').getElementsByTagName('tbody')[0];
+    bodyFinesRef.innerHTML = body.fines;
 
     if ((data.prices) && (Array.isArray(data.prices)) && (data.prices.length > 0)) {
       data.prices.forEach(function (element) {
@@ -122,10 +118,8 @@ function showHistory(ev) {
         body.prices += '</tr>';
       });
     }
-    if (body.prices != '') {
-      var bodyPricesRef = document.getElementById('tablePrices').getElementsByTagName('tbody')[0];
-      bodyPricesRef.innerHTML = body.prices;
-    }
+    var bodyPricesRef = document.getElementById('tablePrices').getElementsByTagName('tbody')[0];
+    bodyPricesRef.innerHTML = body.prices;
 
     document.getElementById('historyDialogCapton').textContent = 'История по квартире № ' + apartmentInfo;
     $('#historyDialog').modal();

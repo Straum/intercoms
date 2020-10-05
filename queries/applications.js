@@ -4,8 +4,9 @@ exports.getCard = function (kind, houseId, porch) {
         return ` SELECT a.card_id AS cardId, a.contract_number AS contractNumber,
         a.m_contract_number AS mContractNumber,
         a.maintenance_contract AS maintenanceContract FROM cards a
-        WHERE (a.house_id = ${houseId}) 
+        WHERE (a.house_id = ${houseId})
         AND (a.porch = ${porch})
+        ORDER BY a.create_date DESC
         LIMIT 1`;
     }
     else {
@@ -15,6 +16,7 @@ exports.getCard = function (kind, houseId, porch) {
         WHERE (a.house_id = ${houseId})
         AND (${porch} >= a.m_start_apartment)
         AND (${porch} <= a.m_end_apartment)
+        ORDER BY a.create_date DESC
         LIMIT 1`;
     }
 };

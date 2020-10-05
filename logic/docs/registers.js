@@ -2,6 +2,7 @@ var moment = require('moment');
 const path = require('path');
 var fs = require('fs');
 var db = require('../../lib/db');
+var iconvlite = require('iconv-lite');
 
 const { relativeTimeThreshold } = require('moment');
 const { query } = require('express-validator/check');
@@ -357,7 +358,7 @@ RegistersLogic.prototype.updateRegister = function (id, startDate, endDate) {
     db.get().getConnection(function (err, connection) {
       connection.query(
         `UPDATE registers SET last_modify_date = NOW(), start_date = ?, end_date = ?
-        'WHERE register_id = ?'`, [startDate, endDate, id],
+        WHERE register_id = ?`, [startDate, endDate, id],
         function (err, rows) {
           connection.release();
           if (err) {
@@ -527,12 +528,6 @@ RegistersLogic.prototype.save = async function (registerModel) {
   }
   else {
     registerModel.id = await self.createNewRegister(registerModel.startFrom, registerModel.endTo);
-      // .then(function (id) {
-      //   registerModel.id = id;
-      // })
-      // .catch(function (error) {
-      //   console.log(error);
-      // })
   }
   await self.insertRegisterData(registerModel);
   await self.insertPaymentsForRegister(registerModel);
@@ -578,7 +573,13 @@ RegistersLogic.prototype.upload = function (id) {
       // let absPath = path.join(__dirname, '/my_files/', filename);
       let relPath = path.join('./public/downloads', fileName); // path relative to server root
 
-      fs.writeFile(absPath, printModelForRegister.data.join(''), (err) => {
+      // convert text from utf8 to 1251
+      var content = printModelForRegister.data.join('');
+      var buffer = Buffer.from(content, 'utf8');
+      var content = iconvlite.encode(buffer, 'cp1251');
+
+      fs.writeFile(absPath, content, (err) => {
+      // fs.writeFile(absPath, printModelForRegister.data.join(''), (err) => {
         if (err) {
           console.log(err);
         }

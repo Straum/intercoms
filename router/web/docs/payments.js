@@ -64,7 +64,8 @@ function printReceipt(model, res) {
   var clientAccount = clientAccountData.join('');
 
   var contentData = [];
-  contentData.push('ST00012|');
+  // contentData.push('ST00012|');
+  contentData.push('ST00011|');
   contentData.push('Name=' + firmBankDetails.name + '|');
   contentData.push('PersonalAcc=' + firmBankDetails.personalAcc + '|');
   contentData.push('BankName=' + firmBankDetails.bankName + '|');

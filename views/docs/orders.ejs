@@ -413,6 +413,7 @@
             filters.city.id = map[element].id;
             filters.city.name = map[element].value;
             $('#filters').val(JSON.stringify(filters));
+            $('#findStreet').focus();
           }
           catch (e) {
             console.log(e.message);
@@ -460,6 +461,7 @@
             filters.street.name = map[element].value;
             filters.street.cityId = map[element].cityId;
             $('#filters').val(JSON.stringify(filters));
+            $('#findHouse').focus();
           }
           catch (e) {
             console.log(e.message);
@@ -507,6 +509,7 @@
             filters.house.number = map[element].value;
             filters.house.streetId = map[element].streetId;
             $('#filters').val(JSON.stringify(filters));
+            $('#findPorch').focus();
           }
           catch (e) {
             console.log(e.message);
@@ -620,6 +623,7 @@
 
           clearCity();
           clearStreet();
+          clearHouse();
           clearPorch()
           $('#findCity').focus();
         }
@@ -645,6 +649,7 @@
           $('#filters').val(JSON.stringify(filters));
 
           clearStreet();
+          clearHouse();
           clearPorch();
           $('#findStreet').focus();
         }
@@ -666,6 +671,7 @@
           $('#filters').val(JSON.stringify(filters));
 
           clearHouse();
+          clearPorch();
           $('#findHouse').focus();
         }
         catch (e) {
