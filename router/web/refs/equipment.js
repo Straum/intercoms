@@ -19,11 +19,12 @@ module.exports = function () {
 
           db.get().getConnection(function (err, connection) {
             connection.query(
-              ' SELECT a.equipment_id AS id, a.name, a.guarantee_period AS guaranteePeriod' +
-              ' FROM equipments a' +
-              ' WHERE a.equipment_id > 0' +
-              ' ORDER BY a.name ASC' +
-              ' LIMIT ?', [visibleRows], function (err, rows) {
+              `SELECT a.equipment_id AS id, a.name, a.guarantee_period AS guaranteePeriod, b.name AS equipmentType
+              FROM equipments a
+              LEFT JOIN types_of_equipment b ON b.type_of_equipment_id = a.type_of_equipment_id
+              WHERE a.equipment_id > 0
+              ORDER BY a.name ASC
+              LIMIT ?`, [visibleRows], function (err, rows) {
                 if (err) {
                   throw err;
                 }
@@ -85,7 +86,7 @@ module.exports = function () {
     res.render('refs/forms/equipment/add.ejs', {
       title: 'Добавьте оборудование',
       data: {
-        name: '', 
+        name: '',
         guaranteePeriod: 0,
       },
       user: req.session.userName
@@ -100,7 +101,7 @@ module.exports = function () {
         ' SELECT COUNT(*) AS count' +
         ' FROM equipments WHERE equipment_id > 0', [], function (err, rows) {
           connection.release();
-          pageCount = 
+          pageCount =
             (rows[0].count / visibleRows) < 1 ? 0 : Math.ceil(rows[0].count / visibleRows);
           if ((offset > pageCount * visibleRows)) {
             offset = (pageCount - 1) * visibleRows;
@@ -108,15 +109,14 @@ module.exports = function () {
 
           db.get().getConnection(function (err, connection) {
             connection.query(
-              ' SELECT a.equipment_id AS id, a.name, a.guarantee_period AS guaranteePeriod' +
-              ' FROM equipments a' +
-              ' WHERE a.equipment_id > 0' +
-              ' ORDER BY a.name ASC' +
-              ' LIMIT ?' +
-              ' OFFSET ?', [visibleRows, offset], function (err, rows) {
-                if (err) {
-                  throw err;
-                }
+              `SELECT a.equipment_id AS id, a.name, a.guarantee_period AS guaranteePeriod, b.name AS equipmentType
+              FROM equipments a
+              LEFT JOIN types_of_equipment b ON b.type_of_equipment_id = a.type_of_equipment_id
+              WHERE a.equipment_id > 0
+              ORDER BY a.name ASC
+              LIMIT ?
+              OFFSET ?`, [visibleRows, offset], function (err, rows) {
+
                 connection.release();
 
                 if (err) {
@@ -159,9 +159,9 @@ module.exports = function () {
           ' VALUE(?, ?)', [data.name, data.years], function (err) {
             connection.release();
             if (err) {
-              res.status(500).send({ 
-                code: 500, 
-                msg: 'Database Error' 
+              res.status(500).send({
+                code: 500,
+                msg: 'Database Error'
               });
             } else {
               res.redirect('/equipment');
@@ -202,9 +202,9 @@ module.exports = function () {
           ' WHERE equipment_id = ?', [data.name, data.years, id], function (err) {
             connection.release();
             if (err) {
-              res.status(500).send({ 
-                code: 500, 
-                msg: 'Database Error' 
+              res.status(500).send({
+                code: 500,
+                msg: 'Database Error'
               });
             } else {
               res.redirect('/equipment');
@@ -242,7 +242,7 @@ module.exports = function () {
               });
             } else {
               res.status(200).send({
-                result: 'OK' 
+                result: 'OK'
               });
             }
           }
@@ -250,9 +250,9 @@ module.exports = function () {
       });
     }
     else {
-      res.status(500).send({ 
-        code: 500, 
-        msg: 'Incorrect parameter' 
+      res.status(500).send({
+        code: 500,
+        msg: 'Incorrect parameter'
       });
     }
   });

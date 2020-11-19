@@ -184,6 +184,11 @@
                     <input type="checkbox" name="isRegistered" id="isRegistered" <%= data.isRegistered === 1 ? ' checked' : '' %>> Для отправки в реестр
                   </label>
                 </div>
+                <div class="checkbox">
+                  <label class="form-check-label" for="allowZeroAmount">
+                    <input type="checkbox" name="allowZeroAmount" id="allowZeroAmount" <%= data.allowZeroAmount === 1 ? ' checked' : '' %>> Разрешить нулевую сумму
+                  </label>
+                </div>
               </div>
               <div role="tabpanel" class="tab-pane" id="paymentsHistory">
                 <table class="table table-bordered table-condensed" id="paymentsTable" name="paymentsTable"

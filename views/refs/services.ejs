@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <!-- <link rel="icon" href="../../../../favicon.ico"> -->
+  <title><%= title %></title>
+
+  <% include ../common/bootstrap_css.ejs %>
+  <link href="/theme.css" rel="stylesheet">
+</head>
+
+<body>
+
+  <% include ../common/full_menu.ejs %>
+
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-xs-12">
+        <ol class="breadcrumb">
+          <li><a href="#">Справочники</a></li>
+          <li><%= title %></li>
+        </ol>
+      </div>
+    </div>
+    <form class="form-inline" role="form" method="get" action="/services/filter">
+      <input type="text" hidden id="filters" name="filters" value="<%= JSON.stringify(filters) %>">
+      <button type="submit" class="btn btn-success" name="applyFilter">&nbsp;Применить фильтр&nbsp;</button>
+      <a href="/services/add" class="btn btn-default" data-toggle="tooltip" data-placement="top"
+        title="Новый сервис"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
+    </form>
+    <p>
+    <table class="table table-bordered table-condensed table-hover">
+      <thead>
+        <tr class="active">
+          <th style="width: 76%; vertical-align: middle" class="text-center">Полное наименование</th>
+          <th style="width: 12%; vertical-align: middle" class="text-center">Сокращение</th>
+          <th style="width: 12%; vertical-align: middle" class="text-center" rowspan="2">Действия</th>
+        </tr>
+        <tr class="active">
+          <td>
+            <div class="input-group">
+              <span class="input-group-btn">
+                <button class="btn btn-default" type="button" id="clearFullName">
+                  <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                </button>
+              </span>
+              <input type="text" class="form-control" placeholder="Полное наименование" name="findFullName" id="findFullName"
+                value="<%= filters.fullName %>">
+            </div>
+          </td>
+          <td>
+            <div class="input-group">
+              <span class="input-group-btn">
+                <button class="btn btn-default" type="button" id="clearShortName">
+                  <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                </button>
+              </span>
+              <input type="text" class="form-control" placeholder="Сокращение" name="findShortName" id="findShortName"
+                value="<%= filters.shortName %>">
+            </div>
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <% data.forEach((item) => {%>
+        <tr>
+          <td class="text-left align-middle">
+            <%= item.fullName %>
+          </td>
+          <td class="text-left align-middle">
+            <%= item.shortName %>
+          </td>
+          <td class="text-center align-middle">
+            <a href="/services/edit/<%= item.id %>" class="btn btn-info btn-xs" id="edit">
+              <span class="glyphicon glyphicon-pencil" aria-hidden="true">
+              </span>
+            </a>
+            <a href="#" onclick="confirmDelete(+<%= item.id %>);" class="btn btn-danger btn-xs" id="services_info">
+              <span class="glyphicon glyphicon-minus" aria-hidden="true">
+              </span>
+            </a>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <% if (pageCount > 0) { %>
+    <nav aria-label="...">
+      <ul class="pagination text-center table_pagination">
+        <% if (currentPage == 1) { %>
+        <li class="page-item disabled">
+          <span class="page-link">&laquo;</span>
+        </li>
+        <% } else { %>
+        <li class="page-item">
+          <a class="page-link" href="/services">&laquo;
+          </a>
+        </li>
+        <% } %>
+        <% var i = (Number(currentPage) > 5 ? Number(currentPage) - 4 : 1) %>
+        <% if (i !== 1) { %>
+        <li class="page-item disabled">
+          <a class="page-link">...</a>
+        </li>
+        <% } %>
+        <% for (; i <= (Number(currentPage) + 4) && i <= pageCount; i++) { %>
+        <% if (i == currentPage) { %>
+        <li class="page-item active">
+          <span class="page-link">
+            <%= i %>
+            <span class="sr-only">(current)</span>
+          </span>
+        </li>
+        <% } else { %>
+        <li class="page-item">
+          <a class="page-link" href="/services/<%= (i == 1) ? '' : (i - 1) * Number(visibleRows) %>">
+            <%= i %>
+          </a>
+        </li>
+        <% } %>
+        <% if (i == Number(currentPage) + 4 && i < pageCount) { %>
+        <li class="page-item disabled">
+          <a class="page-link">...</a>
+        </li>
+        <% } %>
+        <% } %>
+        <% if (currentPage == pageCount) { %>
+        <li class="page-item disabled">
+          <a class="page-link">&raquo;</a>
+        </li>
+        <% } else { %>
+        <li class="page-item">
+          <a class="page-link" href="/services/<%= (pageCount - 1) * Number(visibleRows) %>">&raquo;</a>
+        </li>
+        <% } %>
+      </ul>
+    </nav>
+    <% } %>
+    <div class="row">
+      <div class="col-xs-12">
+        <div class="alert alert-info">Записей: <strong><%= countRecords %></strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="modalDeleteRecord" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Подтверждение</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form>
+            <input type="text" hidden id="deletedUID" name="deletedUID" value="">
+          </form>
+          <p>Удалить запись?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-warning" id="deleteRecord">Удалить</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="/bower_components/bootstrap/js/transition.js"></script>
+  <script src="/bower_components/bootstrap/js/collapse.js"></script>
+  <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
+  <script src="/bower_components/axios/dist/axios.min.js"></script>
+  <script src="/js/services.js"></script>
+
+</body>
+
+</html>

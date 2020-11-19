@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <!-- <link rel="icon" href="../../../../favicon.ico"> -->
+  <title>Home page - <% data.title %></title>
+
+  <% include ../../common/bootstrap_css.ejs %>
+  <link href="/theme.css" rel="stylesheet">
+</head>
+
+<body>
+  <% include ../../common/full_menu.ejs %>
+
+  <div class="container">
+    <div class="form-header">
+      <h3><%= title %></h3>
+      <% if (Object.keys(errors).length > 0) { %>
+      <h3><span class="text-danger">Выявлены ошибки:</span></h3>
+      <ul>
+        <% for (var key in errors) { %>
+        <li><span class="text-danger"><%= errors[key].msg %></span></li>
+        <% }; %>
+      </ul>
+      <% } %>
+    </div>
+    <form method="post" action="/services/save" novalidate>
+
+      <div class="well">
+        <div class="card-body">
+          <input type="text" hidden id="id" name="id" value="<%= data.id %>">
+          <div class="row">
+            <div class="col-md-9">
+              <div class="form-group">
+                <label for="fullName" class="control-label">Полное наименование</label>
+                <input type="text" class="form-control" id="fullName" name="fullName"
+                  value="<%= data.fullName %>" autofocus>
+              </div>
+            </div>
+
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="shortName">Сокращение</label>
+                <input type="text" class="form-control" id="shortName" name="shortName"
+                  value="<%= data.shortName %>">
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12">
+              <button type="submit" class="btn btn-success pull-left" id="saveData">&nbsp;Записать&nbsp;</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <script src="/bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="/bower_components/bootstrap/js/transition.js"></script>
+  <script src="/bower_components/bootstrap/js/collapse.js"></script>
+  <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
+  <script src="/bower_components/axios/dist/axios.min.js"></script>
+
+</body>
+
+</html>

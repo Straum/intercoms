@@ -4,19 +4,27 @@ const ACTION_EDIT_APARTMENT = 1;
 const ACTION_DIALOG_BUILD_APARTMENTS = 2;
 const ACTION_DIALOG_PROLONG_ORDER = 3;
 const ACTION_DIALOG_DELETE_APARTMENT = 4;
+const ACTION_DIALOG_DELETE_PAYMENT = 5;
 
 var Application = function () {
   this.deletedApartment = {
     uid: 0,
     rowIndex: 0
-  },
-    this.editApartment = {
-      uid: 0,
-      rowIndex: 0
-    },
-    this.completeRowIndex = 1,
-    this.actionWithApartment = ACTION_ADD_APARTMENT,
-    this.actionWithDialog = ACTION_DIALOG_BUILD_APARTMENTS
+  };
+
+  this.editApartment = {
+    uid: 0,
+    rowIndex: 0
+  };
+
+  this.deletedPayment = {
+    uid: 0,
+    rowIndex: 0
+  };
+
+  this.completeRowIndex = 1;
+  this.actionWithApartment = ACTION_ADD_APARTMENT;
+  this.actionWithDialog = ACTION_DIALOG_BUILD_APARTMENTS;
 }
 
 var application = new Application();
@@ -45,9 +53,9 @@ $('#dtStartService').datetimepicker({
   format: 'L'
 });
 
-$('#dtStartService').on("dp.change",function (e) {
-    var start = document.getElementById('startService').value;
-    document.getElementById('endService').value = moment(start, 'DD.MM.YYYY').add(1, 'years').format('DD.MM.YYYY');
+$('#dtStartService').on("dp.change", function (e) {
+  var start = document.getElementById('startService').value;
+  document.getElementById('endService').value = moment(start, 'DD.MM.YYYY').add(1, 'years').format('DD.MM.YYYY');
 });
 
 $('#dtEndService').datetimepicker({
@@ -80,15 +88,21 @@ function showHistory(ev) {
 
     if ((data.payments) && (Array.isArray(data.payments)) && (data.payments.length > 0)) {
       data.payments.forEach(function (element) {
-        body.payments += '<tr>';
-        body.payments += '<td class="text-center align-middle">' + moment(element.createDate).format('DD.MM.YYYY') + '</td>';
-        body.payments += '<td class="text-center align-middle">' + moment(element.payDate).format('DD.MM.YYYY') + '</td>';
-        body.payments += '<td class="text-center align-middle">' + element.uid + '</td>';
-        body.payments += '<td class="text-center align-middle">' + element.payMonth + '</td>';
-        body.payments += '<td class="text-center align-middle">' + element.payYear + '</td>';
-        body.payments += '<td class="text-right align-middle">' + element.amount.toFixed(2) + '</td>';
-        body.payments += '<td class="text-center align-middle">' + element.organizationName + '</td>';
-        body.payments += '</tr>';
+        body.payments +=
+          `<tr data-uid="${element.uid}">
+          <td class="text-center align-middle">${moment(element.createDate).format('DD.MM.YYYY')}</td>
+          <td class="text-center align-middle">${moment(element.payDate).format('DD.MM.YYYY')}</td>
+          <td class="text-center align-middle">${element.uid}</td>
+          <td class="text-center align-middle">${element.payMonth}</td>
+          <td class="text-center align-middle">${element.payYear}</td>
+          <td class="text-right align-middle">${element.amount.toFixed(2)}</td>
+          <td class="text-center align-middle">${element.organizationName}</td>
+          <td class="text-center align-middle">
+            <button type="button" class="btn btn-danger btn-xs" onclick="removePayment(event)">
+              <span class="glyphicon glyphicon-minus" aria-hidden="true">
+              </span>
+            </button></td>
+          </tr>`;
       });
     }
     var bodyPaymentsRef = document.getElementById('tablePayments').getElementsByTagName('tbody')[0];
@@ -314,7 +328,20 @@ function removeApartment(ev) {
   application.deletedApartment.uid = id;
   application.deletedApartment.rowIndex = rowIndex;
 
-  document.getElementById('replace-me').innerHTML = "Удалить квартиру?";
+  document.getElementById('replace-me').innerHTML = 'Удалить квартиру?';
+  $('#modalYesNo').modal();
+}
+
+function removePayment(ev) {
+  const id = ev.currentTarget.parentElement.parentElement.getAttribute('data-uid');
+  const rowIndex = ev.currentTarget.parentElement.parentElement.rowIndex;
+  ev.stopPropagation();
+
+  application.actionWithDialog = ACTION_DIALOG_DELETE_PAYMENT;
+  application.deletedPayment.uid = id;
+  application.deletedPayment.rowIndex = rowIndex;
+
+  document.getElementById('replace-me').innerHTML = 'Удалить платеж?';
   $('#modalYesNo').modal();
 }
 
@@ -459,6 +486,9 @@ document.getElementById('decide').addEventListener('click', function (e) {
 
       break;
 
+    case ACTION_DIALOG_DELETE_PAYMENT:
+      deletePayment();
+
     default:
       break;
   }
@@ -567,7 +597,7 @@ function sortTable(index) {
   }
 
   var aInfo = [];
-  data.forEach(function(item) {
+  data.forEach(function (item) {
     aInfo.push(item.fullNumber);
   });
 
@@ -1188,4 +1218,108 @@ function showAlert(hidden, htmlText) {
 function showAlert2(hidden, htmlText) {
   document.getElementById('alertApartment').hidden = hidden;
   document.getElementById('alertApartment').innerHTML = htmlText;
+}
+
+function deletePayment() {
+
+  axios.post('/orders/delete_payment', {
+    id: application.deletedPayment.uid,
+    limit: 15
+  }
+  ).then(function (response) {
+
+    document.getElementById('tablePayments').deleteRow(application.deletedPayment.rowIndex);
+
+    const data = response.data;
+    let table = document.getElementById('tableApartments');
+    if (table) {
+      var rowLength = table.rows.length;
+      for (ind = 0; ind < rowLength; ind++) {
+        if ((Number(table.rows.item(ind).getAttribute('data-uid'))) === Number(data.apartmentId)) {
+          table.rows.item(ind).classList.remove('info2');
+          table.rows.item(ind).classList.remove('warning2');
+          table.rows.item(ind).classList.remove('success2');
+          table.rows.item(ind).classList.remove('danger2');
+
+          let className = '';
+          if ((+data.paid == 1) && (+data.halfPaid == 2)) {
+            className = 'info2';
+          }
+
+          if ((+data.paid == 1) && (+data.halfPaid == 1)) {
+            className = 'warning2';
+          }
+
+          if ((+data.paid == 1) && (+data.halfPaid == 0)) {
+            className = 'success2';
+          }
+
+          if (+data.exempt == 1) {
+            className = 'danger2';
+          }
+          if (className.length > 0) {
+            table.rows.item(ind).classList.add(className);
+          }
+
+          break;
+        }
+      }
+    }
+
+
+    // if ((data.payments) && (Array.isArray(data.payments)) && (data.payments.length > 0)) {
+    //   data.payments.forEach(function (element) {
+    //     body.payments +=
+    //       `<tr data-uid="${element.uid}">
+    //       <td class="text-center align-middle">${moment(element.createDate).format('DD.MM.YYYY')}</td>
+    //       <td class="text-center align-middle">${moment(element.payDate).format('DD.MM.YYYY')}</td>
+    //       <td class="text-center align-middle">${element.uid}</td>
+    //       <td class="text-center align-middle">${element.payMonth}</td>
+    //       <td class="text-center align-middle">${element.payYear}</td>
+    //       <td class="text-right align-middle">${element.amount.toFixed(2)}</td>
+    //       <td class="text-center align-middle">${element.organizationName}</td>
+    //       <td class="text-center align-middle">
+    //         <button type="button" class="btn btn-danger btn-xs" onclick="removePayment(event)">
+    //           <span class="glyphicon glyphicon-minus" aria-hidden="true">
+    //           </span>
+    //         </button></td>
+    //       </tr>`;
+    //   });
+    // }
+    // var bodyPaymentsRef = document.getElementById('tablePayments').getElementsByTagName('tbody')[0];
+    // bodyPaymentsRef.innerHTML = body.payments;
+
+    // if ((data.fines) && (Array.isArray(data.fines)) && (data.fines.length > 0)) {
+    //   data.fines.forEach(function (element) {
+    //     body.fines += '<tr>';
+    //     body.fines += '<td class="text-center align-middle">' + moment(element.createDate).format('DD.MM.YYYY') + '</td>';
+    //     body.fines += '<td class="text-center align-middle">' + element.uid + '</td>';
+    //     body.fines += '<td class="text-right align-middle">' + element.amount.toFixed(2) + '</td>';
+    //     body.fines += '<td class="text-center align-middle"><input type="checkbox" class="styled"' + (Number(element.paid) === 1 ? ' checked' : '') + '></td>';
+    //     body.fines += '</tr>';
+    //   });
+    // }
+    // var bodyFinesRef = document.getElementById('tableFines').getElementsByTagName('tbody')[0];
+    // bodyFinesRef.innerHTML = body.fines;
+
+    // if ((data.prices) && (Array.isArray(data.prices)) && (data.prices.length > 0)) {
+    //   data.prices.forEach(function (element) {
+    //     body.prices += '<tr>';
+    //     body.prices += '<td class="text-center align-middle">' + moment(element.startService).format('DD.MM.YYYY') + '</td>';
+    //     body.prices += '<td class="text-center align-middle">' + moment(element.endService).format('DD.MM.YYYY') + '</td>';
+    //     body.prices += '<td class="text-right align-middle">' + element.normalPayment.toFixed(2) + '</td>';
+    //     body.prices += '<td class="text-right align-middle">' + element.privilegePayment.toFixed(2) + '</td>';
+    //     body.prices += '<td class="text-center align-middle">' + (element.receiptPrinting != null ? moment(element.receiptPrinting).format('DD.MM.YYYY') : '') + '</td>';
+    //     body.prices += '</tr>';
+    //   });
+    // }
+    // var bodyPricesRef = document.getElementById('tablePrices').getElementsByTagName('tbody')[0];
+    // bodyPricesRef.innerHTML = body.prices;
+
+    // document.getElementById('historyDialogCapton').textContent = 'История по квартире № ' + apartmentInfo;
+    // $('#historyDialog').modal();
+
+  }).catch(function (error) {
+    console.log(error);
+  });
 }

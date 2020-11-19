@@ -17,6 +17,7 @@ module.exports.PaymentModel = function () {
   this.zipCode = '';
   this.fileName = '';
   this.isRegistered = 0;
+  this.allowZeroAmount = 0;
 
   // Additional info
   this.contract = {

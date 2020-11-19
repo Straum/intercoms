@@ -5,7 +5,6 @@ const express = require('express');
 var PizZip = require('pizzip');
 var Docxtemplater = require('docxtemplater');
 var fs = require('fs');
-const { isArray } = require('util');
 var PDFDocument = require('pdfkit');
 
 var db = require('../../../lib/db');
@@ -291,7 +290,7 @@ function deleteExistsApartments(data) {
 function insertApartments(data) {
   return new Promise(function (resolve, reject) {
     var apartments = data.apartments.table;
-    if (isArray(apartments) && (apartments.length > 0) && (data.apartments.isRebuilt)) {
+    if (Array.isArray(apartments) && (apartments.length > 0) && (data.apartments.isRebuilt)) {
       var queries = '';
       apartments.forEach(function (item) {
         queries += 'INSERT INTO apartments (number, letter, paid, privilege, exempt, locked, card_id) VALUES (' +
@@ -328,7 +327,7 @@ function updateApartments(data) {
     var queries = '';
 
     var existingApartments = data.apartments.table;
-    if (isArray(existingApartments) && (existingApartments.length > 0)) {
+    if (Array.isArray(existingApartments) && (existingApartments.length > 0)) {
       existingApartments.forEach(function (item) {
         if (Number(item.uid) > 0) {
           queries += 'UPDATE apartments SET number = ' + item.number +
@@ -353,7 +352,7 @@ function updateApartments(data) {
     }
 
     var deletedApartments = data.apartments.isDeleted;
-    if (isArray(deletedApartments) && (deletedApartments.length > 0)) {
+    if (Array.isArray(deletedApartments) && (deletedApartments.length > 0)) {
       deletedApartments.forEach(function (item) {
         queries += 'DELETE FROM apartments WHERE apartment_id = ' + item + ';';
       });
@@ -534,6 +533,56 @@ function getClientInfo(clientId) {
             reject();
           } else {
             resolve(rows);
+          }
+        });
+    });
+  });
+};
+
+
+function getAprtmentId(paymentId) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        'SELECT apartment_id FROM payments where payment_id = ?', [paymentId], function (err, rows) {
+          connection.release();
+          if (err) {
+            reject();
+          } else {
+            resolve(rows[0]);
+          }
+        });
+    });
+  });
+};
+
+
+function deletePayment(paymentId) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        'DELETE FROM payments where payment_id = ?', [paymentId], function (err) {
+          connection.release();
+          if (err) {
+            reject();
+          } else {
+            resolve();
+          }
+        });
+    });
+  });
+};
+
+function convertAnApartment(apartmentId) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        'CALL convert_an_apartment(?)', [apartmentId], function (err, rows) {
+          connection.release();
+          if (err) {
+            reject();
+          } else {
+            resolve(rows[0][0]);
           }
         });
     });
@@ -1818,6 +1867,32 @@ module.exports = function () {
         .then(function (prices) {
           out.prices = prices;
           res.status(200).send(out);
+        })
+        .catch(function (error) {
+          console.log(error.message);
+          res.status(500).send(error.message);
+        });
+    }
+    else {
+      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    }
+  });
+
+  router.post('/delete_payment', function (req, res) {
+    let paymentId = 0;
+    const data = req.body;
+    if ((data) && (typeof (data) === 'object') && ('id' in data)) {
+      const rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      getAprtmentId(data.id)
+        .then(function (info) {
+          paymentId = info.apartment_id;
+          return deletePayment(data.id);
+        })
+        .then(function () {
+          return convertAnApartment(paymentId);
+        })
+        .then(function (apartmentInfo) {
+          res.status(200).send(apartmentInfo);
         })
         .catch(function (error) {
           console.log(error.message);

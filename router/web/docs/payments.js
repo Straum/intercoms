@@ -160,9 +160,11 @@ function printReceipt(model, res) {
     .text('Сумма платежа, руб.', 134, 152, { align: 'left', width: 342 })
     .text(parseFloat(model.amount).toFixed(2), 480, 152, { align: 'left', width: 72 });
 
-  doc
-    .text('Задолженность за период с ' + moment(model.contract.startService).subtract(1, 'years').format('DD.MM.YYYY') + ' по ' + moment(model.contract.endService).subtract(1, 'years').format('DD.MM.YYYY') + ', руб.', 134, 165, { align: 'left', width: 342 })
-    .text(parseFloat(model.apartment.debt).toFixed(2), 480, 165, { align: 'left', width: 72 });
+  if (model.apartment.debt != 0) {
+    doc
+      .text('Задолженность за период с ' + moment(model.contract.startService).subtract(1, 'years').format('DD.MM.YYYY') + ' по ' + moment(model.contract.endService).subtract(1, 'years').format('DD.MM.YYYY') + ', руб.', 134, 165, { align: 'left', width: 342 })
+      .text(parseFloat(model.apartment.debt).toFixed(2), 480, 165, { align: 'left', width: 72 });
+  }
 
   doc.font('ArialBold')
     .fontSize(11)
@@ -864,6 +866,7 @@ module.exports = function () {
     paymentModel.fullAddress = req.body.fullAddress;
     paymentModel.barcode = req.body.barcode;
     paymentModel.isRegistered = req.body.isRegistered ? 1 : 0;
+    paymentModel.allowZeroAmount = req.body.allowZeroAmount ? 1 : 0;
 
     req.assert('createDate', 'Дата создания не заполнена').notEmpty();
     req.assert('cardId', 'Договор с таким номером не существует').custom(function (data) {
@@ -912,14 +915,16 @@ module.exports = function () {
         console.log(error);
       })
 
-    req.assert('amount', 'Сумма оплаты не заполнена').notEmpty();
-    req.assert('amount', 'Сумма должна быть ненулевoй').custom(function (data) {
-      var out = parseFloat(data);
-      if (isNaN(out)) {
-        out = 0;
-      }
-      return out != 0;
-    });
+    if (paymentModel.allowZeroAmount === 0) {
+      req.assert('amount', 'Сумма оплаты не заполнена').notEmpty();
+      req.assert('amount', 'Сумма должна быть ненулевoй').custom(function (data) {
+        var out = parseFloat(data);
+        if (isNaN(out)) {
+          out = 0;
+        }
+        return out != 0;
+      });
+    }
     req.assert('dateOfPayment', 'Дата оплаты не заполнена').notEmpty();
 
     var errors = req.validationErrors();

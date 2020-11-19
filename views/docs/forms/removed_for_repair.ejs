@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <!-- <link rel="icon" href="../../../../favicon.ico"> -->
+  <title>Home page - Снято в ремонт</title>
+
+  <% include ../../common/bootstrap_css.ejs %>
+  <link href="/theme.css" rel="stylesheet">
+  <link href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css"
+    rel="stylesheet">
+</head>
+
+<body>
+  <% include ../../common/full_menu.ejs %>
+
+  <div class="container">
+    <div class="form-header">
+      <h3>Снято в ремонт</h3>
+      <% if (Object.keys(errors).length > 0) { %>
+      <h3><span class="text-danger">Выявлены ошибки:</span></h3>
+      <ul>
+        <% for (var key in errors) { %>
+        <li><span class="text-danger"><%= errors[key].msg %></span></li>
+        <% }; %>
+      </ul>
+      <% } %>
+    </div>
+    <form method="post" action="/removed_for_repair/save" novalidate>
+      <input type="text" hidden id="id" name="id" value="<%= data.id %>">
+      <input type="text" hidden id="address" name="address" value="<%= JSON.stringify(data.address) %>">
+      <input type="text" hidden id="equipment" name="equipment" value="<%= JSON.stringify(data.equipment) %>">
+      <input type="text" hidden id="worker" name="worker" value="<%= JSON.stringify(data.worker) %>">
+      <input type="text" hidden id="service" name="service" value="<%= JSON.stringify(data.service) %>">
+      <div class="well">
+        <div class="card-body">
+
+          <div class="row">
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="createDate" class="control-label">Создано</label>
+                <div class="input-group date" id='datetimepicker_create_date'>
+                  <input type="text" class="form-control" name="createDate" id="createDate"
+                    value="<%= data.createDate ? moment(data.createDate).format( 'DD.MM.YYYY HH:mm' ) : moment(new Date()).format( 'DD.MM.YYYY HH:mm' )  %>"
+                    readonly>
+                  <span class="input-group-addon">
+                    <span class="glyphicon glyphicon-calendar"></span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="personalData">ФИО</label>
+                <input type="text" class="form-control" id="personalData" name="personalData"
+                  value="<%= data.personalData %>" autofocus>
+              </div>
+            </div>
+
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="phones" class="control-label">Телефоны</label>
+                <input type="text" class="form-control" id="phones" name="phones" value="<%= data.phones %>">
+              </div>
+            </div>
+
+          </div>
+
+          <div class="row">
+            <div class="col-md-9">
+              <div class="form-group">
+                <label for="fullAddress">Адрес</label>
+                <div class="input-group">
+                  <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" id="clearAddress">
+                      <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                    </button>
+                  </span>
+                  <% let address = ''; %>
+                  <% address = data.address.area.id > 0 ? `${data.address.area.name}, ` : '' %>
+                  <% address += data.address.city.id > 0 ? `${data.address.city.name}, ` : '' %>
+                  <% address += data.address.street.id > 0 ? `${data.address.street.name}, ` : '' %>
+                  <% address += data.address.house.id > 0 ? `${data.address.house.number}` : '' %>
+                  <input type="text" class="form-control" id="fullAddress" name="fullAddress" value="<%= address %>">
+                  <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" id="addAddress">
+                      <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                    </button>
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="office">№ кв или офис</label>
+                <input type="text" class="form-control" id="office" name="office" value="<%= data.office %>">
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="equipmentType">Тип</label>
+                <select class="form-control" id="equipmentType" name="equipmentType">
+                  <% equipmentTypes.forEach( (item) => { %>
+                  <option value="<%= item.id %>" <%= +item.id === +data.equipmentType ? ' selected' : '' %>>
+                    <%= item.name %></option>
+                  <% }); %>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="equipmentName">Оборудование</label>
+                <div class="input-group">
+                  <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" id="clearEquipment">
+                      <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                    </button>
+                  </span>
+                  <input type="text" class="form-control filter-equipment" id="equipmentName" name="equipmentName" value="<%= data.equipment.id > 0 ? data.equipment.name : '' %>">
+                  <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" id="addEquipment">
+                      <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                    </button>
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="series">Серия</label>
+                <input type="text" class="form-control" id="series" name="series" value="<%= data.series %>">
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label for="repair">Неисправность</label>
+                <textarea class="form-control" rows="3" name="repair" id="repair"><%= data.repair %></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label for="workerName">Исполнитель</label>
+                <div class="input-group">
+                  <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" id="clearWorker">
+                      <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                    </button>
+                  </span>
+                  <input type="text" class="form-control fast-filter" id="workerName" name="workerName" value="<%= data.worker.name %>">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label for="serviceName">Передано на ремонт</label>
+                <div class="input-group">
+                  <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" id="clearService">
+                      <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                    </button>
+                  </span>
+                  <input type="text" class="form-control fast-filter" id="serviceName" name="serviceName" value="<%= data.service.id > 0 ? data.service.name : '' %>">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12">
+              <button type="submit" class="btn btn-success pull-left" id="saveButton">&nbsp;Записать&nbsp;</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </form>
+
+    <div class="modal bs-example-modal-normal" id="equipmentDialog" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <input type="text" hidden id="newEquipment">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="applicationCapton">Введите значение</h4>
+          </div>
+          <div class="modal-body">
+            <div class="form-group" id="completeQuantityRow">
+              <div class="row">
+                <div class="col-xs-12">
+                  <label for="newEquipment">Оборудование</label>
+                  <input type="text" class="form-control filter-equipment" name="newEquipmentName" id="newEquipmentName">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-success" id="saveEquipment">&nbsp;Записать&nbsp;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="/bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="/bower_components/moment/min/moment-with-locales.min.js"></script>
+  <script src="/bower_components/bootstrap/js/transition.js"></script>
+  <script src="/bower_components/bootstrap/js/collapse.js"></script>
+  <script src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
+  <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
+  <script src="/bower_components/axios/dist/axios.min.js"></script>
+  <script src="/js/form_removed_for_repair.js"></script>
+
+</body>
+
+</html>

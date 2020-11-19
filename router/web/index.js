@@ -39,6 +39,7 @@ module.exports = function () {
   router.use('/workers', require('./refs/workers')());
   router.use('/clients', require('./refs/clients')());
   router.use('/organizations', require('./refs/organizations')());
+  router.use('/services', require('./refs/services')());
   router.use('/cities', require('./refs/cities')());
   router.use('/streets', require('./refs/streets')());
   router.use('/templates', require('./refs/templates')());
@@ -50,6 +51,7 @@ module.exports = function () {
   router.use('/applications', require('./docs/applications')());
   router.use('/requests', require('./docs/requests')());
   router.use('/info', require('./docs/infos')());
+  router.use('/removed_for_repair', require('./docs/removed_for_repair')());
 
   // API
   router.use('/api', require('./api/index')());

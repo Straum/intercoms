@@ -382,19 +382,19 @@
 
                           <% _class = '' %>
                           <% if ((+data.apartments.table[cnt].paid == 1) && (+data.apartments.table[cnt].halfPaid == 2)) { %>
-                          <% _class = 'info2' %>
+                          <% _class = 'info2'; %>
                           <% } %>
 
                           <% if ((+data.apartments.table[cnt].paid == 1) && (+data.apartments.table[cnt].halfPaid == 1)) { %>
-                          <% _class = 'warning2' %>
+                          <% _class = 'warning2'; %>
                           <% } %>
 
                           <% if ((+data.apartments.table[cnt].paid == 1) && (+data.apartments.table[cnt].halfPaid == 0)) { %>
-                          <% _class = 'success2' %>
+                          <% _class = 'success2'; %>
                           <% } %>
 
                           <% if (+data.apartments.table[cnt].exempt == 1) { %>
-                          <% _class = 'danger2' %>
+                          <% _class = 'danger2'; %>
                           <% } %>
 
                           <tr class="<%= _class %>" data-uid="<%= data.apartments.table[cnt].uid %>">
@@ -717,6 +717,7 @@
                               <th class="col-xs-1 text-center" style="vertical-align: middle">Год</th>
                               <th class="col-xs-2 text-center" style="vertical-align: middle">Сумма</th>
                               <th class="col-xs-2 text-center" style="vertical-align: middle">Способ</th>
+                              <th class="col-xs-1 text-center" style="vertical-align: middle">Действия</th>
                             </tr>
                           </thead>
                           <tbody>
