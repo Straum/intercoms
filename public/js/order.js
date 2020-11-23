@@ -708,6 +708,7 @@ document.getElementById('clearFullAddress').addEventListener('click', function (
     address.house.streetId = 0;
 
     document.getElementById('address').value = JSON.stringify(address);
+    document.getElementById('fullAddress').value = '';
   } catch (error) {
     console.log('clearFullAddress Error: ' + error.message);
   }
