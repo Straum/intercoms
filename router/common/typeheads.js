@@ -545,6 +545,26 @@ module.exports.fastFilter = function (params, callback) {
   });
 };
 
+module.exports.editEquipment = function (params, callback) {
+  let queryText = `UPDATE equipments SET name = '${params.name}' WHERE equipment_id = ${params.id}`;
+
+  db.get().getConnection(function (err, connection) {
+    connection.query(
+      queryText, [], function (err, rows) {
+        connection.release();
+
+        if (err) {
+          throw err;
+        }
+
+        if (typeof callback === 'function') {
+          callback(null, {operation: 'success'});
+        }
+      }
+    );
+  });
+};
+
 module.exports.addEquipment = function (params, callback) {
   let queryText = `INSERT INTO equipments (name, type_of_equipment_id) VALUES ('${params.name}', ${params.kind})`;
 

@@ -42,5 +42,6 @@ module.exports.RemovedForRepairModel = function () {
     id: 0,
     name: ''
   };
+  this.isDone = 0;
 
 };

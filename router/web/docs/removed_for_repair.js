@@ -72,7 +72,8 @@ function getData(id) {
     a.street_id AS streetId, UPPER(f.name) AS streetName, a.house_id AS houseId, UPPER(g.number) AS houseNumber,
     e.is_city AS isCity, e.no_streets AS noStreets, e.no_houses AS noHouses,
     a.equipment_type AS equipmentType, a.equipment_model AS equipmentId, b.name AS equipmentName, a.series, a.repair,
-    a.worker_id AS workerId, c.name AS workerName, a.service_id AS serviceId, d.full_name AS serviceName
+    a.worker_id AS workerId, c.name AS workerName, a.service_id AS serviceId, d.full_name AS serviceName,
+    a.is_done AS isDone
     FROM removed_for_repair a
     LEFT JOIN equipments b ON b.equipment_id = a.equipment_model
     LEFT JOIN workers c ON c.worker_id = a.worker_id
@@ -117,7 +118,8 @@ function updateData(data) {
         series = ?,
         repair = ?,
         worker_id = ?,
-        service_id = ?
+        service_id = ?,
+        is_done =?
         WHERE removed_for_repair_id = ?`, [
         data.createDate,
         data.personalData,
@@ -132,6 +134,7 @@ function updateData(data) {
         data.repair,
         data.worker.id,
         data.service.id,
+        data.isDone,
         data.id], function (err) {
           connection.release();
           if (err) {
@@ -151,8 +154,8 @@ function insertData(data) {
       connection.query(
         `INSERT INTO removed_for_repair (create_date, personal_data, phones, office,
         city_id, street_id, house_id,
-        equipment_type, equipment_model, series, repair, worker_id, service_id)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`, [
+        equipment_type, equipment_model, series, repair, worker_id, service_id, is_done)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, [
         data.createDate,
         data.personalData,
         data.phones,
@@ -165,7 +168,8 @@ function insertData(data) {
         data.series,
         data.repair,
         data.worker.id,
-        data.service.id], function (err, rows) {
+        data.service.id,
+        data.isDone], function (err, rows) {
           connection.release();
           if (err) {
             reject();
@@ -322,17 +326,21 @@ var filterRecords = async function (req, res) {
   const add = filterBuilder(req);
 
   let countRecords = 0;
+  let isDoneRecords = 0;
   let pageCount = 0;
   let rows = [];
 
-  const queryRecordsCount = `SELECT COUNT(*) AS count FROM removed_for_repair a WHERE (a.removed_for_repair_id > 0) AND (a.is_deleted = 0) ${add.whereSQL}`;
+  const queryRecordsCount =
+    `SELECT COUNT(*) AS count, COUNT(CASE WHEN a.is_done = 1 THEN 1 END) AS isDone
+    FROM removed_for_repair a WHERE (a.removed_for_repair_id > 0) AND (a.is_deleted = 0) ${add.whereSQL}`;
 
   const queryRecords =
     `SELECT a.removed_for_repair_id AS id, a.create_date AS createDate, a.office,
     f.parent_id AS areaId, UPPER(k.name) AS areaName, a.city_id AS cityId, UPPER(f.name) AS cityName,
     a.street_id AS streetId, UPPER(g.name) AS streetName, a.house_id AS houseId, UPPER(h.number) AS houseNumber,
     e.type_of_equipment_id AS equipmentTypeId, e.name AS equipmentType,
-    b.name AS equipmentName, c.name AS workerName, d.short_name AS serviceName
+    b.name AS equipmentName, c.name AS workerName, d.short_name AS serviceName,
+    a.is_done AS isDone
     FROM removed_for_repair a
     LEFT JOIN equipments b ON b.equipment_id = a.equipment_model
     LEFT JOIN workers c ON c.worker_id = a.worker_id
@@ -347,6 +355,7 @@ var filterRecords = async function (req, res) {
   await getRecordsCount(queryRecordsCount)
     .then(function (result) {
       countRecords = result ? result.count : 0;
+      isDoneRecords = result ? result.isDone : 0;
       pageCount = (countRecords / visibleRows) < 1 ? 0 : Math.ceil(countRecords / visibleRows);
     })
     .catch(function (error) {
@@ -370,6 +379,7 @@ var filterRecords = async function (req, res) {
     currentPage: currentPage,
     visibleRows: visibleRows,
     countRecords: countRecords,
+    isDoneRecords: isDoneRecords,
     moment: moment,
     user: req.session.userName,
     filters: add.conditions
@@ -425,6 +435,8 @@ module.exports = function () {
         model.worker.name = data.workerName || '';
         model.service.id = data.serviceId || 0;
         model.service.name = data.serviceName || '';
+
+        model.isDone = data.isDone;
       }
     })
       .catch(function (error) {
@@ -475,17 +487,21 @@ module.exports = function () {
     let offset = +req.params.offset;
     let currentPage = Math.ceil(offset / visibleRows) + 1;
     let countRecords = 0;
+    let isDoneRecords = 0;
     let pageCount = 0;
     let rows = [];
 
-    const queryRecordsCount = `SELECT COUNT(*) AS count FROM removed_for_repair a WHERE (a.removed_for_repair_id > 0) AND (a.is_deleted = 0) ${add.whereSQL}`;
+    const queryRecordsCount =
+      `SELECT COUNT(*) AS count, COUNT(CASE WHEN a.is_done = 1 THEN 1 END) AS isDone
+      FROM removed_for_repair a WHERE (a.removed_for_repair_id > 0) AND (a.is_deleted = 0) ${add.whereSQL}`;
 
     const queryRecords =
       `SELECT a.removed_for_repair_id AS id, a.create_date AS createDate, a.office,
       f.parent_id AS areaId, UPPER(k.name) AS areaName, a.city_id AS cityId, UPPER(f.name) AS cityName,
       a.street_id AS streetId, UPPER(g.name) AS streetName, a.house_id AS houseId, UPPER(h.number) AS houseNumber,
       e.type_of_equipment_id AS equipmentTypeId, e.name AS equipmentType,
-      b.name AS equipmentName, c.name AS workerName, d.short_name AS serviceName
+      b.name AS equipmentName, c.name AS workerName, d.short_name AS serviceName,
+      a.is_done AS isDone
       FROM removed_for_repair a
       LEFT JOIN equipments b ON b.equipment_id = a.equipment_model
       LEFT JOIN workers c ON c.worker_id = a.worker_id
@@ -500,6 +516,7 @@ module.exports = function () {
     await getRecordsCount(queryRecordsCount)
       .then(function (result) {
         countRecords = result ? result.count : 0;
+        isDoneRecords = result ? result.isDone : 0;
         pageCount = (countRecords / visibleRows) < 1 ? 0 : Math.ceil(countRecords / visibleRows);
       })
       .catch(function (error) {
@@ -521,6 +538,7 @@ module.exports = function () {
       currentPage: currentPage,
       visibleRows: visibleRows,
       countRecords: countRecords,
+      isDoneRecords: isDoneRecords,
       moment: moment,
       user: req.session.userName,
       filters: add.conditions
@@ -541,6 +559,7 @@ module.exports = function () {
     model.equipmentType = +req.body.equipmentType;
     model.series = req.body.series.trim().length === 0 ? null : req.body.series;
     model.repair = req.body.repair;
+    model.isDone = req.body.isDone === 'on' ? 1 : 0;
 
     try {
       model.address = JSON.parse(req.body.address);
@@ -683,6 +702,23 @@ module.exports = function () {
       };
       common.fastFilter(params, function (err, rows) {
         res.status(200).send(rows);
+      });
+    }
+    else {
+      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    }
+  });
+
+  router.post('/edit_equipment', function (req, res) {
+    let data = req.body;
+    if ((data) && (typeof (data) === 'object') && ('id' in data) && ('name' in data) && ('kind' in data)) {
+      let params = {
+        id: data.id,
+        name: data.name,
+        kind: data.kind
+      };
+      common.editEquipment(params, function (err, data) {
+        res.status(200).send(data);
       });
     }
     else {

@@ -31,7 +31,7 @@
     <form class="form-inline" role="form" method="get" action="/orders/filter">
       <input type="text" hidden id="filters" name="filters" value="<%= JSON.stringify(filters) %>">
       <div class="input-group date my-tooltip" id="startDate" data-toggle="tooltip" data-placement="top"
-        title="Начальная дата конца ТО">
+        title="Начальная дата конца">
         <input type="text" class="form-control" name="startDate"
           value="<%= moment(filters.period.start).format( 'DD.MM.YYYY HH:mm' ) %>" />
         <span class="input-group-addon">
@@ -39,7 +39,7 @@
         </span>
       </div>
       <div class="input-group date my-tooltip" id="endDate" data-toggle="tooltip" data-placement="top"
-        title="Конечная дата конца ТО">
+        title="Конечная дата конца">
         <input type="text" class="form-control" name="endDate"
           value="<%= moment(filters.period.end).format( 'DD.MM.YYYY HH:mm' ) %>" />
         <span class="input-group-addon">
@@ -67,8 +67,12 @@
         </tr>
       </thead>
       <tbody>
-        <% data.forEach(function(item) {%>
+        <% data.forEach((item) => { %>
+        <% if (item.isDone) { %>
+        <tr class="success">
+      <% } else { %>
         <tr>
+        <% } %>
           <td class="text-center align-middle">
             <%= item.id %>
           </td>
@@ -164,7 +168,7 @@
     <% } %>
     <div class="row">
       <div class="col-xs-12">
-        <div class="alert alert-info">Записей: <strong><%= countRecords %></strong></div>
+        <div class="alert alert-info">Записей: <strong><%= countRecords %></strong>, из них выполненных: <strong><%= isDoneRecords %></strong></div>
       </div>
     </div>
   </div>

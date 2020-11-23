@@ -96,7 +96,7 @@ module.exports = function () {
         ' SELECT COUNT(*) AS count' +
         ' FROM workers WHERE worker_id > 0', [], function (err, rows) {
           connection.release();
-          pageCount = 
+          pageCount =
             (rows[0].count / visibleRows) < 1 ? 0 : Math.ceil(rows[0].count / visibleRows);
           if ((offset > pageCount * visibleRows)) {
             offset = (pageCount - 1) * visibleRows;
@@ -164,8 +164,8 @@ module.exports = function () {
       db.get().getConnection(function (err, connection) {
         connection.query(
           ' INSERT INTO workers (name, is_work, phone)' +
-          ' VALUE(?, ?)', [
-              req.body.name, 
+          ' VALUE(?, ?, ?)', [
+              req.body.name,
               isWork,
               req.body.phone
             ], function (err) {
