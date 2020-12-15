@@ -56,13 +56,13 @@
       <table class="table table-bordered table-hover table-condensed">
         <thead>
           <tr class="active">
-            <th rowspan="2" style="width: 5%; vertical-align: middle" class="text-center align-middle">№ дог</th>
-            <th rowspan="2" style="width: 5%; vertical-align: middle" class="text-center align-middle">№ ТО</th>
-            <th style="width: 10;" class="text-center align-middle">Город</th>
+            <th rowspan="2" style="width: 8%; vertical-align: middle" class="text-center align-middle">Создано</th>
+            <th rowspan="2" style="width: 4%; vertical-align: middle" class="text-center align-middle">№ ТО</th>
+            <th style="width: 9;" class="text-center align-middle">Город</th>
             <th style="width: 15%;" class="text-center align-middle">Улица</th>
             <th style="width: 6%;" class="text-center align-middle">Дом</th>
             <th style="width: 10%;" class="text-center align-middle">Исполнитель</th>
-            <th rowspan="2" style="width: 6%; vertical-align: middle" class="text-center align-middle">Номера</th>
+            <th rowspan="2" style="width: 5%; vertical-align: middle" class="text-center align-middle">Номера</th>
             <th rowspan="2" style="width: 10%; vertical-align: middle" class="text-center align-middle">Выполнено</th>
             <th rowspan="2" style="width: 25%; vertical-align: middle" class="text-center align-middle">Описание проблем
             </th>
@@ -119,10 +119,7 @@
           <% for (var ind = 0, max = data.length; ind < max; ind++) {%>
           <tr>
             <td class="text-center align-middle">
-              <% if (+data[ind].contractNumber > 0) { %>
-              <a href="/orders/edit/<%= data[ind].documentId %>"><%= data[ind].contractNumber %>
-              </a>
-              <% } %>
+              <%= moment(data[ind].createDate).format( 'DD.MM.YYYY HH:mm') %>
             </td>
             <td class="text-center align-middle">
               <% if ((+data[ind].prolongedContractNumber > 0) && (+data[ind].maintenanceContract === 1) ) { %>
@@ -149,7 +146,10 @@
               <%= data[ind].closeDate == null ? '' : moment(data[ind].closeDate).format( 'DD.MM.YYYY HH:mm') %>
             </td>
             <td class="text-left align-middle">
-              <%= 'problemDescription' in data[ind] ? data[ind].problemDescription : '' %>
+              <% if (+data[ind].workWithMobileApp === 1) { %>
+                <img src="/images/cell-phone.png">
+                <% } %>
+              <%- 'problemDescription' in data[ind] ? data[ind].problemDescription : '' %>
             </td>
             <td class="text-center align-middle">
               <a href="/applications/edit/<%= data[ind].documentId %>" class="btn btn-info btn-xs" id="edit">

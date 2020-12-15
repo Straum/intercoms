@@ -22,11 +22,47 @@ var PrintOrderReceipts = require('../../../lib/print_order_receipts').PrintOrder
 
 require('shelljs/global');
 
+function checkCurrentPeriod(orderId) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        'CALL check_current_period(?)', [orderId],
+        function (err, rows) {
+          connection.release();
+          if (err) {
+            reject();
+          }
+          else {
+            resolve();
+          }
+        });
+    });
+  });
+}
+
+function checkPreviousPeriod(orderId) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        'CALL check_previous_period(?)', [orderId],
+        function (err, rows) {
+          connection.release();
+          if (err) {
+            reject();
+          }
+          else {
+            resolve();
+          }
+        });
+    });
+  });
+}
+
 function checkOrder(orderId) {
   return new Promise(function (resolve, reject) {
     db.get().getConnection(function (err, connection) {
       connection.query(
-        'CALL check_order', [orderId],
+        'CALL check_order(?)', [orderId],
         function (err, rows) {
           connection.release();
           if (err) {
@@ -132,7 +168,7 @@ function getPrices(id) {
     db.get().getConnection(function (err, connection) {
       connection.query(
         ' SELECT' +
-        ' a.start_service AS startService,' +
+        ' DISTINCT a.start_service AS startService,' +
         ' a.end_service AS endService,' +
         ' a.normal_payment AS normalPayment,' +
         ' a.privilege_payment As privilegePayment,' +
@@ -294,13 +330,13 @@ function insertApartments(data) {
       var queries = '';
       apartments.forEach(function (item) {
         queries += 'INSERT INTO apartments (number, letter, paid, privilege, exempt, locked, card_id) VALUES (' +
-        item.number + ', ' +
-        item.letter + ', '  +
-        item.paid + ', ' +
-        item.privilege + ', ' +
-        item.exempt + ', ' +
-        item.locked + ', ' +
-        data.id + ');';
+          item.number + ', ' +
+          item.letter + ', ' +
+          item.paid + ', ' +
+          item.privilege + ', ' +
+          item.exempt + ', ' +
+          item.locked + ', ' +
+          data.id + ');';
       });
 
       db.get().getConnection(function (err, connection) {
@@ -331,17 +367,17 @@ function updateApartments(data) {
       existingApartments.forEach(function (item) {
         if (Number(item.uid) > 0) {
           queries += 'UPDATE apartments SET number = ' + item.number +
-          ', letter = ' + item.letter +
-          ', paid = ' + item.paid +
-          ', privilege = ' + item.privilege +
-          ', exempt = ' + item.exempt +
-          ', locked = ' + item.locked +
-          ' WHERE apartment_id = ' + item.uid + ';';
+            ', letter = ' + item.letter +
+            ', paid = ' + item.paid +
+            ', privilege = ' + item.privilege +
+            ', exempt = ' + item.exempt +
+            ', locked = ' + item.locked +
+            ' WHERE apartment_id = ' + item.uid + ';';
         }
         else {
           queries += 'INSERT INTO apartments (number, letter, paid, privilege, exempt, locked, card_id) VALUES (' +
             item.number + ', ' +
-            item.letter + ', '  +
+            item.letter + ', ' +
             item.paid + ', ' +
             item.privilege + ', ' +
             item.exempt + ', ' +
@@ -711,7 +747,7 @@ function generateReportForSetup(res, sceleton) {
   // buf is a nodejs buffer, you can either write it to a file or do anything else with it.
   fs.writeFileSync(outputFile, buf);
 
-  res.download(outputFile, sceleton.contractNumber + '-1', function (err) {
+  res.download(outputFile, sceleton.contractNumber + '-1.doc', function (err) {
     if (err) {
       res.send('Нет файла!');
     }
@@ -775,7 +811,7 @@ function generateReportForService(res, sceleton) {
   var outputFile = path.join(__dirname, '../../../public/docs/') + sceleton.contractNumber + '-2.doc';
   fs.writeFileSync(outputFile, buf);
 
-  res.download(outputFile, sceleton.contractNumber + '-2', function (err) {
+  res.download(outputFile, sceleton.contractNumber + '-2.doc', function (err) {
     if (err) {
       res.send('Нет файла!');
     }
@@ -1041,6 +1077,12 @@ module.exports = function () {
     var contractClientData = null;
     var serviceClientData = null;
     var apartments = [];
+
+    let orderId = parseInt(id);
+    if (orderId != NaN) {
+      // await checkCurrentPeriod(orderId);
+      // await checkPreviousPeriod(orderId);
+    }
 
     order.getClientContractData(id, function (contractData) {
       contractClientData = order.decodeClientData(contractData);
@@ -1506,7 +1548,7 @@ module.exports = function () {
     });
   });
 
-  router.post('/save', function (req, res) {
+  router.post('/save', async function (req, res) {
 
     var orderModel = new OrderModel();
     orderModel.id = req.body.id;
@@ -1576,57 +1618,39 @@ module.exports = function () {
           return;
         }
         printingReceipts(orderModel.id, res);
-        // await getApartmentDebt(paymentModel.apartment.id)
-        //   .then(function (result) {
-        //     paymentModel.apartment.debt = result.debt;
-        //     printReceipt(paymentModel, res);
-        //   })
-        //   .catch(function (error) {
-        //     console.log('Error getApartmentDebt: ' + error);
-        //   })
         return;
       }
 
-
       if (orderModel.id != 0) {
-        updateOrder(orderModel)
-          .then(function () {
-            return deleteExistsApartments(orderModel);
-          })
-          .then(function () {
-            return updateApartments(orderModel);
-          })
-          .then(function () {
-            // res.redirect('/orders');
-            if ('save_and_close' in req.body) {
-              res.redirect('/orders');
-            }
-            if ('save' in req.body) {
-              res.redirect('/orders/edit/' + orderModel.id);
-            }
-          })
-          .catch(function (error) {
-            console.log(error);
-          });
+        try {
+          await updateOrder(orderModel);
+          await deleteExistsApartments(orderModel);
+          await updateApartments(orderModel);
+          await checkCurrentPeriod(orderModel.id);
+          await checkPreviousPeriod(orderModel.id);
+        }
+        catch (err) {
+          console.log('/save(id != 0)::' + err.message);
+        }
       }
       else {
-        saveOrder(orderModel)
-          .then(function (uid) {
-            orderModel.id = uid;
-            return insertApartments(orderModel);
-          })
-          .then(function () {
-            if ('save_and_close' in req.body) {
-              res.redirect('/orders');
-            }
-            if ('save' in req.body) {
-              res.redirect('/orders/edit/' + orderModel.id);
-            }
-          })
-          .catch(function (error) {
-            console.log(error);
-          });
+        try {
+          await saveOrder(orderModel);
+          await insertApartments(orderModel);
+          await checkCurrentPeriod(orderModel.id);
+          await checkPreviousPeriod(orderModel.id);
+        }
+        catch (err) {
+          console.log('/save(id == 0)::' + err.message);
+        }
       }
+      if ('save_and_close' in req.body) {
+        res.redirect('/orders');
+      }
+      if ('save' in req.body) {
+        res.redirect('/orders/edit/' + orderModel.id);
+      }
+
     }
     else {
       res.render('docs/forms/order2.ejs', {

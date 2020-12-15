@@ -748,6 +748,7 @@ var downloadDoneReport = function (req, res) {
     ' a.phone, ' +
     ' f.name AS performerName,' +
     ' a.close_date AS closeDate, ' +
+    ' a.work_with_mobile_app AS workWithMobileApp,' +
     ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc' +
     ' FROM applications a' +
     ' LEFT JOIN cities b ON b.city_id = a.city_id' +
@@ -864,6 +865,7 @@ var applicationsReport = function (req, res) {
     ' d.number AS houseNumber, a.porch, a.kind, ' +
     ' a.phone, a.completion_date AS completionDate, a.weight, ' +
     ' f.name AS performerName,' +
+    ' a.work_with_mobile_app AS workWithMobileApp,' +
     ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc' +
     ' FROM applications a' +
     ' LEFT JOIN cities b ON b.city_id = a.city_id' +
@@ -1116,8 +1118,7 @@ var redirectToAccepted = function (res, uid) {
   db.get().getConnection(function (err, connection) {
     connection.query(
       ' UPDATE applications SET' +
-      ' is_done = ?,' +
-      ' close_date = NOW()' +
+      ' is_done = ?' +
       ' WHERE application_id = ?', [1, uid], function (err) {
 
         connection.release();
@@ -1126,7 +1127,6 @@ var redirectToAccepted = function (res, uid) {
           res.status(500).send(db.showDatabaseError(500, err));
         }
 
-        // res.redirect('/applications/completed');
         res.redirect('/applications');
 
       });
@@ -1156,12 +1156,13 @@ var findRecords = function (req, res) {
   var fullQuery =
     ' SELECT a.application_id AS documentId, a.create_date AS createDate, a.weight, ' +
     ' a.completion_date AS completionDate, b.name AS cityName, c.name AS streetName,' +
-    ' d.number AS houseNumber, e.name AS performerName, e.worker_id AS performerId, ' +
+    ' d.number AS houseNumber, e.name AS performerName, e.worker_id AS performerId,' +
     ' CASE ' +
     ' WHEN a.kind = 0 THEN CONCAT("под. ", a.porch)' +
     ' WHEN a.kind = 1 THEN CONCAT("кв. ", a.porch)' +
     ' END AS numeration, ' +
-    ' a.close_date AS closeData, ' +
+    ' a.close_date AS closeDate, ' +
+    ' a.work_with_mobile_app AS workWithMobileApp,' +
     ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc ' +
     ' FROM applications a' +
     ' LEFT JOIN cities b ON b.city_id = a.city_id' +
@@ -1208,7 +1209,7 @@ var findRecords = function (req, res) {
 
                 db.get().getConnection(function (err, connection) {
                   var stringSQL =
-                    ' SELECT a.application_id AS documentId, a.name AS problemDescription FROM faults a' +
+                    ' SELECT a.application_id AS documentId, a.name AS problemDescription, a.decision FROM faults a' +
                     ' WHERE a.application_id IN ';
                   if (parameters.trim().length === 0) {
                     parameters = '(-1)';
@@ -1226,6 +1227,7 @@ var findRecords = function (req, res) {
                         rows.forEach(function (item) {
                           for (var ind = 0; ind < dataset.length; ind++) {
                             if (dataset[ind].documentId === item.documentId) {
+                              // dataset[ind].problemDescription += (item.problemDescription + '<!>' + item.decision) + '<!!>';
                               dataset[ind].problemDescription += (dataset[ind].problemDescription.trim().length > 0 ? ', ' : '') + item.problemDescription;
                               if (dataset[ind].problemDescription.length >= MAX_LENGTH) {
                                 dataset[ind].problemDescription = utils.formatStringWithEllipses(dataset[ind].problemDescription, MAX_LENGTH);
@@ -1276,12 +1278,13 @@ var findCompletedRecords = function (req, res) {
   var fullQuery =
     ' SELECT a.application_id AS documentId, a.create_date AS createDate, a.weight, ' +
     ' b.name AS cityName, c.name AS streetName,' +
-    ' d.number AS houseNumber, e.name AS performerName, a.porch, a.kind, ' +
+    ' d.number AS houseNumber, e.name AS performerName, a.porch, a.kind,' +
     ' CASE ' +
     ' WHEN a.kind = 0 THEN CONCAT("под. ", a.porch)' +
     ' WHEN a.kind = 1 THEN CONCAT("кв. ", a.porch)' +
     ' END AS numeration, ' +
     ' a.close_date AS closeDate, ' +
+    ' a.work_with_mobile_app AS workWithMobileApp,' +
     ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc,' +
     ' f.contract_number AS contractNumber, f.m_contract_number AS prolongedContractNumber,' +
     ' f.maintenance_contract AS maintenanceContract' +
@@ -1332,7 +1335,7 @@ var findCompletedRecords = function (req, res) {
 
             db.get().getConnection(function (err, connection) {
               var stringSQL =
-                ' SELECT a.application_id AS documentId, a.name AS problemDescription' +
+                ' SELECT a.application_id AS documentId, a.name AS problemDescription, a.decision' +
                 ' FROM faults a' +
                 ' WHERE a.application_id IN ';
               if (parameters.trim().length === 0) {
@@ -1351,10 +1354,12 @@ var findCompletedRecords = function (req, res) {
                     rows.forEach(function (item) {
                       for (var ind = 0; ind < dataset.length; ind++) {
                         if (dataset[ind].documentId === item.documentId) {
-                          dataset[ind].problemDescription += (dataset[ind].problemDescription.trim().length > 0 ? ', ' : '') + item.problemDescription;
-                          if (dataset[ind].problemDescription.length >= MAX_LENGTH) {
-                            dataset[ind].problemDescription = utils.formatStringWithEllipses(dataset[ind].problemDescription, MAX_LENGTH);
-                          }
+                          let decision = item.decision.trim();
+                          dataset[ind].problemDescription += decision.length > 0  ? `${item.problemDescription} : <mark><strong>${item.decision};</strong></mark>` : `${item.problemDescription}`;
+                          // dataset[ind].problemDescription += (dataset[ind].problemDescription.trim().length > 0 ? ', ' : '') + item.problemDescription;
+                          // if (dataset[ind].problemDescription.length >= MAX_LENGTH) {
+                          //   dataset[ind].problemDescription = utils.formatStringWithEllipses(dataset[ind].problemDescription, MAX_LENGTH);
+                          // }
                           break;
                         }
                       }
@@ -2176,7 +2181,8 @@ module.exports = function () {
       ' WHEN a.kind = 0 THEN CONCAT("под. ", a.porch)' +
       ' WHEN a.kind = 1 THEN CONCAT("кв. ", a.porch)' +
       ' END AS numeration, ' +
-      ' a.close_date AS closeData, ' +
+      ' a.close_date AS closeDate, ' +
+      ' a.work_with_mobile_app AS workWithMobileApp,' +
       ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc ' +
       ' FROM applications a' +
       ' LEFT JOIN cities b ON b.city_id = a.city_id' +
@@ -2295,6 +2301,7 @@ module.exports = function () {
       ' WHEN a.kind = 1 THEN CONCAT("кв. ", a.porch)' +
       ' END AS numeration, ' +
       ' a.close_date AS closeDate, ' +
+      ' a.work_with_mobile_app AS workWithMobileApp,' +
       ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc,' +
       ' f.contract_number AS contractNumber, f.m_contract_number AS prolongedContractNumber,' +
       ' f.maintenance_contract AS maintenanceContract' +
@@ -2346,7 +2353,7 @@ module.exports = function () {
 
                   db.get().getConnection(function (err, connection) {
                     var stringSQL =
-                      ' SELECT a.application_id AS documentId, a.name AS problemDescription FROM faults a' +
+                      ' SELECT a.application_id AS documentId, a.name AS problemDescription, a.decision FROM faults a' +
                       ' WHERE a.application_id IN ';
                     if (parameters.trim().length === 0) {
                       parameters = '(-1)';
@@ -2365,10 +2372,12 @@ module.exports = function () {
                           rows.forEach(function (item) {
                             for (var ind = 0; ind < dataset.length; ind++) {
                               if (dataset[ind].documentId === item.documentId) {
-                                dataset[ind].problemDescription += (dataset[ind].problemDescription.trim().length > 0 ? ', ' : '') + item.problemDescription;
-                                if (dataset[ind].problemDescription.length >= MAX_LENGTH) {
-                                  dataset[ind].problemDescription = utils.formatStringWithEllipses(dataset[ind].problemDescription, MAX_LENGTH);
-                                }
+                                let decision = item.decision.trim();
+                                dataset[ind].problemDescription += decision.length > 0  ? `${item.problemDescription} : <mark><strong>${item.decision};</strong></mark>` : `${item.problemDescription}`;
+                                // dataset[ind].problemDescription += (dataset[ind].problemDescription.trim().length > 0 ? ', ' : '') + item.problemDescription;
+                                // if (dataset[ind].problemDescription.length >= MAX_LENGTH) {
+                                //   dataset[ind].problemDescription = utils.formatStringWithEllipses(dataset[ind].problemDescription, MAX_LENGTH);
+                                // }
                                 break;
                               }
                             }
