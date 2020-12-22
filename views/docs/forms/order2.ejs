@@ -70,14 +70,13 @@
                   <div class="col-md-2 <%= errors.createDate ? 'has-error' : '' %>">
                     <div class="form-group">
                       <label for="createDate" class="control-label">Создано</label>
-                      <div class="input-group date" id="dtCreateDate">
+                      <div class="input-group date only-date" id="dtCreateDate">
                         <input type="text" class="form-control" name="createDate" id="createDate"
                           value="<%= data.createDate ? moment(data.createDate).format( 'DD.MM.YYYY' ) : moment(new Date()).format( 'DD.MM.YYYY' )  %>" readonly>
                         <span class="input-group-addon">
                           <span class="glyphicon glyphicon-calendar"></span>
                         </span>
                       </div>
-
                     </div>
                   </div>
                   <div class="col-md-6">
@@ -97,7 +96,7 @@
                   <div class="col-md-2">
                     <div class="form-group">
                       <label for="endContract" class="control-label">Окончание договора</label>
-                      <div class="input-group date" id="dtEndContract">
+                      <div class="input-group date only-date" id="dtEndContract">
                         <input type="text" class="form-control" name="endContract" id="endContract"
                           value="<%= data.endContract ? moment(data.endContract).format( 'DD.MM.YYYY' ) : '' %>">
                         <span class="input-group-addon">
@@ -123,7 +122,7 @@
                   <div class="col-md-2 col-md-offset-7 <%= errors.creditTo ? 'has-error' : '' %>">
                     <div class="form-group">
                       <label for="creditTo" class="control-label">Кредит до</label>
-                      <div class="input-group date" id="dtCreditTo">
+                      <div class="input-group date only-date" id="dtCreditTo">
                         <input type="text" class="form-control" name="creditTo" id="creditTo"
                           value="<%= data.creditTo ? moment(data.creditTo).format( 'DD.MM.YYYY' ) : '' %>">
                         <span class="input-group-addon">
@@ -239,7 +238,7 @@
                   <div class="col-md-2">
                     <div class="form-group">
                       <label for="startService" class="control-label">c</label>
-                      <div class="input-group date" id="dtStartService">
+                      <div class="input-group date only-date" id="dtStartService">
                         <input type="text" class="form-control" name="startService" id="startService"
                           value="<%= data.startService != null ? moment(data.startService).format( 'DD.MM.YYYY' ) : '' %>">
                         <span class="input-group-addon">
@@ -251,7 +250,7 @@
                   <div class="col-md-2">
                     <div class="form-group">
                       <label for="endService" class="control-label">по</label>
-                      <div class="input-group date" id="dtEndService">
+                      <div class="input-group date only-date" id="dtEndService">
                         <input type="text" class="form-control" name="endService" id="endService"
                           value="<%= data.endService != null ? moment(data.endService).format( 'DD.MM.YYYY' ) : '' %>" readonly>
                         <span class="input-group-addon">
@@ -304,7 +303,7 @@
                   <div class="col-md-2">
                     <div class="form-group">
                       <label for="receiptPrinting" class="control-label">Печать квитанций</label>
-                      <div class="input-group date" id="dtReceiptPrinting">
+                      <div class="input-group date only-date" id="dtReceiptPrinting">
                         <input type="text" class="form-control" name="receiptPrinting" id="receiptPrinting"
                           value="<%= data.receiptPrinting != null ? moment(data.receiptPrinting).format( 'DD.MM.YYYY' ) : '' %>">
                         <span class="input-group-addon">
@@ -697,16 +696,27 @@
 
             <div class="row" style="vertical-align: middle">
               <div class="col-md-3">
-                <button class="btn btn-success"><i class='glyphicon glyphicon-plus'></i></button>
+                <a href="#" class="btn btn-success" id="addPayment" data-toggle="tooltip" data-placement="top" title="Внести платеж вручную">
+                  <span class="glyphicon glyphicon-rub" aria-hidden="true">
+                  </span>
+                </a>
+                <a href="#" class="btn btn-info" id="printReceiptForApartment" data-toggle="tooltip" data-placement="top" title="Сформировать квитанцию ">
+                  <span class="glyphicon glyphicon-print" aria-hidden="true">
+                  </span>
+                </a>
+                <a href="#" class="btn btn-info" id="addPaymentInRegister" data-toggle="tooltip" data-placement="top" title="Внести платеж в реестр">
+                  <span class="glyphicon glyphicon-send" aria-hidden="true">
+                  </span>
+                </a>
               </div>
               <div class="col-md-9">
-                <span class="pull-right"><h4><mark>6027089952</mark>-<mark>0001307</mark>-<mark>0058</mark></h4></span>
+                <span class="pull-right""><h4 id="personalAccount"></h4></span>
               </div>
             </div>
 
             <ul class="nav nav-pills">
               <li class="active"><a data-toggle="tab" href="#payments">Оплаты</a></li>
-              <li><a data-toggle="tab" href="#fines">Подключения</a></li>
+              <li><a data-toggle="tab" href="#register">Реестр</a></li>
               <li><a data-toggle="tab" href="#prices">Платы</a></li>
             </ul>
 
@@ -738,17 +748,17 @@
                     </div>
                   </div>
 
-                  <div id="fines" class="tab-pane">
+                  <div id="register" class="tab-pane">
                     <div class="row">
-                      <div class="col-md-6">
+                      <div class="col-md-7">
                         <table class="table table-bordered table-hover table-condensed" style="background-color: white;"
-                          name="tableFines" id="tableFines">
+                          name="tableRegisters" id="tableRegisters">
                           <thead>
                             <tr class="active">
                               <th class="col-xs-2 text-center" style="vertical-align: middle">Создано</th>
-                              <th class="col-xs-1 text-center" style="vertical-align: middle">ID</th>
+                              <th class="col-xs-2 text-center" style="vertical-align: middle">ID</th>
                               <th class="col-xs-2 text-center" style="vertical-align: middle">Сумма</th>
-                              <th class="col-xs-1 text-center" style="vertical-align: middle">Погашено</th>
+                              <th class="col-xs-1 text-center" style="vertical-align: middle">Действия</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -826,6 +836,82 @@
         </div>
         <div class="modal-footer">
           <button class="btn btn-success" id="saveApartment">&nbsp;Записать&nbsp;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal bs-example-modal-normal" id="addPaymentDialog" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+              aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title">Внести платеж</h4>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-xs-12">
+              <div class="form-group">
+                <label for="paymentDate" class="control-label">Дата</label>
+                <div class="input-group date date-only-mouse" id="dtNewPaymentDate">
+                  <input type="text" class="form-control" name="paymentDate" id="paymentDate" readonly>
+                  <span class="input-group-addon">
+                    <span class="glyphicon glyphicon-calendar"></span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-xs-12">
+              <div class="form-group">
+                <label for="paymentAmount">Сумма</label>
+                <input type="text" class="form-control" name="paymentAmount" id="paymentAmount" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-success" id="actionAddPayment">&nbsp;Записать&nbsp;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal bs-example-modal-normal" id="addPaymentInRegisterDialog" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+              aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title">Внести платеж в реестр</h4>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-xs-12">
+              <div class="form-group">
+                <label for="registerDate" class="control-label">Дата</label>
+                <div class="input-group date date-only-mouse" id="dtRegisterDate">
+                  <input type="text" class="form-control" name="registerDate" id="registerDate" readonly>
+                  <span class="input-group-addon">
+                    <span class="glyphicon glyphicon-calendar"></span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-xs-12">
+              <div class="form-group">
+                <label for="amountInRegister">Сумма</label>
+                <input type="text" class="form-control" name="amountInRegister" id="amountInRegister" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-success" id="actionAddPaymentInRegister">&nbsp;Записать&nbsp;</button>
         </div>
       </div>
     </div>

@@ -22,6 +22,98 @@ var PrintOrderReceipts = require('../../../lib/print_order_receipts').PrintOrder
 
 require('shelljs/global');
 
+
+const paymentsHistory = async (apartmentId) => {
+  let out = {
+    personalAccount: '',
+    payments: [],
+    fines: [],
+    prices: []
+  };
+
+  try {
+    const rawData = await getApartmentInfo(apartmentId);
+    if ((rawData) && (rawData instanceof Object)) {
+      out.personalAccount = generatePersonalAccount(rawData);
+    }
+
+    out.payments = await getPayments(apartmentId);
+    out.fines = await getPaymentsByRegister(apartmentId);
+    out.prices = await getPrices(apartmentId);
+    return out;
+  }
+  catch (error) {
+    console.log(error.message);
+  }
+}
+
+function addPayment(data) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        ' INSERT INTO payments (' +
+        ' create_date, apartment_id, pay_month, pay_year, amount, pay_date, `mode`, is_registered)' +
+        ' VALUES (' +
+        ' ?,?,?,?,?,?,?,?)', [
+        data.createDate,
+        data.apartmentId,
+        data.payMonth,
+        data.payYear,
+        data.amount,
+        data.payDate,
+        data.mode,
+        data.isRegistered
+      ],
+        function (err, rows) {
+          connection.release();
+          if (err) {
+            reject();
+          }
+          else {
+            resolve(rows.insertId);
+          }
+        });
+    });
+  });
+}
+
+function getOrderIdFromApartment(apartmentId) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        `SELECT card_id FROM apartments WHERE apartment_id = ?`, [apartmentId],
+        function (err, rows) {
+          connection.release();
+          if (err) {
+            reject();
+          }
+          else {
+            resolve((Array.isArray(rows) && rows.length == 1) ? rows[0].card_id : null);
+          }
+        });
+    });
+  });
+}
+
+
+function generatePersonalAccount(data) {
+  var out = [];
+
+  let rpts = 6 - (data.prolongedContractNumber.trim().length);
+  const outContractNumber = (rpts > 0 ? '0'.repeat(rpts) : '') + data.prolongedContractNumber.trim();
+
+  rpts = (3 - data.apartmentNumber.toString().trim().length);
+  const outApartment = (rpts > 0 ? '0'.repeat(rpts) : '') + data.apartmentNumber.toString().trim();
+
+  out.push(data.isDuplicate ? '1' : '0');
+  out.push(outContractNumber);
+  out.push('_');
+  out.push(data.letter.toString());
+  out.push(outApartment);
+
+  return out.join('');
+}
+
 function checkCurrentPeriod(orderId) {
   return new Promise(function (resolve, reject) {
     db.get().getConnection(function (err, connection) {
@@ -77,30 +169,31 @@ function checkOrder(orderId) {
 }
 
 function printingReceipts(orderId, res) {
-
   var printOrderReceipts = new PrintOrderReceipts(orderId, res);
   printOrderReceipts.go();
-
-  // var doc = new PDFDocument();
-  // var filename = 'receipts.pdf';
-  // res.setHeader('Content-disposition', 'attachment; filename="' + filename + '"');
-  // res.setHeader('Content-type', 'application/pdf');
-
-  // var vkImage = path.join(__dirname, '../../../public/images/vk_logo_icon.jpg');
-  // var adImage = path.join(__dirname, '../../../public/images/new_logo_2.jpg');
-
-  // doc.margins = {
-  //   top: 14,
-  //   bottom: 0,
-  //   left: 0,
-  //   right: 0
-  // };
-
-  // doc.layout = 'portrait'; // 'landscape'
-
-  // doc.pipe(res);
-  // doc.end();
 }
+
+function getApartmentInfo(id) {
+  return new Promise((resolve, reject) => {
+    db.get().getConnection((err, connection) => {
+      connection.query(
+        `SELECT a.number AS apartmentNumber, a.letter, b.m_contract_number  AS prolongedContractNumber,
+        b.m_duplicate AS isDuplicate FROM apartments a
+        LEFT JOIN cards b ON b.card_id = a.card_id
+        WHERE a.apartment_id = ? LIMIT 1`, [id],
+        (err, rows) => {
+          connection.release();
+          if (err) {
+            reject();
+          }
+          else {
+            resolve((Array.isArray(rows) && rows.length == 1) ? { ...rows[0] } : null);
+          }
+        });
+    });
+  });
+}
+
 
 function getPayments(id) {
   return new Promise(function (resolve, reject) {
@@ -119,13 +212,48 @@ function getPayments(id) {
         ' FROM payments a' +
         ' LEFT JOIN organizations b ON b.organization_id = a.mode' +
         ' WHERE' +
-        ' a.apartment_id = ?' +
+        ' (a.apartment_id = ?)' +
+        ' AND (a.is_registered = 0)' +
         ' ORDER BY' +
-        ' a.pay_date DESC', [id],
+        ' a.pay_date DESC, payment_id', [id],
         function (err, rows) {
           connection.release();
           if (err) {
-            reject();
+            reject(err);
+          }
+          else {
+            resolve(rows);
+          }
+        });
+    });
+  });
+}
+
+function getPaymentsByRegister(id) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        ` SELECT
+        a.payment_id AS uid,
+        a.create_date AS createDate,
+        a.pay_month AS payMonth,
+        a.pay_year AS payYear,
+        a.pay_date AS payDate,
+        a.amount,
+        a.mode,
+        a.privilege,
+        b.name as organizationName
+        FROM payments a
+        LEFT JOIN organizations b ON b.organization_id = a.mode
+        WHERE
+        (a.apartment_id = ?)
+        AND (a.is_registered = 1)
+        ORDER BY
+        a.pay_date DESC, a.payment_id`, [id],
+        function (err, rows) {
+          connection.release();
+          if (err) {
+            reject(err);
           }
           else {
             resolve(rows);
@@ -153,7 +281,7 @@ function getFines(id) {
         function (err, rows) {
           connection.release();
           if (err) {
-            reject();
+            reject(err);
           }
           else {
             resolve(rows);
@@ -182,7 +310,7 @@ function getPrices(id) {
         function (err, rows) {
           connection.release();
           if (err) {
-            reject();
+            reject(err);
           }
           else {
             resolve(rows);
@@ -478,7 +606,7 @@ function saveOrder(data) {
         data.complete.total.cost], function (err, rows) {
           connection.release();
           if (err) {
-            reject();
+            reject(err);
           }
           else {
             resolve(rows.insertId);
@@ -608,6 +736,8 @@ function deletePayment(paymentId) {
     });
   });
 };
+
+
 
 function convertAnApartment(apartmentId) {
   return new Promise(function (resolve, reject) {
@@ -918,10 +1048,10 @@ var filterBuilder = function (req) {
 
         if (+obj.porch.number > 0) { // + add "No data"
           where += ' AND (a.porch = ' + obj.porch.number + ')';
-          cloneFilters.conditions.porch = {
-            number: obj.porch.number
-          };
         }
+        cloneFilters.conditions.porch = {
+          number: obj.porch.number
+        };
 
         if (+obj.number.order > 0) {
           where += ' AND (a.contract_number = ' + obj.number.order + ')';
@@ -1548,10 +1678,18 @@ module.exports = function () {
     });
   });
 
+  router.get('/print_receipt_for_apartment/:id', async function (req, res) {
+    const apartmentId = parseInt(req.params.id);
+    const orderId = await getOrderIdFromApartment(apartmentId);
+
+    const printOrderReceipts = new PrintOrderReceipts(orderId, res);
+    printOrderReceipts.oneApartment(apartmentId);
+  });
+
   router.post('/save', async function (req, res) {
 
     var orderModel = new OrderModel();
-    orderModel.id = req.body.id;
+    orderModel.id = parseInt(req.body.id);
     orderModel.contractNumber = req.body.contractNumber;
     orderModel.createDate = req.body.createDate == null ? moment(new Date()).format('YYYY-MM-DD') : moment(req.body.createDate, 'DD.MM.YYYY').format('YYYY-MM-DD');
     orderModel.endContract = ((req.body.endContract != null) && (req.body.endContract.trim().length > 0)) ? moment(req.body.endContract, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
@@ -1635,7 +1773,7 @@ module.exports = function () {
       }
       else {
         try {
-          await saveOrder(orderModel);
+          orderModel.id = await saveOrder(orderModel);
           await insertApartments(orderModel);
           await checkCurrentPeriod(orderModel.id);
           await checkPreviousPeriod(orderModel.id);
@@ -1869,36 +2007,103 @@ module.exports = function () {
     }
   });
 
-  router.post('/payments_history', function (req, res) {
+  router.post('/payments_history', async function (req, res) {
     var data = req.body;
     var out = {
+      personalAccount: '',
       payments: [],
       fines: [],
       prices: []
     };
-    if ((data) && (typeof (data) === 'object') && ('id' in data)) {
-      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
 
-      getPayments(data.id)
-        .then(function (payments) {
-          out.payments = payments;
-          return getFines(data.id);
-        })
-        .then(function (fines) {
-          out.fines = fines;
-          return getPrices(data.id);
-        })
-        .then(function (prices) {
-          out.prices = prices;
-          res.status(200).send(out);
-        })
-        .catch(function (error) {
-          console.log(error.message);
-          res.status(500).send(error.message);
-        });
+    if ((data) && (typeof (data) === 'object') && ('id' in data)) {
+      // var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+
+      try {
+        const rawData = await getApartmentInfo(data.id);
+        if ((rawData) && (rawData instanceof Object)) {
+          out.personalAccount = generatePersonalAccount(rawData);
+        }
+
+        out.payments = await getPayments(data.id);
+        out.fines = await getPaymentsByRegister(data.id);
+        out.prices = await getPrices(data.id);
+        res.status(200).send(out);
+      }
+      catch (error) {
+        console.log(error.message);
+        res.status(500).send(error.message);
+      }
+
+      // getPayments(data.id)
+      //   .then(function (payments) {
+      //     out.payments = payments;
+      //     return getFines(data.id);
+      //   })
+      //   .then(function (fines) {
+      //     out.fines = fines;
+      //     return getPrices(data.id);
+      //   })
+      //   .then(function (prices) {
+      //     out.prices = prices;
+      //     res.status(200).send(out);
+      //   })
+      //   .catch(function (error) {
+      //     console.log(error.message);
+      //     res.status(500).send(error.message);
+      //   });
     }
     else {
       res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    }
+  });
+
+  router.post('/add_payment', async (req, res) => {
+
+    const obj = {
+      apartmentId: parseInt(req.body.id),
+      amount: parseFloat(req.body.amount),
+      payDate: moment(req.body.date, 'DD.MM.YYYY').format('YYYY-MM-DD'),
+      mode: 2,
+      isRegistered: 0
+    }
+
+    const data = { ...obj, ...{ payMonth: moment(obj.payDate).month() + 1 }, ...{ payYear: moment(obj.payDate).year() }, ...{ createDate: obj.payDate } };
+
+    try {
+      const uid = await addPayment(data);
+      const apartmentInfo = await convertAnApartment(obj.apartmentId);
+      const paymentsData = await paymentsHistory(obj.apartmentId);
+      res.status(200).send({ apartmentInfo: apartmentInfo, paymentsHistory: paymentsData });
+    }
+    catch (error) {
+      console.log(`Error: (/add_payment) - ${error.message}`);
+      res.status(500).send({ success: 'Bad' });
+      return;
+    }
+  });
+
+  router.post('/add_payment_in_register', async (req, res) => {
+
+    const obj = {
+      apartmentId: parseInt(req.body.id),
+      amount: parseFloat(req.body.amount),
+      payDate: moment(req.body.date, 'DD.MM.YYYY').format('YYYY-MM-DD'),
+      mode: 2,
+      isRegistered: 1
+    }
+
+    const data = { ...obj, ...{ payMonth: moment(obj.payDate).month() + 1 }, ...{ payYear: moment(obj.payDate).year() }, ...{ createDate: obj.payDate } };
+
+    try {
+      const uid = await addPayment(data);
+      const paymentsData = await paymentsHistory(obj.apartmentId);
+      res.status(200).send({ paymentsHistory: paymentsData });
+    }
+    catch (error) {
+      console.log(`Error: (/add_payment_in_register) - ${error.message}`);
+      res.status(500).send({ success: 'Bad' });
+      return;
     }
   });
 
@@ -1906,7 +2111,6 @@ module.exports = function () {
     let paymentId = 0;
     const data = req.body;
     if ((data) && (typeof (data) === 'object') && ('id' in data)) {
-      const rowsCount = 'limit' in data ? data.limit : rowsLimit;
       getAprtmentId(data.id)
         .then(function (info) {
           paymentId = info.apartment_id;
@@ -1926,6 +2130,17 @@ module.exports = function () {
     else {
       res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
     }
+  });
+
+  router.post('/print_receipt_for_apartment', function (req, res) {
+    var id = req.body.id;
+    getOrderIdFromApartment(id).then(function (orderId) {
+      printingReceipts(orderId, res);
+    })
+      .catch(function (error) {
+        console.log(error);
+        res.status(500).send(error);
+      });;
   });
 
   return router;

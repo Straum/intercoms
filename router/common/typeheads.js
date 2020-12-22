@@ -115,7 +115,7 @@ module.exports.filterStreets = function (params, callback) {
     ' SELECT a.street_id AS id, a.name AS value, city_id AS cityId' +
     ' FROM streets a';
 
-  queryText += ' WHERE a.city_id = ' + params.cityId;
+  queryText += ' WHERE a.is_deleted = 0 AND a.city_id = ' + params.cityId;
 
   if (params.streetName.length > 0) {
     queryText += ' AND a.name LIKE ' + `'` + params.streetName + '%' + `'`;
@@ -148,7 +148,7 @@ module.exports.filterHouses = function (params, callback) {
     ' SELECT a.house_id AS id, a.number AS value, street_id AS streetId' +
     ' FROM houses a';
 
-  queryText += ' WHERE a.street_id = ' + params.streetId;
+  queryText += ' WHERE a.is_deleted = 0 AND a.street_id = ' + params.streetId;
 
   if (params.houseNumber.length > 0) {
     queryText += ' AND a.number LIKE ' + `'` + params.houseNumber + '%' + `'`;

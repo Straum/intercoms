@@ -5,6 +5,7 @@ const ACTION_DIALOG_BUILD_APARTMENTS = 2;
 const ACTION_DIALOG_PROLONG_ORDER = 3;
 const ACTION_DIALOG_DELETE_APARTMENT = 4;
 const ACTION_DIALOG_DELETE_PAYMENT = 5;
+const ACTION_DIALOG_DELETE_PAYMENT_FROM_REGISTER = 6;
 
 var Application = function () {
   this.deletedApartment = {
@@ -22,9 +23,16 @@ var Application = function () {
     rowIndex: 0
   };
 
+  this.deletedPaymentFromRegister = {
+    uid: 0,
+    rowIndex: 0
+  };
+
   this.completeRowIndex = 1;
   this.actionWithApartment = ACTION_ADD_APARTMENT;
   this.actionWithDialog = ACTION_DIALOG_BUILD_APARTMENTS;
+
+  this.apartmentId = 0;
 }
 
 var application = new Application();
@@ -33,23 +41,18 @@ var application = new Application();
 
 $('[data-toggle="tooltip"]').tooltip();
 
-$('#dtCreateDate').datetimepicker({
+$('.only-date').datetimepicker({
   locale: 'ru',
   format: 'L'
 });
 
-$('#dtEndContract').datetimepicker({
-  locale: 'ru',
-  format: 'L'
+$('.only-datetime').datetimepicker({
+  locale: 'ru'
 });
 
-$('#dtCreditTo').datetimepicker({
+$('.date-only-mouse').datetimepicker({
   locale: 'ru',
-  format: 'L'
-});
-
-$('#dtStartService').datetimepicker({
-  locale: 'ru',
+  ignoreReadonly: true,
   format: 'L'
 });
 
@@ -58,22 +61,12 @@ $('#dtStartService').on("dp.change", function (e) {
   document.getElementById('endService').value = moment(start, 'DD.MM.YYYY').add(1, 'years').format('DD.MM.YYYY');
 });
 
-$('#dtEndService').datetimepicker({
-  locale: 'ru',
-  format: 'L'
-});
-
-$('#dtReceiptPrinting').datetimepicker({
-  locale: 'ru',
-  format: 'L'
-});
-
 function showHistory(ev) {
-  // var id = ev.currentTarget.getAttribute('data-uid');
   var id = ev.currentTarget.parentElement.parentElement.getAttribute('data-uid');
   var apartmentInfo = ev.currentTarget.parentElement.parentElement.cells[1].innerText;
   ev.stopPropagation();
 
+  application.apartmentId = id;
   axios.post('/orders/payments_history', {
     id: id,
     limit: 15
@@ -81,10 +74,18 @@ function showHistory(ev) {
   ).then(function (response) {
     var data = response.data;
     var body = {
+      personalAccount: '',
       payments: '',
       fines: '',
       prices: ''
     };
+
+    if (('personalAccount' in data) && (typeof data.personalAccount === 'string')) {
+      const arrAccount = data.personalAccount.split('_');
+      if (Array.isArray(arrAccount) && (arrAccount.length === 2)) {
+        document.getElementById('personalAccount').innerHTML = `<mark>${arrAccount[0]}</mark>-<mark>${arrAccount[1]}</mark>`;
+      }
+    }
 
     if ((data.payments) && (Array.isArray(data.payments)) && (data.payments.length > 0)) {
       data.payments.forEach(function (element) {
@@ -110,15 +111,20 @@ function showHistory(ev) {
 
     if ((data.fines) && (Array.isArray(data.fines)) && (data.fines.length > 0)) {
       data.fines.forEach(function (element) {
-        body.fines += '<tr>';
-        body.fines += '<td class="text-center align-middle">' + moment(element.createDate).format('DD.MM.YYYY') + '</td>';
-        body.fines += '<td class="text-center align-middle">' + element.uid + '</td>';
-        body.fines += '<td class="text-right align-middle">' + element.amount.toFixed(2) + '</td>';
-        body.fines += '<td class="text-center align-middle"><input type="checkbox" class="styled"' + (Number(element.paid) === 1 ? ' checked' : '') + '></td>';
-        body.fines += '</tr>';
+        body.fines +=
+        `<tr data-uid="${element.uid}">
+          <td class="text-center align-middle">${moment(element.createDate).format('DD.MM.YYYY')}</td>
+          <td class="text-center align-middle">${element.uid}</td>
+          <td class="text-right align-middle">${element.amount.toFixed(2)}</td>
+          <td class="text-center align-middle">
+          <button type="button" class="btn btn-danger btn-xs" onclick="removePaymentFromRegister(event)">
+            <span class="glyphicon glyphicon-minus" aria-hidden="true">
+            </span>
+          </button></td>
+        </tr>`;
       });
     }
-    var bodyFinesRef = document.getElementById('tableFines').getElementsByTagName('tbody')[0];
+    var bodyFinesRef = document.getElementById('tableRegisters').getElementsByTagName('tbody')[0];
     bodyFinesRef.innerHTML = body.fines;
 
     if ((data.prices) && (Array.isArray(data.prices)) && (data.prices.length > 0)) {
@@ -136,6 +142,7 @@ function showHistory(ev) {
     bodyPricesRef.innerHTML = body.prices;
 
     document.getElementById('historyDialogCapton').textContent = 'История по квартире № ' + apartmentInfo;
+    document.getElementById('printReceiptForApartment').setAttribute('href', `/orders/print_receipt_for_apartment/${id}`);
     $('#historyDialog').modal();
 
   }).catch(function (error) {
@@ -345,6 +352,19 @@ function removePayment(ev) {
   $('#modalYesNo').modal();
 }
 
+function removePaymentFromRegister(ev) {
+  const id = ev.currentTarget.parentElement.parentElement.getAttribute('data-uid');
+  const rowIndex = ev.currentTarget.parentElement.parentElement.rowIndex;
+  ev.stopPropagation();
+
+  application.actionWithDialog = ACTION_DIALOG_DELETE_PAYMENT_FROM_REGISTER;
+  application.deletedPaymentFromRegister.uid = id;
+  application.deletedPaymentFromRegister.rowIndex = rowIndex;
+
+  document.getElementById('replace-me').innerHTML = 'Удалить из реестра?';
+  $('#modalYesNo').modal();
+}
+
 document.getElementById('decide').addEventListener('click', function (e) {
 
   var apartments = JSON.parse(document.getElementById('apartments').value);
@@ -488,6 +508,9 @@ document.getElementById('decide').addEventListener('click', function (e) {
 
     case ACTION_DIALOG_DELETE_PAYMENT:
       deletePayment();
+
+    case ACTION_DIALOG_DELETE_PAYMENT_FROM_REGISTER:
+      deletedPaymentFromRegister();
 
     default:
       break;
@@ -1224,8 +1247,7 @@ function showAlert2(hidden, htmlText) {
 function deletePayment() {
 
   axios.post('/orders/delete_payment', {
-    id: application.deletedPayment.uid,
-    limit: 15
+    id: application.deletedPayment.uid
   }
   ).then(function (response) {
 
@@ -1235,7 +1257,7 @@ function deletePayment() {
     let table = document.getElementById('tableApartments');
     if (table) {
       var rowLength = table.rows.length;
-      for (ind = 0; ind < rowLength; ind++) {
+      for (ind = 2; ind < rowLength; ind++) {
         if ((Number(table.rows.item(ind).getAttribute('data-uid'))) === Number(data.apartmentId)) {
           table.rows.item(ind).classList.remove('info2');
           table.rows.item(ind).classList.remove('warning2');
@@ -1267,60 +1289,183 @@ function deletePayment() {
       }
     }
 
+  }).catch(function (error) {
+    console.log(error);
+  });
+}
 
-    // if ((data.payments) && (Array.isArray(data.payments)) && (data.payments.length > 0)) {
-    //   data.payments.forEach(function (element) {
-    //     body.payments +=
-    //       `<tr data-uid="${element.uid}">
-    //       <td class="text-center align-middle">${moment(element.createDate).format('DD.MM.YYYY')}</td>
-    //       <td class="text-center align-middle">${moment(element.payDate).format('DD.MM.YYYY')}</td>
-    //       <td class="text-center align-middle">${element.uid}</td>
-    //       <td class="text-center align-middle">${element.payMonth}</td>
-    //       <td class="text-center align-middle">${element.payYear}</td>
-    //       <td class="text-right align-middle">${element.amount.toFixed(2)}</td>
-    //       <td class="text-center align-middle">${element.organizationName}</td>
-    //       <td class="text-center align-middle">
-    //         <button type="button" class="btn btn-danger btn-xs" onclick="removePayment(event)">
-    //           <span class="glyphicon glyphicon-minus" aria-hidden="true">
-    //           </span>
-    //         </button></td>
-    //       </tr>`;
-    //   });
-    // }
-    // var bodyPaymentsRef = document.getElementById('tablePayments').getElementsByTagName('tbody')[0];
-    // bodyPaymentsRef.innerHTML = body.payments;
+function deletedPaymentFromRegister() {
 
-    // if ((data.fines) && (Array.isArray(data.fines)) && (data.fines.length > 0)) {
-    //   data.fines.forEach(function (element) {
-    //     body.fines += '<tr>';
-    //     body.fines += '<td class="text-center align-middle">' + moment(element.createDate).format('DD.MM.YYYY') + '</td>';
-    //     body.fines += '<td class="text-center align-middle">' + element.uid + '</td>';
-    //     body.fines += '<td class="text-right align-middle">' + element.amount.toFixed(2) + '</td>';
-    //     body.fines += '<td class="text-center align-middle"><input type="checkbox" class="styled"' + (Number(element.paid) === 1 ? ' checked' : '') + '></td>';
-    //     body.fines += '</tr>';
-    //   });
-    // }
-    // var bodyFinesRef = document.getElementById('tableFines').getElementsByTagName('tbody')[0];
-    // bodyFinesRef.innerHTML = body.fines;
+  axios.post('/orders/delete_payment', {
+    id: application.deletedPaymentFromRegister.uid
+  }
+  ).then(function (response) {
 
-    // if ((data.prices) && (Array.isArray(data.prices)) && (data.prices.length > 0)) {
-    //   data.prices.forEach(function (element) {
-    //     body.prices += '<tr>';
-    //     body.prices += '<td class="text-center align-middle">' + moment(element.startService).format('DD.MM.YYYY') + '</td>';
-    //     body.prices += '<td class="text-center align-middle">' + moment(element.endService).format('DD.MM.YYYY') + '</td>';
-    //     body.prices += '<td class="text-right align-middle">' + element.normalPayment.toFixed(2) + '</td>';
-    //     body.prices += '<td class="text-right align-middle">' + element.privilegePayment.toFixed(2) + '</td>';
-    //     body.prices += '<td class="text-center align-middle">' + (element.receiptPrinting != null ? moment(element.receiptPrinting).format('DD.MM.YYYY') : '') + '</td>';
-    //     body.prices += '</tr>';
-    //   });
-    // }
-    // var bodyPricesRef = document.getElementById('tablePrices').getElementsByTagName('tbody')[0];
-    // bodyPricesRef.innerHTML = body.prices;
-
-    // document.getElementById('historyDialogCapton').textContent = 'История по квартире № ' + apartmentInfo;
-    // $('#historyDialog').modal();
+    document.getElementById('tableRegisters').deleteRow(application.deletedPaymentFromRegister.rowIndex);
 
   }).catch(function (error) {
     console.log(error);
   });
 }
+
+document.getElementById('addPayment').addEventListener('click', function (e) {
+  $('#addPaymentDialog').modal();
+});
+
+$('#addPaymentDialog').on('shown.bs.modal', function () {
+  document.getElementById('paymentDate').value = moment(new Date()).format('DD.MM.YYYY');
+  document.getElementById('paymentAmount').value = '';
+  document.getElementById('paymentAmount').focus();
+})
+
+document.getElementById('actionAddPayment').addEventListener('click', function (e) {
+  let amount = parseFloat(document.getElementById('paymentAmount').value);
+  if (isNaN(amount)) return;
+
+  axios.post('/orders/add_payment', {
+    id: application.apartmentId,
+    date: document.getElementById('paymentDate').value,
+    amount: amount
+  }
+  ).then(function (response) {
+
+    $('#addPaymentDialog').modal('hide');
+
+    const success = response.data;
+    const data = success.apartmentInfo;
+    const data1 = success.paymentsHistory;
+
+    // part 1
+    // function showHistory(ev) {
+    // TODO: Убрать и почистить дублирующий код!
+    let tablePayments = '';
+    if ((data1.payments) && (Array.isArray(data1.payments)) && (data1.payments.length > 0)) {
+      data1.payments.forEach(function (element) {
+        tablePayments +=
+          `<tr data-uid="${element.uid}">
+          <td class="text-center align-middle">${moment(element.createDate).format('DD.MM.YYYY')}</td>
+          <td class="text-center align-middle">${moment(element.payDate).format('DD.MM.YYYY')}</td>
+          <td class="text-center align-middle">${element.uid}</td>
+          <td class="text-center align-middle">${element.payMonth}</td>
+          <td class="text-center align-middle">${element.payYear}</td>
+          <td class="text-right align-middle">${element.amount.toFixed(2)}</td>
+          <td class="text-center align-middle">${element.organizationName}</td>
+          <td class="text-center align-middle">
+            <button type="button" class="btn btn-danger btn-xs" onclick="removePayment(event)">
+              <span class="glyphicon glyphicon-minus" aria-hidden="true">
+              </span>
+            </button></td>
+          </tr>`;
+      });
+    }
+    const bodyPaymentsRef = document.getElementById('tablePayments').getElementsByTagName('tbody')[0];
+    bodyPaymentsRef.innerHTML = tablePayments;
+
+    // part 2
+    let table = document.getElementById('tableApartments');
+    if (table) {
+      var rowLength = table.rows.length;
+      for (ind = 2; ind < rowLength; ind++) {
+        if ((Number(table.rows.item(ind).getAttribute('data-uid'))) === Number(data.apartmentId)) {
+          table.rows.item(ind).classList.remove('info2');
+          table.rows.item(ind).classList.remove('warning2');
+          table.rows.item(ind).classList.remove('success2');
+          table.rows.item(ind).classList.remove('danger2');
+
+          let className = '';
+          if ((+data.paid == 1) && (+data.halfPaid == 2)) {
+            className = 'info2';
+          }
+
+          if ((+data.paid == 1) && (+data.halfPaid == 1)) {
+            className = 'warning2';
+          }
+
+          if ((+data.paid == 1) && (+data.halfPaid == 0)) {
+            className = 'success2';
+          }
+
+          if (+data.exempt == 1) {
+            className = 'danger2';
+          }
+          if (className.length > 0) {
+            table.rows.item(ind).classList.add(className);
+          }
+
+          break;
+        }
+      }
+    }
+
+  }).catch(function (error) {
+    console.log(error);
+  });
+
+});
+
+document.getElementById('addPaymentInRegister').addEventListener('click', function (e) {
+  $('#addPaymentInRegisterDialog').modal();
+});
+
+$('#addPaymentInRegisterDialog').on('shown.bs.modal', function () {
+
+  let isPrivilege = false;
+  const table = document.getElementById('tableApartments');
+
+  if (table) {
+    var rowLength = table.rows.length;
+    for (ind = 2; ind < rowLength; ind++) {
+      if ((Number(table.rows.item(ind).getAttribute('data-uid'))) === Number(application.apartmentId)) {
+        isPrivilege = table.rows.item(ind).children[3].firstElementChild.checked;
+        break;
+      }
+    }
+  }
+
+  document.getElementById('registerDate').value = moment(new Date()).format('DD.MM.YYYY');
+  document.getElementById('amountInRegister').value = isPrivilege ? document.getElementById('privilegePayment').value : document.getElementById('normalPayment').value;
+  document.getElementById('amountInRegister').focus();
+});
+
+
+document.getElementById('actionAddPaymentInRegister').addEventListener('click', function (e) {
+  let amount = parseFloat(document.getElementById('amountInRegister').value);
+  if (isNaN(amount)) return;
+
+  axios.post('/orders/add_payment_in_register', {
+    id: application.apartmentId,
+    date: document.getElementById('registerDate').value,
+    amount: amount
+  }
+  ).then(function (response) {
+
+    $('#addPaymentInRegisterDialog').modal('hide');
+
+    const success = response.data;
+    const data = success.paymentsHistory;
+
+    // function showHistory(ev) {
+    // TODO: Убрать и почистить дублирующий код!
+    let tableRegisters = '';
+    if ((data.fines) && (Array.isArray(data.fines)) && (data.fines.length > 0)) {
+      data.fines.forEach(function (element) {
+        tableRegisters += `<tr data-uid="${element.uid}">
+        <td class="text-center align-middle">${moment(element.createDate).format('DD.MM.YYYY')}</td>
+        <td class="text-center align-middle">${element.uid}</td>
+        <td class="text-right align-middle">${element.amount.toFixed(2)}</td>
+        <td class="text-center align-middle">
+            <button type="button" class="btn btn-danger btn-xs" onclick="removePaymentFromRegister(event)">
+              <span class="glyphicon glyphicon-minus" aria-hidden="true">
+              </span>
+            </button></td>
+        </tr>`;
+      });
+    }
+    var bodyFinesRef = document.getElementById('tableRegisters').getElementsByTagName('tbody')[0];
+    bodyFinesRef.innerHTML = tableRegisters;
+
+  }).catch(function (error) {
+    console.log(error);
+  });
+
+});
