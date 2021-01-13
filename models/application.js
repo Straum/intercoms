@@ -41,6 +41,9 @@ module.exports.ApplicationModel = function () {
     };
 
     this.isDone = 0;
+    this.isTimeRange = 0;
+    this.hourFrom = 0;
+    this.hourTo = 0;
 
     return this;
   };

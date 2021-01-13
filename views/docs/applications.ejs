@@ -152,9 +152,16 @@
               <%= data[ind].performerName %>
             </td>
             <td class="text-left align-middle">
+              <% if (data[ind].maintenanceContract === 0) { %>
+                <img src="/images/brick.png">
+              <% } %>
               <% if ((data[ind].completionDate != null) && (data[ind].weight >= 0)) { %>
               <span class="glyphicon glyphicon-calendar" aria-hidden="true"></span>
               <% } %>
+              <% if ((data[ind].isTimeRange != 0)) { %>
+                <img src="/images/timer_blue_18.png">
+                <%= `${data[ind].hourFrom}-${data[ind].hourTo}, ` %>
+                <% } %>
               <%= 'problemDescription' in data[ind] ? data[ind].problemDescription : '' %>
             </td>
             <td class="text-center align-middle">

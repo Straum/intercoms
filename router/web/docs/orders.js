@@ -1176,7 +1176,7 @@ var filterRecords = function (req, res) {
               } else {
                 var currentPage = 1;
                 res.render('docs/orders.ejs', {
-                  title: 'Договора',
+                  title: 'Договоры',
                   data: rows,
                   pageCount: pageCount,
                   currentPage: currentPage,
@@ -1443,7 +1443,7 @@ module.exports = function () {
                 } else {
                   var currentPage = Math.ceil(offset / visibleRows) + 1;
                   res.render('docs/orders.ejs', {
-                    title: 'Договора',
+                    title: 'Договоры',
                     data: rows,
                     pageCount: pageCount,
                     currentPage: currentPage,

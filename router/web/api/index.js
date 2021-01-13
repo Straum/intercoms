@@ -70,7 +70,8 @@ function getCurrentApplicationsHeader(workerId) {
         SELECT a.application_id AS documentId, DATE_FORMAT(a.create_date, '%Y-%m-%d %H:%i:%s') AS createDate,
         a.phone, b.city_id AS cityId, c.street_id AS streetId, d.house_id AS houseId,
         b.name AS cityName, c.name AS streetName,
-        d.number AS houseNumber, a.porch, a.kind
+        d.number AS houseNumber, a.porch, a.kind,
+        a.is_time_range AS isTimeRange, a.hour_from AS hourFrom, a.hour_to AS hourTo
         FROM applications a
         LEFT JOIN cities b ON b.city_id = a.city_id
         LEFT JOIN streets c ON c.street_id = a.street_id
@@ -79,7 +80,7 @@ function getCurrentApplicationsHeader(workerId) {
         AND (a.is_done = 0)
         AND (a.is_deleted = 0)
         AND (a.worker_id = ?)
-        ORDER BY b.name, c.name, d.number ASC`, [workerId], (err, rows) => {
+        ORDER BY a.is_time_range DESC, b.name ASC, c.name ASC, d.number ASC`, [workerId], (err, rows) => {
         connection.release();
 
         var currentApplications = [];
@@ -110,7 +111,10 @@ function getCurrentApplicationsHeader(workerId) {
               createDate: item.createDate,
               phone: item.phone,
               cityName: cityName,
-              address: address
+              address: address,
+              isTimeRange: item.isTimeRange != 0,
+              hourFrom: item.hourFrom,
+              hourTo: item.hourTo
             });
           });
           resolve({
