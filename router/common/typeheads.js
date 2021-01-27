@@ -7,15 +7,15 @@ var getCity = function (cityName, callback) {
     connection.query(
       ' SELECT a.city_id AS cityId' +
       ' FROM cities a' +
-      ' WHERE a.name = ?' +
-      ' LIMIT 1', [cityName], function (err, rows) {
+      ' WHERE (a.is_deleted = 0) AND (a.name = ?)' +
+      ' LIMIT 1', [cityName],
+      function (err, rows) {
         connection.release();
 
         if (typeof callback === 'function') {
           if (rows.length === 1) {
             callback(rows[0].cityId);
-          }
-          else {
+          } else {
             callback(null);
           }
         }
@@ -27,7 +27,7 @@ var getCity = function (cityName, callback) {
 var getStreets = function (cityId, streetName, rowsLimit, callback) {
   var queryText = ' SELECT a.street_id AS streetId, a.name AS streetName' +
     ' FROM streets a' +
-    ' WHERE (a.city_id = ' + cityId + ')';
+    ' WHERE (a.is_deleted = 0) AND (a.city_id = ' + cityId + ')';
 
   if ((typeof streetName === 'string') && (streetName.trim() !== '')) {
     queryText += ' AND (a.name LIKE ' + `'` + streetName.trim() + '%' + `'` + ')';
@@ -37,7 +37,8 @@ var getStreets = function (cityId, streetName, rowsLimit, callback) {
 
   db.get().getConnection(function (err, connection) {
     connection.query(
-      queryText, [], function (err, rows) {
+      queryText, [],
+      function (err, rows) {
         connection.release();
 
         if (typeof callback === 'function') {
@@ -55,7 +56,7 @@ var getHouses = function (cityId, streetName, houseNumber, rowsLimit, callback) 
 
       var queryText = ' SELECT a.house_id, a.number AS house_number, a.street_id' +
         ' FROM houses a' +
-        ' WHERE (a.street_id = ' + streetId + ')';
+        ' WHERE (a.is_deleted = 0) AND (a.street_id = ' + streetId + ')';
 
       if ((typeof houseNumber === 'string') && (houseNumber.trim().length > 0)) {
         queryText += ' AND (a.number LIKE ' + `'` + houseNumber.trim() + '%' + `'` + ')';
@@ -65,7 +66,8 @@ var getHouses = function (cityId, streetName, houseNumber, rowsLimit, callback) 
 
       db.get().getConnection(function (err, connection) {
         connection.query(
-          queryText, [], function (err, rows) {
+          queryText, [],
+          function (err, rows) {
             connection.release();
 
             if (typeof callback === 'function') {
@@ -93,7 +95,8 @@ module.exports.filterCities = function (params, callback) {
 
   db.get().getConnection(function (err, connection) {
     connection.query(
-      queryText, [], function (err, rows) {
+      queryText, [],
+      function (err, rows) {
         connection.release();
 
         if (err) {
@@ -126,7 +129,8 @@ module.exports.filterStreets = function (params, callback) {
 
   db.get().getConnection(function (err, connection) {
     connection.query(
-      queryText, [], function (err, rows) {
+      queryText, [],
+      function (err, rows) {
         connection.release();
 
         if (err) {
@@ -159,7 +163,8 @@ module.exports.filterHouses = function (params, callback) {
 
   db.get().getConnection(function (err, connection) {
     connection.query(
-      queryText, [], function (err, rows) {
+      queryText, [],
+      function (err, rows) {
         connection.release();
 
         if (err) {
@@ -192,7 +197,8 @@ module.exports.filterPorches = function (params, callback) {
 
   db.get().getConnection(function (err, connection) {
     connection.query(
-      queryText, [], function (err, rows) {
+      queryText, [],
+      function (err, rows) {
         connection.release();
 
         if (err) {
@@ -224,7 +230,8 @@ module.exports.filterEquipments = function (params, callback) {
 
   db.get().getConnection(function (err, connection) {
     connection.query(
-      queryText, [], function (err, rows) {
+      queryText, [],
+      function (err, rows) {
         connection.release();
 
         if (err) {
@@ -241,20 +248,21 @@ module.exports.filterEquipments = function (params, callback) {
 
 module.exports.filterOrders = function (orderNumber, rowsCount, callback) {
 
-  var queryText =
-    ' SELECT a.card_id AS id, CAST(a.contract_number AS CHAR(11)) AS `value`' +
-    ' FROM cards a';
+  let queryText =
+    `SELECT a.card_id AS id, CAST(a.contract_number AS CHAR(11)) AS value
+      FROM cards a
+      WHERE (a.is_deleted = 0)`;
 
   if (orderNumber.length > 0) {
-    queryText += ' WHERE a.contract_number LIKE ' + `'` + orderNumber.trim() + '%' + `'`;
+    queryText += ` AND (a.contract_number LIKE '${orderNumber.trim()}%')`;
   }
 
-  queryText += ' ORDER BY a.contract_number ASC';
-  queryText += ' LIMIT ' + rowsCount;
+  queryText += ` ORDER BY a.contract_number ASC LIMIT ${rowsCount}`;
 
   db.get().getConnection(function (err, connection) {
     connection.query(
-      queryText, [], function (err, rows) {
+      queryText, [],
+      function (err, rows) {
         connection.release();
 
         if (err) {
@@ -271,28 +279,28 @@ module.exports.filterOrders = function (orderNumber, rowsCount, callback) {
 
 module.exports.filterProlongedOrders = function (orderNumber, rowsCount, callback) {
 
-  var queryText =
-    ' SELECT a.card_id AS id, a.m_contract_number AS `value`,' +
-    ' a.contract_number AS contractNumber, a.start_service AS startService,' +
-    ' a.end_service AS endService, m_start_apartment AS startApartment, m_end_apartment AS endApartment,' +
-    ' a.m_duplicate AS isDuplicate, a.receipt_printing AS receiptPrint,' +
-    ' b.`name` AS cityName, c.`name` AS streetName, d.`number` AS houseNumber' +
-    ' FROM cards a' +
-    ' LEFT JOIN cities b ON b.city_id = a.city_id' +
-    ' LEFT JOIN streets c ON c.street_id = a.street_id' +
-    ' LEFT JOIN houses d ON d.house_id = a.house_id';
+  let queryText =
+    `SELECT a.card_id AS id, a.m_contract_number AS value,
+      a.contract_number AS contractNumber, a.start_service AS startService,
+      a.end_service AS endService, m_start_apartment AS startApartment, m_end_apartment AS endApartment,
+      a.m_duplicate AS isDuplicate, a.receipt_printing AS receiptPrint,
+      b.name AS cityName, c.name AS streetName, d.number AS houseNumber
+      FROM cards a
+      LEFT JOIN cities b ON b.city_id = a.city_id
+      LEFT JOIN streets c ON c.street_id = a.street_id
+      LEFT JOIN houses d ON d.house_id = a.house_id
+      WHERE (a.is_deleted = 0)`;
 
   if (orderNumber.length > 0) {
-    queryText += ' WHERE a.m_contract_number LIKE ' + `'` + orderNumber.trim() + '%' + `'`;
+    queryText += ` AND (a.m_contract_number LIKE '${orderNumber.trim()}%')`;
   }
 
-  queryText += ' ORDER BY a.m_contract_number ASC';
-  queryText += ' LIMIT ' + rowsCount;
-
+  queryText += ` ORDER BY a.m_contract_number ASC LIMIT ${rowsCount}`;
 
   db.get().getConnection(function (err, connection) {
     connection.query(
-      queryText, [], function (err, rows) {
+      queryText, [],
+      function (err, rows) {
         connection.release();
 
         if (err) {
@@ -324,7 +332,8 @@ module.exports.filterPerformers = function (params, callback) {
 
   db.get().getConnection(function (err, connection) {
     connection.query(
-      queryText, [], function (err, rows) {
+      queryText, [],
+      function (err, rows) {
         connection.release();
 
         if (err) {
@@ -357,7 +366,8 @@ module.exports.filterClients = function (params, callback) {
 
   db.get().getConnection(function (err, connection) {
     connection.query(
-      queryText, [], function (err, rows) {
+      queryText, [],
+      function (err, rows) {
         connection.release();
 
         if (err) {
@@ -395,7 +405,8 @@ module.exports.outFullAddress = function (params, callback) {
 
     db.get().getConnection(function (err, connection) {
       connection.query(
-        queryText, [], function (err, rows) {
+        queryText, [],
+        function (err, rows) {
           connection.release();
 
           if (err) {
@@ -418,8 +429,7 @@ module.exports.outFullAddress = function (params, callback) {
         }
       );
     });
-  }
-  else if (words.length >= 2) {
+  } else if (words.length >= 2) {
     var cityId = 0;
     getCity(words[0].trim(), function (id) {
       if (id === null) {
@@ -491,7 +501,8 @@ module.exports.filterEquipment = function (params, callback) {
 
   db.get().getConnection(function (err, connection) {
     connection.query(
-      queryText, [], function (err, rows) {
+      queryText, [],
+      function (err, rows) {
         connection.release();
 
         if (err) {
@@ -530,7 +541,8 @@ module.exports.fastFilter = function (params, callback) {
 
   db.get().getConnection(function (err, connection) {
     connection.query(
-      queryText, [], function (err, rows) {
+      queryText, [],
+      function (err, rows) {
         connection.release();
 
         if (err) {
@@ -550,7 +562,8 @@ module.exports.editEquipment = function (params, callback) {
 
   db.get().getConnection(function (err, connection) {
     connection.query(
-      queryText, [], function (err, rows) {
+      queryText, [],
+      function (err, rows) {
         connection.release();
 
         if (err) {
@@ -558,7 +571,9 @@ module.exports.editEquipment = function (params, callback) {
         }
 
         if (typeof callback === 'function') {
-          callback(null, {operation: 'success'});
+          callback(null, {
+            operation: 'success'
+          });
         }
       }
     );
@@ -570,7 +585,8 @@ module.exports.addEquipment = function (params, callback) {
 
   db.get().getConnection(function (err, connection) {
     connection.query(
-      queryText, [], function (err, rows) {
+      queryText, [],
+      function (err, rows) {
         connection.release();
 
         if (err) {
@@ -601,13 +617,13 @@ function filterVillages(areaId, word, limit) {
 
     db.get().getConnection(function (err, connection) {
       connection.query(
-        queryText, [], function (err, rows) {
+        queryText, [],
+        function (err, rows) {
           connection.release();
 
           if (err) {
             reject();
-          }
-          else {
+          } else {
             let items = [];
             if (Array.isArray(rows)) {
               items = [...rows];
@@ -633,13 +649,13 @@ function filterCities(word, limit) {
 
     db.get().getConnection(function (err, connection) {
       connection.query(
-        queryText, [], function (err, rows) {
+        queryText, [],
+        function (err, rows) {
           connection.release();
 
           if (err) {
             reject();
-          }
-          else {
+          } else {
             let items = [];
             if (Array.isArray(rows)) {
               items = [...rows];
@@ -663,13 +679,13 @@ function filterStreets(cityId, streetName, limit) {
 
     db.get().getConnection(function (err, connection) {
       connection.query(
-        queryText, [], function (err, rows) {
+        queryText, [],
+        function (err, rows) {
           connection.release();
 
           if (err) {
             reject();
-          }
-          else {
+          } else {
             let items = [];
             if (Array.isArray(rows)) {
               items = [...rows];
@@ -695,13 +711,13 @@ function filterHouses(streetId, houseNumber, limit) {
 
     db.get().getConnection(function (err, connection) {
       connection.query(
-        queryText, [], function (err, rows) {
+        queryText, [],
+        function (err, rows) {
           connection.release();
 
           if (err) {
             reject();
-          }
-          else {
+          } else {
             let items = [];
             if (Array.isArray(rows)) {
               items = [...rows];
@@ -722,16 +738,18 @@ function findVillageByName(areaId, name) {
 
     db.get().getConnection(function (err, connection) {
       connection.query(
-        queryText, [], function (err, rows) {
+        queryText, [],
+        function (err, rows) {
           connection.release();
 
           if (err) {
             reject();
-          }
-          else {
+          } else {
             let village = [];
             if (Array.isArray(rows) && (rows.length === 1)) {
-              village = { ...rows[0] };
+              village = {
+                ...rows[0]
+              };
             }
             resolve(village);
           }
@@ -749,16 +767,18 @@ function findCityByName(name) {
 
     db.get().getConnection(function (err, connection) {
       connection.query(
-        queryText, [], function (err, rows) {
+        queryText, [],
+        function (err, rows) {
           connection.release();
 
           if (err) {
             reject();
-          }
-          else {
+          } else {
             let city = [];
             if (Array.isArray(rows) && (rows.length === 1)) {
-              city = { ...rows[0] };
+              city = {
+                ...rows[0]
+              };
             }
             resolve(city);
           }
@@ -776,16 +796,18 @@ function findStreetByName(cityId, name) {
 
     db.get().getConnection(function (err, connection) {
       connection.query(
-        queryText, [], function (err, rows) {
+        queryText, [],
+        function (err, rows) {
           connection.release();
 
           if (err) {
             reject();
-          }
-          else {
+          } else {
             let street = [];
             if (Array.isArray(rows) && (rows.length === 1)) {
-              street = { ...rows[0] };
+              street = {
+                ...rows[0]
+              };
             }
             resolve(street);
           }
@@ -839,7 +861,9 @@ module.exports.getFullAddress2 = async function (params, callback) {
 
     await findCityByName(words[0].trim())
       .then(function (data) {
-        city = { ...data };
+        city = {
+          ...data
+        };
       })
       .catch(function (error) {
         console.log('Error findCityByName: ' + error);
@@ -863,7 +887,9 @@ module.exports.getFullAddress2 = async function (params, callback) {
       if (words.length === 3) {
         await findStreetByName(city.id, words[1].trim())
           .then(function (data) {
-            street = { ...data };
+            street = {
+              ...data
+            };
           })
           .catch(function (error) {
             console.log('Error findStreetByName: ' + error);
@@ -880,8 +906,7 @@ module.exports.getFullAddress2 = async function (params, callback) {
             console.log('Error filterHouses: ' + error);
           })
       }
-    }
-    else {
+    } else {
       // Area + villages
       if (words.length === 2) {
         await filterVillages(city.id, words[1].trim(), params.limit)
@@ -898,7 +923,9 @@ module.exports.getFullAddress2 = async function (params, callback) {
       if (words.length === 3) {
         await findVillageByName(city.id, words[1].trim())
           .then(function (data) {
-            village = { ...data };
+            village = {
+              ...data
+            };
           })
           .catch(function (error) {
             console.log('Error findVillageByName: ' + error);
@@ -921,7 +948,9 @@ module.exports.getFullAddress2 = async function (params, callback) {
       if (words.length === 4) {
         await findVillageByName(city.id, words[1].trim())
           .then(function (data) {
-            village = { ...data };
+            village = {
+              ...data
+            };
           })
           .catch(function (error) {
             console.log('Error findVillageByName: ' + error);
@@ -930,13 +959,15 @@ module.exports.getFullAddress2 = async function (params, callback) {
         if ((!village.noStreets) && !(village.noHouses)) {
           await findStreetByName(village.id, words[2].trim())
             .then(function (data) {
-              street = { ...data };
+              street = {
+                ...data
+              };
             })
             .catch(function (error) {
               console.log('Error findStreetByName: ' + error);
             })
 
-            await filterHouses(street.id, words[3].trim(), params.limit)
+          await filterHouses(street.id, words[3].trim(), params.limit)
             .then(function (items) {
               outputData.items = items;
             })

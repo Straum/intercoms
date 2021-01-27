@@ -1208,6 +1208,8 @@ module.exports = function () {
     var serviceClientData = null;
     var apartments = [];
 
+    console.log('id = ' + id);
+
     let orderId = parseInt(id);
     if (orderId != NaN) {
       // await checkCurrentPeriod(orderId);
@@ -1235,118 +1237,127 @@ module.exports = function () {
                 } else {
 
                   var data = rows[0];
-                  var orderModel = new OrderModel();
-                  orderModel.id = data.id;
-                  orderModel.contractNumber = data.contractNumber;
-                  orderModel.createDate = data.createDate;
-                  orderModel.endContract = data.endContract;
-                  orderModel.creditTo = data.creditTo;
-                  orderModel.repaid = data.repaid;
 
-                  orderModel.equipment.key = data.equipmentId;
-                  orderModel.equipment.value = data.equipmentName;
+                  if (data) {
 
-                  orderModel.address.city.key = data.cityId;
-                  orderModel.address.city.value = data.cityName;
+                    var orderModel = new OrderModel();
+                    orderModel.id = data.id;
+                    orderModel.contractNumber = data.contractNumber;
+                    orderModel.createDate = data.createDate;
+                    orderModel.endContract = data.endContract;
+                    orderModel.creditTo = data.creditTo;
+                    orderModel.repaid = data.repaid;
 
-                  orderModel.address.street.key = data.streetId;
-                  orderModel.address.street.value = data.streetName;
-                  orderModel.address.street.cityId = data.cityId;
+                    orderModel.equipment.key = data.equipmentId;
+                    orderModel.equipment.value = data.equipmentName;
 
-                  orderModel.address.house.key = data.houseId;
-                  orderModel.address.house.value = data.houseNumber;
-                  orderModel.address.house.streetId = data.streetId;
+                    orderModel.address.city.key = data.cityId;
+                    orderModel.address.city.value = data.cityName;
 
-                  orderModel.fullAddress = '';
-                  if (data.cityId > 0) {
-                    orderModel.fullAddress = data.cityName.trim();
-                    if (data.streetId > 0) {
-                      orderModel.fullAddress += ', ' + data.streetName.trim();
-                      if (data.houseId > 0) {
-                        orderModel.fullAddress += ', ' + data.houseNumber.trim();
+                    orderModel.address.street.key = data.streetId;
+                    orderModel.address.street.value = data.streetName;
+                    orderModel.address.street.cityId = data.cityId;
+
+                    orderModel.address.house.key = data.houseId;
+                    orderModel.address.house.value = data.houseNumber;
+                    orderModel.address.house.streetId = data.streetId;
+
+                    orderModel.fullAddress = '';
+                    if (data.cityId > 0) {
+                      orderModel.fullAddress = data.cityName.trim();
+                      if (data.streetId > 0) {
+                        orderModel.fullAddress += ', ' + data.streetName.trim();
+                        if (data.houseId > 0) {
+                          orderModel.fullAddress += ', ' + data.houseNumber.trim();
+                        }
                       }
                     }
+                    orderModel.porch = data.porch;
+                    orderModel.numeration = data.numeration;
+
+                    orderModel.client.contract = {
+                      key: data.clientId,
+                      value: data.clientName,
+                      phones: data.phones
+                    };
+                    orderModel.client.service = {
+                      key: data.clientServiceId,
+                      value: data.clientServiceName,
+                      phones: data.clientServicePhones
+                    };
+                    orderModel.client.onePerson = data.onePerson;
+
+                    orderModel.serviceNumber = data.serviceNumber;
+                    orderModel.startService = data.startService;
+                    orderModel.endService = data.endService;
+                    orderModel.maintenanceContract = data.maintenanceContract;
+                    orderModel.startApartment = data.startApartment;
+                    orderModel.endApartment = data.endApartment;
+                    orderModel.normalPayment = data.normalPayment;
+                    orderModel.privilegePayment = data.privilegePayment;
+                    orderModel.receiptPrinting = data.receiptPrinting;
+
+                    if (apartments.length > 0) {
+                      orderModel.apartments.stat.paid = apartments.filter(function (element) {
+                        return Number(element.paid) === 1;
+                      }).length;
+                      orderModel.apartments.stat.privilege = apartments.filter(function (element) {
+                        return Number(element.privilege) === 1;
+                      }).length;
+                      orderModel.apartments.stat.exempt = apartments.filter(function (element) {
+                        return Number(element.exempt) === 1;
+                      }).length;
+                      orderModel.apartments.stat.locked = apartments.filter(function (element) {
+                        return Number(element.locked) === 1;
+                      }).length;
+                    }
+                    orderModel.apartments.table = apartments;
+
+                    orderModel.contractInfo = data.contractInfo;
+                    orderModel.serviceInfo = data.serviceInfo;
+
+                    // Complete
+                    orderModel.complete.equipment.quantity = data.equipmentQuantity;
+                    orderModel.complete.equipment.price = data.equipmentPrice;
+                    orderModel.complete.equipment.cost = data.equipmentCost;
+
+                    orderModel.complete.mounting.quantity = data.mountingQuantity;
+                    orderModel.complete.mounting.price = data.mountingPrice;
+                    orderModel.complete.mounting.cost = data.mountingCost;
+
+                    orderModel.complete.subscriberUnit.quantity = data.subscriberUnitQuantity;
+                    orderModel.complete.subscriberUnit.price = data.subscriberUnitPrice;
+                    orderModel.complete.subscriberUnit.cost = data.subscriberUnitCost;
+
+                    orderModel.complete.key.quantity = data.keyQuantity;
+                    orderModel.complete.key.price = data.keyPrice;
+                    orderModel.complete.key.cost = data.keyCost;
+
+                    orderModel.complete.door.quantity = data.doorQuantity;
+                    orderModel.complete.door.price = data.doorPrice;
+                    orderModel.complete.door.cost = data.doorCost;
+
+                    orderModel.complete.subtotal.cost = data.subtotalCost;
+                    orderModel.complete.subtotalForApartment.cost = data.subtotalForApartmentCost;
+                    orderModel.complete.discountForApartment.cost = data.discountForApartmentCost;
+                    orderModel.complete.total.cost = data.totalCost;
+
+                    // res.render('docs/forms/order.ejs', {
+                    res.render('docs/forms/order2.ejs', {
+                      title: 'Договор',
+                      data: orderModel,
+                      moment: moment,
+                      utils: utils,
+                      errors: {},
+                      // apartments: apartments,
+                      user: req.session.userName
+                    });
                   }
-                  orderModel.porch = data.porch;
-                  orderModel.numeration = data.numeration;
-
-                  orderModel.client.contract = {
-                    key: data.clientId,
-                    value: data.clientName,
-                    phones: data.phones
-                  };
-                  orderModel.client.service = {
-                    key: data.clientServiceId,
-                    value: data.clientServiceName,
-                    phones: data.clientServicePhones
-                  };
-                  orderModel.client.onePerson = data.onePerson;
-
-                  orderModel.serviceNumber = data.serviceNumber;
-                  orderModel.startService = data.startService;
-                  orderModel.endService = data.endService;
-                  orderModel.maintenanceContract = data.maintenanceContract;
-                  orderModel.startApartment = data.startApartment;
-                  orderModel.endApartment = data.endApartment;
-                  orderModel.normalPayment = data.normalPayment;
-                  orderModel.privilegePayment = data.privilegePayment;
-                  orderModel.receiptPrinting = data.receiptPrinting;
-
-                  if (apartments.length > 0) {
-                    orderModel.apartments.stat.paid = apartments.filter(function (element) {
-                      return Number(element.paid) === 1;
-                    }).length;
-                    orderModel.apartments.stat.privilege = apartments.filter(function (element) {
-                      return Number(element.privilege) === 1;
-                    }).length;
-                    orderModel.apartments.stat.exempt = apartments.filter(function (element) {
-                      return Number(element.exempt) === 1;
-                    }).length;
-                    orderModel.apartments.stat.locked = apartments.filter(function (element) {
-                      return Number(element.locked) === 1;
-                    }).length;
+                  else {
+                    res.render('404', {
+                      user: req.session.userName
+                    });
                   }
-                  orderModel.apartments.table = apartments;
-
-                  orderModel.contractInfo = data.contractInfo;
-                  orderModel.serviceInfo = data.serviceInfo;
-
-                  // Complete
-                  orderModel.complete.equipment.quantity = data.equipmentQuantity;
-                  orderModel.complete.equipment.price = data.equipmentPrice;
-                  orderModel.complete.equipment.cost = data.equipmentCost;
-
-                  orderModel.complete.mounting.quantity = data.mountingQuantity;
-                  orderModel.complete.mounting.price = data.mountingPrice;
-                  orderModel.complete.mounting.cost = data.mountingCost;
-
-                  orderModel.complete.subscriberUnit.quantity = data.subscriberUnitQuantity;
-                  orderModel.complete.subscriberUnit.price = data.subscriberUnitPrice;
-                  orderModel.complete.subscriberUnit.cost = data.subscriberUnitCost;
-
-                  orderModel.complete.key.quantity = data.keyQuantity;
-                  orderModel.complete.key.price = data.keyPrice;
-                  orderModel.complete.key.cost = data.keyCost;
-
-                  orderModel.complete.door.quantity = data.doorQuantity;
-                  orderModel.complete.door.price = data.doorPrice;
-                  orderModel.complete.door.cost = data.doorCost;
-
-                  orderModel.complete.subtotal.cost = data.subtotalCost;
-                  orderModel.complete.subtotalForApartment.cost = data.subtotalForApartmentCost;
-                  orderModel.complete.discountForApartment.cost = data.discountForApartmentCost;
-                  orderModel.complete.total.cost = data.totalCost;
-
-                  // res.render('docs/forms/order.ejs', {
-                  res.render('docs/forms/order2.ejs', {
-                    title: 'Договор',
-                    data: orderModel,
-                    moment: moment,
-                    utils: utils,
-                    errors: {},
-                    // apartments: apartments,
-                    user: req.session.userName
-                  });
                 }
               });
           });

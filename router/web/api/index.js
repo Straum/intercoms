@@ -71,6 +71,7 @@ function getCurrentApplicationsHeader(workerId) {
         a.phone, b.city_id AS cityId, c.street_id AS streetId, d.house_id AS houseId,
         b.name AS cityName, c.name AS streetName,
         d.number AS houseNumber, a.porch, a.kind,
+        a.features AS isDisablingApartments,
         a.is_time_range AS isTimeRange, a.hour_from AS hourFrom, a.hour_to AS hourTo
         FROM applications a
         LEFT JOIN cities b ON b.city_id = a.city_id
@@ -114,7 +115,8 @@ function getCurrentApplicationsHeader(workerId) {
               address: address,
               isTimeRange: item.isTimeRange != 0,
               hourFrom: item.hourFrom,
-              hourTo: item.hourTo
+              hourTo: item.hourTo,
+              isDisablingApartments: item.isDisablingApartments,
             });
           });
           resolve({

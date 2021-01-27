@@ -228,7 +228,8 @@ var Filters = function () {
     street: { id: 0, name: '', cityId: 0 },
     house: { id: 0, number: '', streetId: 0 },
     performer: { id: 0, name: '' },
-    emptyPerformers: false
+    emptyPerformers: false,
+    apartmentDisconnections: false,
   };
   this.whereSQL = '';
   this.orderBy = '';
@@ -393,6 +394,11 @@ var filterBuilder = function (req, isDone) {
             id: obj.performer.id,
             name: obj.performer.name,
           };
+
+          if (obj.apartmentDisconnections) {
+            where += ' AND (a.features = 1)';
+          }
+          cloneFilters.conditions.apartmentDisconnections = obj.apartmentDisconnections;
 
           cloneFilters.conditions.period.sortBy = obj.period.sortBy;
           cloneFilters.conditions.period.allRecords = obj.period.allRecords;
@@ -981,13 +987,15 @@ var findRecords = function (req, res) {
     a.work_with_mobile_app AS workWithMobileApp,
     (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc,
     f.maintenance_contract AS maintenanceContract,
-    a.is_time_range AS isTimeRange, a.hour_from AS hourFrom, a.hour_to AS hourTo
+    a.features AS isDisablingApartments,
+    a.is_time_range AS isTimeRange, a.hour_from AS hourFrom, a.hour_to AS hourTo,
+    (DATEDIFF(NOW(), (DATE_ADD(f.create_date, INTERVAL 365 DAY))) < 0) AS isYoungAge
     FROM applications a
-    LEFT JOIN cities b ON b.city_id = a.city_id
-    LEFT JOIN streets c ON c.street_id = a.street_id
-    LEFT JOIN houses d ON d.house_id = a.house_id
-    LEFT JOIN workers e ON e.worker_id = a.worker_id
-    LEFT JOIN cards f ON f.card_id = a.card_id
+    LEFT JOIN cities b ON a.city_id = b.city_id
+    LEFT JOIN streets c ON a.street_id = c.street_id
+    LEFT JOIN houses d ON a.house_id = d.house_id
+    LEFT JOIN workers e ON a.worker_id = e.worker_id
+    LEFT JOIN cards f ON a.card_id = f.card_id
     WHERE (a.application_id > 0)
     AND (a.is_done = 0)
     AND (a.is_deleted = 0) ${add.whereSQL}
@@ -1248,15 +1256,18 @@ module.exports = function () {
                 e.worker_id AS performerId,
                 a.is_done AS isDone, a.close_date AS closeDate,
                 a.card_id AS cardId,
+                a.features AS isDisablingApartments,
                 a.is_time_range AS isTimeRange, a.hour_from AS hourFrom, a.hour_to AS hourTo,
                 (SELECT g.contract_number FROM cards g WHERE g.card_id = a.card_id) AS contractNumber,
                 (SELECT h.m_contract_number FROM cards h WHERE h.card_id = a.card_id) AS prolongedContractNumber,
-                (SELECT i.maintenance_contract FROM cards i WHERE i.card_id = a.card_id) AS maintenanceContract
+                (SELECT i.maintenance_contract FROM cards i WHERE i.card_id = a.card_id) AS maintenanceContract,
+                (DATEDIFF(NOW(), (DATE_ADD(f.create_date, INTERVAL 365 DAY))) < 0) AS isYoungAge
                 FROM applications a
-                LEFT JOIN cities b ON b.city_id = a.city_id
-                LEFT JOIN streets c ON c.street_id = a.street_id
-                LEFT JOIN houses d ON d.house_id = a.house_id
-                LEFT JOIN workers e ON e.worker_id = a.worker_id
+                LEFT JOIN cities b ON a.city_id = b.city_id
+                LEFT JOIN streets c ON a.street_id = c.street_id
+                LEFT JOIN houses d ON a.house_id = d.house_id
+                LEFT JOIN workers e ON a.worker_id = e.worker_id
+                LEFT JOIN cards f ON a.card_id = f.card_id
                 WHERE (a.application_id = ?)
                 LIMIT 1`, [id], function (err, rows) {
                   connection.release();
@@ -1299,8 +1310,10 @@ module.exports = function () {
                     applicationModel.order.contractNumber = rows[0].contractNumber;
                     applicationModel.order.prolongedContractNumber = rows[0].prolongedContractNumber;
                     applicationModel.order.maintenanceContract = rows[0].maintenanceContract;
+                    applicationModel.order.isYoungAge = rows[0].isYoungAge;
 
                     applicationModel.isDone = rows[0].isDone;
+                    applicationModel.isDisablingApartments = rows[0].isDisablingApartments;
                     applicationModel.isTimeRange = rows[0].isTimeRange;
                     applicationModel.hourFrom = rows[0].hourFrom;
                     applicationModel.hourTo = rows[0].hourTo;
@@ -1379,6 +1392,7 @@ module.exports = function () {
     applicationModel.performer.name = req.body.performer;
     applicationModel.order.id = Number(req.body.cardId);
     applicationModel.isDone = Number(req.body.isDone);
+    applicationModel.isDisablingApartments = req.body.isDisablingApartments ? 1 : 0;
     applicationModel.isTimeRange = req.body.isTimeRange ? 1 : 0;
     applicationModel.hourFrom = parseInt(req.body.hourFrom);
     applicationModel.hourTo = parseInt(req.body.hourTo);
@@ -1464,7 +1478,8 @@ module.exports = function () {
                     weight = ?,
                     is_time_range = ?,
                     hour_from = ?,
-                    hour_to = ?
+                    hour_to = ?,
+                    features = ?
                     WHERE application_id = ?`, [
                     applicationModel.createDate,
                     applicationModel.completionDate,
@@ -1481,6 +1496,7 @@ module.exports = function () {
                     applicationModel.isTimeRange,
                     applicationModel.hourFrom,
                     applicationModel.hourTo,
+                    applicationModel.isDisablingApartments,
                     applicationModel.id
                   ], function (err) {
                     connection.release();
@@ -1504,8 +1520,8 @@ module.exports = function () {
           else {
             db.get().getConnection(function (err, connection) {
               connection.query(
-                `INSERT INTO applications (create_date, completion_date, city_id, street_id, house_id, porch, kind, phone, worker_id, card_id, weight, is_time_range, hour_from, hour_to)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+                `INSERT INTO applications (create_date, completion_date, city_id, street_id, house_id, porch, kind, phone, worker_id, card_id, weight, is_time_range, hour_from, hour_to, features)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
                 applicationModel.createDate,
                 applicationModel.completionDate,
                 applicationModel.address.city.id,
@@ -1519,7 +1535,8 @@ module.exports = function () {
                 applicationModel.weight,
                 applicationModel.isTimeRange,
                 applicationModel.hourFrom,
-                applicationModel.hourTo
+                applicationModel.hourTo,
+                applicationModel.isDisablingApartments
               ], function (err, rows) {
                 connection.release();
                 if (err) {
@@ -1803,7 +1820,7 @@ module.exports = function () {
           if (err) {
             res.status(500).send(db.showDatabaseError(500, err));
           } else {
-            res.status(200).send(rows);
+            res.status(200).send(rows.length > 0 ? rows[0] : null);
           }
         });
     });
@@ -1836,13 +1853,15 @@ module.exports = function () {
       a.work_with_mobile_app AS workWithMobileApp,
       (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc,
       f.maintenance_contract AS maintenanceContract,
-      a.is_time_range AS isTimeRange, a.hour_from AS hourFrom, a.hour_to AS hourTo
+      a.features AS isDisablingApartments,
+      a.is_time_range AS isTimeRange, a.hour_from AS hourFrom, a.hour_to AS hourTo,
+      (DATEDIFF(NOW(), (DATE_ADD(f.create_date, INTERVAL 365 DAY))) < 0) AS isYoungAge
       FROM applications a
-      LEFT JOIN cities b ON b.city_id = a.city_id
-      LEFT JOIN streets c ON c.street_id = a.street_id
-      LEFT JOIN houses d ON d.house_id = a.house_id
-      LEFT JOIN workers e ON e.worker_id = a.worker_id
-      LEFT JOIN cards f ON f.card_id = a.card_id
+      LEFT JOIN cities b ON a.city_id = b.city_id
+      LEFT JOIN streets c ON a.street_id = c.street_id
+      LEFT JOIN houses d ON a.house_id = d.house_id
+      LEFT JOIN workers e ON a.worker_id = e.worker_id
+      LEFT JOIN cards f ON a.card_id = f.card_id
       WHERE (a.application_id > 0)
       AND (a.is_done = 0)
       AND (a.is_deleted = 0) ${add.whereSQL}
@@ -1962,11 +1981,11 @@ module.exports = function () {
       ' f.contract_number AS contractNumber, f.m_contract_number AS prolongedContractNumber,' +
       ' f.maintenance_contract AS maintenanceContract' +
       ' FROM applications a' +
-      ' LEFT JOIN cities b ON b.city_id = a.city_id' +
-      ' LEFT JOIN streets c ON c.street_id = a.street_id' +
-      ' LEFT JOIN houses d ON d.house_id = a.house_id' +
-      ' LEFT JOIN workers e ON e.worker_id = a.worker_id' +
-      ' LEFT JOIN cards f ON f.card_id = a.card_id' +
+      ' LEFT JOIN cities b ON a.city_id = b.city_id' +
+      ' LEFT JOIN streets c ON a.street_id = c.street_id' +
+      ' LEFT JOIN houses d ON a.house_id = d.house_id' +
+      ' LEFT JOIN workers e ON a.worker_id = e.worker_id' +
+      ' LEFT JOIN cards f ON a.card_id = f.card_id' +
       ' WHERE (a.application_id > 0)' +
       ' AND (a.is_done = 1)' +
       ' AND (a.is_deleted = 0)' + add.whereSQL +

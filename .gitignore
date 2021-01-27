@@ -1,5 +1,12 @@
 /fonts/
-/public/
+/public/bower_components/
+/public/docs/
+/public/downloads/
+/public/images/
+/public/in/
+/public/out/
+/public/photos/
+/public/templates/
 /node_modules/
 /.vscode/
 /nbproject/private/

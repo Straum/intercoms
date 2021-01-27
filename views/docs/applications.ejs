@@ -10,7 +10,8 @@
   <title>Home page - Заявки</title>
 
   <% include ../common/bootstrap_css.ejs %>
-  <link href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+  <link href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css"
+    rel="stylesheet">
   <link href="/theme.css" rel="stylesheet">
 </head>
 
@@ -35,21 +36,28 @@
     </div>
     <form class="form-inline" role="form" method="get" action="/applications/filter" id="applicationsForm">
       <input type="text" hidden id="filters" name="filters" value="<%= JSON.stringify(filters) %>">
-      <div class="input-group date my-tooltip" id="startDate" data-toggle="tooltip" data-placement="top" title="Начальная дата">
-        <input type="text" class="form-control" name="startDate" value="<%= moment(filters.period.start).format( 'DD.MM.YYYY HH:mm' ) %>" <%= filters.period.allRecords ? 'readonly' : '' %> />
+      <div class="input-group date my-tooltip" id="startDate" data-toggle="tooltip" data-placement="top"
+        title="Начальная дата">
+        <input type="text" class="form-control" name="startDate"
+          value="<%= moment(filters.period.start).format( 'DD.MM.YYYY HH:mm' ) %>"
+          <%= filters.period.allRecords ? 'readonly' : '' %> />
         <span class="input-group-addon">
-            <span class="glyphicon glyphicon-calendar"></span>
+          <span class="glyphicon glyphicon-calendar"></span>
         </span>
       </div>
-      <div class="input-group date my-tooltip" id="endDate" data-toggle="tooltip" data-placement="top" title="Конечная дата">
-        <input type="text" class="form-control" name="endDate" value="<%= moment(filters.period.end).format( 'DD.MM.YYYY HH:mm' ) %>" <%= filters.period.allRecords ? 'readonly' : '' %> />
+      <div class="input-group date my-tooltip" id="endDate" data-toggle="tooltip" data-placement="top"
+        title="Конечная дата">
+        <input type="text" class="form-control" name="endDate"
+          value="<%= moment(filters.period.end).format( 'DD.MM.YYYY HH:mm' ) %>"
+          <%= filters.period.allRecords ? 'readonly' : '' %> />
         <span class="input-group-addon">
-            <span class="glyphicon glyphicon-calendar"></span>
+          <span class="glyphicon glyphicon-calendar"></span>
         </span>
       </div>
       &nbsp;
       <div class="checkbox">
-        <label><input type="checkbox" name="allRecords" id="allRecords" <%= filters.period.allRecords ? ' checked' : '' %>> Все </label>
+        <label><input type="checkbox" name="allRecords" id="allRecords"
+            <%= filters.period.allRecords ? ' checked' : '' %>> Все </label>
       </div>
       &nbsp;
       <button type="submit" class="btn btn-success" name="applyFilter">&nbsp;Применить фильтр&nbsp;</button>
@@ -59,14 +67,23 @@
         name="downloadReport"><span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span></button>
       &nbsp;
       <div class="checkbox">
-        <label><input type="checkbox" name="emptyPerformers" id="emptyPerformers" <%= filters.emptyPerformers ? ' checked' : '' %>> Неотданные исполнители </label>
+        <label><input type="checkbox" name="emptyPerformers" id="emptyPerformers"
+            <%= filters.emptyPerformers ? ' checked' : '' %>> Неотданные исполнители </label>
+      </div>
+      &nbsp;
+      <div class="checkbox">
+        <label><input type="checkbox" name="apartmentDisconnections" id="apartmentDisconnections"
+            <%= filters.apartmentDisconnections ? ' checked' : '' %>> Отключения квартир </label>
       </div>
     </form>
     <p>
       <table class="table table-bordered table-hover table-condensed">
         <thead>
           <tr class="active">
-            <th style="width: 10%; vertical-align: middle" rowspan="2" class="text-center" onclick="sortBy()"><span>Дата</span>&nbsp;<span class="glyphicon <%= filters.period.sortBy == 'ASC' ? 'glyphicon-arrow-up' : 'glyphicon-arrow-down' %>"></span></th>
+            <th style="width: 10%; vertical-align: middle" rowspan="2" class="text-center" onclick="sortBy()">
+              <span>Дата</span>&nbsp;<span
+                class="glyphicon <%= filters.period.sortBy == 'ASC' ? 'glyphicon-arrow-up' : 'glyphicon-arrow-down' %>"></span>
+            </th>
             <th style="width: 15%;" class="text-center align-middle">Город</th>
             <th style="width: 15%;" class="text-center align-middle">Улица</th>
             <th style="width: 6%;" class="text-center align-middle">Дом</th>
@@ -118,7 +135,8 @@
                   </button>
                 </span>
                 <input type="text" class="form-control" placeholder="Исполнитель" name="findPerformer"
-                  id="findPerformer" value="<%= +filters.performer.id === 0 ? '' : filters.performer.name %>" <%= filters.emptyPerformers ? " disabled" : "" %>
+                  id="findPerformer" value="<%= +filters.performer.id === 0 ? '' : filters.performer.name %>"
+                  <%= filters.emptyPerformers ? " disabled" : "" %>>
               </div>
             </td>
           </tr>
@@ -127,12 +145,12 @@
           <% for (var ind = 0, max = data.length; ind < max; ind++) {%>
 
           <% if (+data[ind].weight === -1) { %>
-            <tr class="danger">
-          <% } else if (+data[ind].weight === 0) { %>
-            <tr class="warning">
-          <% } else { %>
-            <tr>
-          <% } %>
+          <tr class="danger">
+            <% } else if (+data[ind].weight === 0) { %>
+          <tr class="warning">
+            <% } else { %>
+          <tr>
+            <% } %>
             <td class="text-center align-middle">
               <%= moment(data[ind].createDate).format( 'DD.MM.YYYY HH:mm') %>
             </td>
@@ -152,16 +170,19 @@
               <%= data[ind].performerName %>
             </td>
             <td class="text-left align-middle">
-              <% if (data[ind].maintenanceContract === 0) { %>
-                <img src="/images/brick.png">
+              <% if ((data[ind].maintenanceContract != 1) && (data[ind].isYoungAge != 1)) { %>
+              <img src="/images/brick.png">
               <% } %>
               <% if ((data[ind].completionDate != null) && (data[ind].weight >= 0)) { %>
               <span class="glyphicon glyphicon-calendar" aria-hidden="true"></span>
               <% } %>
+              <% if ((data[ind].isDisablingApartments != 0)) { %>
+                <img src="/images/redcross_18.png">
+              <% } %>
               <% if ((data[ind].isTimeRange != 0)) { %>
-                <img src="/images/timer_blue_18.png">
-                <%= `${data[ind].hourFrom}-${data[ind].hourTo}, ` %>
-                <% } %>
+              <img src="/images/timer_blue_18.png">
+              <%= `${data[ind].hourFrom}-${data[ind].hourTo}, ` %>
+              <% } %>
               <%= 'problemDescription' in data[ind] ? data[ind].problemDescription : '' %>
             </td>
             <td class="text-center align-middle">
@@ -233,7 +254,8 @@
       <% } %>
       <div class="row">
         <div class="col-xs-12">
-          <div class="alert alert-info">Записей: <strong><%= countRecords %></strong>, из них неотданных: <strong><%= unReleasedData %></strong></div>
+          <div class="alert alert-info">Записей: <strong><%= countRecords %></strong>, из них неотданных:
+            <strong><%= unReleasedData %></strong></div>
         </div>
       </div>
   </div>
@@ -273,7 +295,6 @@
   <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
   <script src="/bower_components/axios/dist/axios.min.js"></script>
   <script>
-
     $('[data-toggle="tooltip"]').tooltip();
 
     $('#startDate').datetimepicker({
@@ -286,8 +307,7 @@
         var filters = JSON.parse(data);
         filters.period.start = moment(e.date).format('YYYY-MM-DD HH:mm');
         $('#filters').val(JSON.stringify(filters));
-      }
-      catch (e) {
+      } catch (e) {
         console.log(e.message);
       }
     });
@@ -302,8 +322,7 @@
         var filters = JSON.parse(data);
         filters.period.end = moment(e.date).format('YYYY-MM-DD HH:mm');
         $('#filters').val(JSON.stringify(filters));
-      }
-      catch (e) {
+      } catch (e) {
         console.log(e.message);
       }
     });
@@ -316,15 +335,16 @@
         $('[name="startDate"]').prop("readonly", e.currentTarget.checked);
         $('[name="endDate"]').prop("readonly", e.currentTarget.checked);
         $('#filters').val(JSON.stringify(filters));
-      }
-      catch (e) {
+      } catch (e) {
         console.log(e.message);
       }
     });
 
     function confirmDelete(id) {
       $('#deletedUID').val(id);
-      $('#modalDeleteRecord').modal({ 'keyboard': true });
+      $('#modalDeleteRecord').modal({
+        'keyboard': true
+      });
     }
 
     function clearCity() {
@@ -345,31 +365,40 @@
 
     function sortBy() {
       var data = $('#filters').val();
-        try {
-          var filters = JSON.parse(data);
-          var sortBy = filters.period.sortBy;
-          filters.period.sortBy = (sortBy == 'ASC' ? 'DESC' : 'ASC');
-          $('#filters').val(JSON.stringify(filters));
+      try {
+        var filters = JSON.parse(data);
+        var sortBy = filters.period.sortBy;
+        filters.period.sortBy = (sortBy == 'ASC' ? 'DESC' : 'ASC');
+        $('#filters').val(JSON.stringify(filters));
 
-          document.getElementById("applicationsForm").submit();
-        }
-        catch (e) {
-          console.log(e.message);
-        }
+        document.getElementById("applicationsForm").submit();
+      } catch (e) {
+        console.log(e.message);
       }
+    }
 
-      document.getElementById('emptyPerformers').addEventListener('click', function (e) {
-        var data = $('#filters').val();
-        try {
-          var filters = JSON.parse(data);
-          filters.emptyPerformers = e.currentTarget.checked;
-          $('#filters').val(JSON.stringify(filters));
-          document.getElementById('findPerformer').disabled = e.currentTarget.checked;
-        }
-        catch (e) {
-          console.log(e.message);
-        }
-      });
+    document.getElementById('emptyPerformers').addEventListener('click', function (e) {
+      var data = $('#filters').val();
+      try {
+        var filters = JSON.parse(data);
+        filters.emptyPerformers = e.currentTarget.checked;
+        $('#filters').val(JSON.stringify(filters));
+        document.getElementById('findPerformer').disabled = e.currentTarget.checked;
+      } catch (e) {
+        console.log(e.message);
+      }
+    });
+
+    document.getElementById('apartmentDisconnections').addEventListener('click', function (e) {
+      var data = $('#filters').val();
+      try {
+        var filters = JSON.parse(data);
+        filters.apartmentDisconnections = e.currentTarget.checked;
+        $('#filters').val(JSON.stringify(filters));
+      } catch (e) {
+        console.log(e.message);
+      }
+    });
 
     $(document).ready(function () {
 
@@ -424,8 +453,7 @@
 
           $('#filters').val(JSON.stringify(filters));
           $('#findCity').focus();
-        }
-        catch (e) {
+        } catch (e) {
           console.log(e.message);
         }
       });
@@ -446,8 +474,7 @@
 
           $('#filters').val(JSON.stringify(filters));
           $('#findStreet').focus();
-        }
-        catch (e) {
+        } catch (e) {
           console.log(e.message);
         }
       });
@@ -463,8 +490,7 @@
 
           $('#filters').val(JSON.stringify(filters));
           $('#findHouse').focus();
-        }
-        catch (e) {
+        } catch (e) {
           console.log(e.message);
         }
       });
@@ -479,8 +505,7 @@
 
           $('#filters').val(JSON.stringify(filters));
           $('#findPerformer').focus();
-        }
-        catch (e) {
+        } catch (e) {
           console.log(e.message);
         }
       });
@@ -497,14 +522,13 @@
           axios.post('/applications/find_city', {
             cityName: query,
             limit: 15
-          }
-          ).then(function (response) {
-              var data = response.data;
-              data.forEach( function (item) {
-                map[item.value] = item;
-                results.push(item.value);
-              });
-              process(results);
+          }).then(function (response) {
+            var data = response.data;
+            data.forEach(function (item) {
+              map[item.value] = item;
+              results.push(item.value);
+            });
+            process(results);
           }).catch(function (error) {
             console.log(error);
           });
@@ -517,8 +541,7 @@
             filters.city.name = map[element].value;
             $('#filters').val(JSON.stringify(filters));
             document.getElementById('findStreet').focus();
-          }
-          catch (e) {
+          } catch (e) {
             console.log(e.message);
           }
           return element;
@@ -535,8 +558,7 @@
           try {
             var filters = JSON.parse(data);
             cityId = filters.city.id;
-          }
-          catch (e) {
+          } catch (e) {
             console.log(e.message);
           }
 
@@ -544,14 +566,13 @@
             streetName: query,
             cityId: cityId,
             limit: 15
-          }
-          ).then(function (response) {
-              var data = response.data;
-              data.forEach( function (item) {
-                map[item.value] = item;
-                results.push(item.value);
-              });
-              process(results);
+          }).then(function (response) {
+            var data = response.data;
+            data.forEach(function (item) {
+              map[item.value] = item;
+              results.push(item.value);
+            });
+            process(results);
           }).catch(function (error) {
             console.log(error);
           });
@@ -565,8 +586,7 @@
             filters.street.cityId = map[element].cityId;
             $('#filters').val(JSON.stringify(filters));
             document.getElementById('findHouse').focus();
-          }
-          catch (e) {
+          } catch (e) {
             console.log(e.message);
           }
           return element;
@@ -583,8 +603,7 @@
           try {
             var filters = JSON.parse(data);
             streetId = filters.street.id;
-          }
-          catch (e) {
+          } catch (e) {
             console.log(e.message);
           }
 
@@ -592,14 +611,13 @@
             houseNumber: query,
             streetId: streetId,
             limit: 15
-          }
-          ).then(function (response) {
-              var data = response.data;
-              data.forEach( function (item) {
-                map[item.value] = item;
-                results.push(item.value);
-              });
-              process(results);
+          }).then(function (response) {
+            var data = response.data;
+            data.forEach(function (item) {
+              map[item.value] = item;
+              results.push(item.value);
+            });
+            process(results);
           }).catch(function (error) {
             console.log(error);
           });
@@ -612,8 +630,7 @@
             filters.house.number = map[element].value;
             filters.house.streetId = map[element].streetId;
             $('#filters').val(JSON.stringify(filters));
-          }
-          catch (e) {
+          } catch (e) {
             console.log(e.message);
           }
           return element;
@@ -629,14 +646,13 @@
           axios.post('/applications/find_performer', {
             performerName: query,
             limit: 15
-          }
-          ).then(function (response) {
-              var data = response.data;
-              data.forEach( function (item) {
-                map[item.value] = item;
-                results.push(item.value);
-              });
-              process(results);
+          }).then(function (response) {
+            var data = response.data;
+            data.forEach(function (item) {
+              map[item.value] = item;
+              results.push(item.value);
+            });
+            process(results);
           }).catch(function (error) {
             console.log(error);
           });
@@ -648,16 +664,14 @@
             filters.performer.id = map[element].id;
             filters.performer.name = map[element].value;
             $('#filters').val(JSON.stringify(filters));
-          }
-          catch (e) {
+          } catch (e) {
             console.log(e.message);
           }
           return element;
         }
       });
 
-});
-
+    });
   </script>
 </body>
 
