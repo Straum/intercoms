@@ -1,8 +1,12 @@
 'use strict';
 
 const express = require('express');
+
 const { body } = require('express-validator/check');
 var db = require('../../../lib/db.js');
+
+// const logger = express.logger;
+// const log = require('../../../lib/log').logger;
 
 function insertApplicationsTable(data, workerId) {
   return new Promise((resolve, reject) => {
@@ -155,6 +159,8 @@ module.exports = function () {
 
   router.get('/v1/test_connection', function (req, res) {
     res.status(200).send(JSON.stringify({ 'test_connection': 'successful' }));
+    console.log('/v1/test_connection');
+    console.log('Проба пера');
   });
 
   router.get('/v1/current_orders/:id', async function (req, res) {
@@ -388,19 +394,20 @@ module.exports = function () {
     });
   });
 
-  router.post('/v1/completed_applications/:id', async function (req, res) {
-    var workerId = req.params.id;
-    console.log(`id: ${workerId}`);
+  router.post('/v1/completed_applications/:id', async (req, res) => {
+    const workerId = req.params.id;
+    // log.info(`Выгрузка заявок от сервисника`);
+    // log.info(`ID сервисника: ${workerId}`);
 
     const data = req.body;
-    console.log(`outData: ${JSON.stringify(data)}`);
+    // logger.info(`Входящие данные: ${JSON.stringify(data)}`);
 
     await insertApplicationsTable(data, workerId)
       .then(() => {
 
       })
       .catch((error) => {
-        console.log(`ERROR: ${error.message}`)
+        // log.info(`Ошибка при заполнении табличных данных заявок: ${error.message}`)
       })
 
     await insertApplicationsHeader(data, workerId)
@@ -408,7 +415,7 @@ module.exports = function () {
 
       })
       .catch((error) => {
-        console.log(`ERROR: ${error.message}`)
+        // log.info(`Ошибка при заполнении шапок заявок: ${error.message}`)
       })
 
     res.status(200).send({ result: 'success' });

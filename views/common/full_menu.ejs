@@ -1,54 +1,64 @@
 <nav class="navbar navbar-default navbar-fixed-top">
-    <div class="container">
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
-                aria-expanded="false" aria-controls="navbar">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand" href="/home">Домофон-сервис</a>
-        </div>
-        <div class="collapse navbar-collapse">
-            <ul class="nav navbar-nav">
-                <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">Справочники<span class="caret"></span></a>
-                    <ul class="dropdown-menu" role="menu">
-                        <li><a class="dropdown-item" href="/equipment">Оборудование</a></li>
-                        <li><a class="dropdown-item" href="/workers">Персонал</a></li>
-                        <li><a class="dropdown-item" href="/clients">Клиенты</a></li>
-                        <li><a class="dropdown-item" href="/organizations">Организации</a></li>
-                        <li><a class="dropdown-item" href="/services">Сервисы</a></li>
-                        <li><a class="dropdown-item" href="/cities">Города</a></li>
-                        <li><a class="dropdown-item" href="/streets">Улицы</a></li>
-                    </ul>
-                </li>
-                <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">Документы<span class="caret"></span></a>
-                    <ul class="dropdown-menu" role="menu">
-                        <li><a class="dropdown-item" href="/orders">Договоры</a></li>
-                        <li><a class="dropdown-item" href="/registers">Реестр</a></li>
-                        <li><a class="dropdown-item" href="/payments">Платежи</a></li>
-                        <li><a class="dropdown-item" href="/info">Информация</a></li>
-                        <li><a class="dropdown-item" href="/applications">Заявки</a></li>
-                        <li role="separator" class="divider"></li>
-                        <li><a class="dropdown-item" href="/removed_for_repair">Снято в ремонт</a></li>
-                    </ul>
-                </li>
-                <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">Справка<span class="caret"></span></a>
-                    <ul class="dropdown-menu" role="menu">
-                        <li><a class="dropdown-item" href="#">О программе</a></li>
-                    </ul>
-                </li>
-            </ul>
-            <ul class="nav navbar-nav navbar-right">
-                <% if (user != null) { %>
-                    <p class="navbar-text"><strong><%= user %></strong></p>
-                <% } %>
-                <li><a href="/logout">Выход</a></li>
-            </ul>
-        </div>
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
+        aria-expanded="false" aria-controls="navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="/home">Домофон-сервис</a>
     </div>
+    <div class="collapse navbar-collapse">
+      <ul class="nav navbar-nav">
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">Справочники<span
+              class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a class="dropdown-item" href="/equipment">Оборудование</a></li>
+            <li><a class="dropdown-item" href="/workers">Персонал</a></li>
+            <li><a class="dropdown-item" href="/clients">Клиенты</a></li>
+            <li><a class="dropdown-item" href="/organizations">Организации</a></li>
+            <li><a class="dropdown-item" href="/services">Сервисы</a></li>
+            <li><a class="dropdown-item" href="/cities">Города</a></li>
+            <li><a class="dropdown-item" href="/streets">Улицы</a></li>
+          </ul>
+        </li>
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">Документы<span
+              class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a class="dropdown-item" href="/orders">Договоры</a></li>
+            <li><a class="dropdown-item" href="/registers">Реестр</a></li>
+            <li><a class="dropdown-item" href="/payments">Платежи</a></li>
+            <li><a class="dropdown-item" href="/info">Информация</a></li>
+            <li><a class="dropdown-item" href="/applications">Заявки</a></li>
+            <li role="separator" class="divider"></li>
+            <li><a class="dropdown-item" href="/removed_for_repair">Снято в ремонт</a></li>
+          </ul>
+        </li>
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">Отчеты<span
+              class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a class="dropdown-item" href="/report_payments_by_banks">Платежи по банкам</a></li>
+          </ul>
+        </li>
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">Справка<span
+              class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a class="dropdown-item" href="#">О программе</a></li>
+          </ul>
+        </li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <% if (user != null) { %>
+        <p class="navbar-text"><strong><%= user %></strong></p>
+        <% } %>
+        <li><a href="/logout">Выход</a></li>
+      </ul>
+    </div>
+  </div>
 </nav>

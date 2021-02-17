@@ -8,8 +8,7 @@ var fs = require('fs');
 var PDFDocument = require('pdfkit');
 
 var db = require('../../../lib/db');
-const visibleRows = require('../../../lib/config').config.visibleRows;
-var rowsLimit = require('../../../lib/config').config.rowsLimit;
+const cfg = require('../../../lib/config').config;
 var moment = require('moment');
 var utils = require('../../../lib/utils');
 var order = require('../../../lib/order_service');
@@ -19,9 +18,9 @@ var common = require('../../common/typeheads');
 var OrderModel = require('../../../models/order').OrderModel;
 var models = require('../../../models/order');
 var PrintOrderReceipts = require('../../../lib/print_order_receipts').PrintOrderReceipts;
+const {hostIP, hostPort} = require('../../../lib/config').config;
 
 require('shelljs/global');
-
 
 const paymentsHistory = async (apartmentId) => {
   let out = {
@@ -41,8 +40,7 @@ const paymentsHistory = async (apartmentId) => {
     out.fines = await getPaymentsByRegister(apartmentId);
     out.prices = await getPrices(apartmentId);
     return out;
-  }
-  catch (error) {
+  } catch (error) {
     console.log(error.message);
   }
 }
@@ -55,21 +53,20 @@ function addPayment(data) {
         ' create_date, apartment_id, pay_month, pay_year, amount, pay_date, `mode`, is_registered)' +
         ' VALUES (' +
         ' ?,?,?,?,?,?,?,?)', [
-        data.createDate,
-        data.apartmentId,
-        data.payMonth,
-        data.payYear,
-        data.amount,
-        data.payDate,
-        data.mode,
-        data.isRegistered
-      ],
+          data.createDate,
+          data.apartmentId,
+          data.payMonth,
+          data.payYear,
+          data.amount,
+          data.payDate,
+          data.mode,
+          data.isRegistered
+        ],
         function (err, rows) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve(rows.insertId);
           }
         });
@@ -86,15 +83,13 @@ function getOrderIdFromApartment(apartmentId) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve((Array.isArray(rows) && rows.length == 1) ? rows[0].card_id : null);
           }
         });
     });
   });
 }
-
 
 function generatePersonalAccount(data) {
   var out = [];
@@ -123,8 +118,7 @@ function checkCurrentPeriod(orderId) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve();
           }
         });
@@ -141,8 +135,7 @@ function checkPreviousPeriod(orderId) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve();
           }
         });
@@ -159,8 +152,7 @@ function checkOrder(orderId) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve();
           }
         });
@@ -185,15 +177,15 @@ function getApartmentInfo(id) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
-            resolve((Array.isArray(rows) && rows.length == 1) ? { ...rows[0] } : null);
+          } else {
+            resolve((Array.isArray(rows) && rows.length == 1) ? {
+              ...rows[0]
+            } : null);
           }
         });
     });
   });
 }
-
 
 function getPayments(id) {
   return new Promise(function (resolve, reject) {
@@ -220,8 +212,7 @@ function getPayments(id) {
           connection.release();
           if (err) {
             reject(err);
-          }
-          else {
+          } else {
             resolve(rows);
           }
         });
@@ -254,8 +245,7 @@ function getPaymentsByRegister(id) {
           connection.release();
           if (err) {
             reject(err);
-          }
-          else {
+          } else {
             resolve(rows);
           }
         });
@@ -282,8 +272,7 @@ function getFines(id) {
           connection.release();
           if (err) {
             reject(err);
-          }
-          else {
+          } else {
             resolve(rows);
           }
         });
@@ -311,8 +300,7 @@ function getPrices(id) {
           connection.release();
           if (err) {
             reject(err);
-          }
-          else {
+          } else {
             resolve(rows);
           }
         });
@@ -371,57 +359,58 @@ function updateOrder(data) {
         ' discount_for_apartment = ?,' +
         ' total = ?' +
         ' WHERE card_id = ?', [
-        data.contractNumber,
-        data.createDate,
-        data.equipment.key,
-        data.endContract,
-        data.creditTo,
-        data.repaid,
-        data.address.city.key,
-        data.address.street.key,
-        data.address.house.key,
-        data.porch,
-        data.numeration,
-        data.client.contract.key,
-        data.onePerson,
-        data.client.service.key,
-        data.serviceNumber,
-        data.startService,
-        data.endService,
-        data.endService,
-        data.maintenanceContract,
-        data.startApartment,
-        data.endApartment,
-        data.normalPayment,
-        data.privilegePayment,
-        data.receiptPrinting,
-        data.contractInfo,
-        data.serviceInfo,
-        data.complete.equipment.quantity,
-        data.complete.equipment.price,
-        data.complete.equipment.cost,
-        data.complete.mounting.quantity,
-        data.complete.mounting.price,
-        data.complete.mounting.cost,
-        data.complete.subscriberUnit.quantity,
-        data.complete.subscriberUnit.price,
-        data.complete.subscriberUnit.cost,
-        data.complete.key.quantity,
-        data.complete.key.price,
-        data.complete.key.cost,
-        data.complete.door.quantity,
-        data.complete.door.price,
-        data.complete.door.cost,
-        data.complete.subtotal.cost,
-        data.complete.subtotalForApartment.cost,
-        data.complete.discountForApartment.cost,
-        data.complete.total.cost,
-        data.id], function (err) {
+          data.contractNumber,
+          data.createDate,
+          data.equipment.key,
+          data.endContract,
+          data.creditTo,
+          data.repaid,
+          data.address.city.key,
+          data.address.street.key,
+          data.address.house.key,
+          data.porch,
+          data.numeration,
+          data.client.contract.key,
+          data.onePerson,
+          data.client.service.key,
+          data.serviceNumber,
+          data.startService,
+          data.endService,
+          data.endService,
+          data.maintenanceContract,
+          data.startApartment,
+          data.endApartment,
+          data.normalPayment,
+          data.privilegePayment,
+          data.receiptPrinting,
+          data.contractInfo,
+          data.serviceInfo,
+          data.complete.equipment.quantity,
+          data.complete.equipment.price,
+          data.complete.equipment.cost,
+          data.complete.mounting.quantity,
+          data.complete.mounting.price,
+          data.complete.mounting.cost,
+          data.complete.subscriberUnit.quantity,
+          data.complete.subscriberUnit.price,
+          data.complete.subscriberUnit.cost,
+          data.complete.key.quantity,
+          data.complete.key.price,
+          data.complete.key.cost,
+          data.complete.door.quantity,
+          data.complete.door.price,
+          data.complete.door.cost,
+          data.complete.subtotal.cost,
+          data.complete.subtotalForApartment.cost,
+          data.complete.discountForApartment.cost,
+          data.complete.total.cost,
+          data.id
+        ],
+        function (err) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve();
           }
         });
@@ -438,14 +427,12 @@ function deleteExistsApartments(data) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve();
           }
         });
       });
-    }
-    else {
+    } else {
       resolve();
     }
   })
@@ -472,14 +459,12 @@ function insertApartments(data) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve();
           }
         });
       });
-    }
-    else {
+    } else {
       resolve();
     }
   })
@@ -501,8 +486,7 @@ function updateApartments(data) {
             ', exempt = ' + item.exempt +
             ', locked = ' + item.locked +
             ' WHERE apartment_id = ' + item.uid + ';';
-        }
-        else {
+        } else {
           queries += 'INSERT INTO apartments (number, letter, paid, privilege, exempt, locked, card_id) VALUES (' +
             item.number + ', ' +
             item.letter + ', ' +
@@ -528,14 +512,12 @@ function updateApartments(data) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve();
           }
         });
       });
-    }
-    else {
+    } else {
       resolve();
     }
   });
@@ -559,56 +541,57 @@ function saveOrder(data) {
         ' subtotal, subtotal_for_apartment, discount_for_apartment, total)' +
         ' VALUES (' +
         ' ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [
-        data.contractNumber,
-        data.createDate,
-        data.equipment.key,
-        data.endContract,
-        data.creditTo,
-        data.repaid,
-        data.address.city.key,
-        data.address.street.key,
-        data.address.house.key,
-        data.porch,
-        data.numeration,
-        data.client.contract.key,
-        data.onePerson,
-        data.client.service.key,
-        data.serviceNumber,
-        data.startService,
-        data.endService,
-        data.endService,
-        data.maintenanceContract,
-        data.startApartment,
-        data.endApartment,
-        data.normalPayment,
-        data.privilegePayment,
-        data.receiptPrinting,
-        data.contractInfo,
-        data.serviceInfo,
-        data.complete.equipment.quantity,
-        data.complete.equipment.price,
-        data.complete.equipment.cost,
-        data.complete.mounting.quantity,
-        data.complete.mounting.price,
-        data.complete.mounting.cost,
-        data.complete.subscriberUnit.quantity,
-        data.complete.subscriberUnit.price,
-        data.complete.subscriberUnit.cost,
-        data.complete.key.quantity,
-        data.complete.key.price,
-        data.complete.key.cost,
-        data.complete.door.quantity,
-        data.complete.door.price,
-        data.complete.door.cost,
-        data.complete.subtotal.cost,
-        data.complete.subtotalForApartment.cost,
-        data.complete.discountForApartment.cost,
-        data.complete.total.cost], function (err, rows) {
+          data.contractNumber,
+          data.createDate,
+          data.equipment.key,
+          data.endContract,
+          data.creditTo,
+          data.repaid,
+          data.address.city.key,
+          data.address.street.key,
+          data.address.house.key,
+          data.porch,
+          data.numeration,
+          data.client.contract.key,
+          data.onePerson,
+          data.client.service.key,
+          data.serviceNumber,
+          data.startService,
+          data.endService,
+          data.endService,
+          data.maintenanceContract,
+          data.startApartment,
+          data.endApartment,
+          data.normalPayment,
+          data.privilegePayment,
+          data.receiptPrinting,
+          data.contractInfo,
+          data.serviceInfo,
+          data.complete.equipment.quantity,
+          data.complete.equipment.price,
+          data.complete.equipment.cost,
+          data.complete.mounting.quantity,
+          data.complete.mounting.price,
+          data.complete.mounting.cost,
+          data.complete.subscriberUnit.quantity,
+          data.complete.subscriberUnit.price,
+          data.complete.subscriberUnit.cost,
+          data.complete.key.quantity,
+          data.complete.key.price,
+          data.complete.key.cost,
+          data.complete.door.quantity,
+          data.complete.door.price,
+          data.complete.door.cost,
+          data.complete.subtotal.cost,
+          data.complete.subtotalForApartment.cost,
+          data.complete.discountForApartment.cost,
+          data.complete.total.cost
+        ],
+        function (err, rows) {
           connection.release();
           if (err) {
             reject(err);
-          }
-          else {
+          } else {
             resolve(rows.insertId);
           }
         });
@@ -644,7 +627,8 @@ function getOrderInfo(orderId) {
         ' LEFT JOIN houses d ON d.house_id = a.house_id' +
         ' LEFT JOIN equipments e ON e.equipment_id = a.equipment_id' +
         ' WHERE (a.card_id = ?)' +
-        ' LIMIT 1', [orderId], function (err, rows) {
+        ' LIMIT 1', [orderId],
+        function (err, rows) {
           connection.release();
           if (err) {
             reject();
@@ -669,7 +653,8 @@ function getAddressInfo(clientId, residenceType) {
         ' LEFT JOIN streets c ON c.street_id = a.street_id' +
         ' LEFT JOIN houses d ON d.house_id = a.house_id' +
         ' WHERE (a.client_id = ?) AND (a.residence_type_id = ?)' +
-        ' LIMIT 1', [clientId, residenceType], function (err, rows) {
+        ' LIMIT 1', [clientId, residenceType],
+        function (err, rows) {
           connection.release();
           if (err) {
             reject();
@@ -691,7 +676,8 @@ function getClientInfo(clientId) {
         ' LEFT JOIN faces b ON b.client_id = a.client_id' +
         ' LEFT JOIN docs_types c ON c.doc_type_id = b.doc_type_id' +
         ' WHERE (a.client_id = ?)' +
-        ' LIMIT 1', [clientId], function (err, rows) {
+        ' LIMIT 1', [clientId],
+        function (err, rows) {
           connection.release();
           if (err) {
             reject();
@@ -703,12 +689,12 @@ function getClientInfo(clientId) {
   });
 };
 
-
 function getAprtmentId(paymentId) {
   return new Promise(function (resolve, reject) {
     db.get().getConnection(function (err, connection) {
       connection.query(
-        'SELECT apartment_id FROM payments where payment_id = ?', [paymentId], function (err, rows) {
+        'SELECT apartment_id FROM payments where payment_id = ?', [paymentId],
+        function (err, rows) {
           connection.release();
           if (err) {
             reject();
@@ -720,12 +706,12 @@ function getAprtmentId(paymentId) {
   });
 };
 
-
 function deletePayment(paymentId) {
   return new Promise(function (resolve, reject) {
     db.get().getConnection(function (err, connection) {
       connection.query(
-        'DELETE FROM payments where payment_id = ?', [paymentId], function (err) {
+        'DELETE FROM payments where payment_id = ?', [paymentId],
+        function (err) {
           connection.release();
           if (err) {
             reject();
@@ -737,13 +723,12 @@ function deletePayment(paymentId) {
   });
 };
 
-
-
 function convertAnApartment(apartmentId) {
   return new Promise(function (resolve, reject) {
     db.get().getConnection(function (err, connection) {
       connection.query(
-        'CALL convert_an_apartment(?)', [apartmentId], function (err, rows) {
+        'CALL convert_an_apartment(?)', [apartmentId],
+        function (err, rows) {
           connection.release();
           if (err) {
             reject();
@@ -759,8 +744,7 @@ function addressOfClient(data) {
   var out = [];
   try {
     if ((data.city) && (data.city.trim() != '')) {
-      out.push('Город: ' + data.city);
-      {
+      out.push('Город: ' + data.city); {
         if (data.street.trim() != '') {
           out.push(', улица: ' + data.street);
         }
@@ -772,8 +756,7 @@ function addressOfClient(data) {
         }
       }
     }
-  }
-  catch (err) {
+  } catch (err) {
     console.log('addressOfClient error: ', err.message);
   };
   return out.join('');
@@ -783,8 +766,7 @@ function passportData(data) {
   var out = [];
   try {
     if ((data.name) && (data.name.trim() != '')) {
-      out.push(data.name);
-      {
+      out.push(data.name); {
         if ((data.series) && (data.series.trim() != '')) {
           out.push(' серия ' + data.series);
         }
@@ -799,14 +781,13 @@ function passportData(data) {
         }
       }
     }
-  }
-  catch (err) {
+  } catch (err) {
     console.log('passportData error: ', err.message);
   };
   return out.join('');
 }
 
-function generateReportForSetup(res, sceleton) {
+function generateReportForSetup(sceleton, isCopyFile) {
   var templateFile = (sceleton.city.printType == 1) ? 'setup_pskov.docx' : 'setup_vluki.docx';
   var content = fs
     .readFileSync(path.join(__dirname, '../../../public/templates/' + templateFile), 'binary');
@@ -871,21 +852,25 @@ function generateReportForSetup(res, sceleton) {
   }
 
   var buf = doc.getZip()
-    .generate({ type: 'nodebuffer' });
+    .generate({
+      type: 'nodebuffer'
+    });
 
   var outputFile = path.join(__dirname, '../../../public/docs/') + sceleton.contractNumber + '-1.doc';
   // buf is a nodejs buffer, you can either write it to a file or do anything else with it.
   fs.writeFileSync(outputFile, buf);
 
-  res.download(outputFile, sceleton.contractNumber + '-1.doc', function (err) {
-    if (err) {
-      res.send('Нет файла!');
-    }
-  });
+  if (isCopyFile) {
+    let copiedFile = `${cfg.pathToNAS}\\${sceleton.contractNumber}-1.doc`;
+    fs.copyFileSync(outputFile, copiedFile);
+    return copiedFile;
+  }
+
+  return outputFile;
 
 }
 
-function generateReportForService(res, sceleton) {
+function generateReportForService(sceleton, isCopyFile) {
   // Orginal code
   // https://www.tutorialswebsite.com/replace-word-document-placeholder-node-js/
 
@@ -936,16 +921,21 @@ function generateReportForService(res, sceleton) {
   }
 
   var buf = doc.getZip()
-    .generate({ type: 'nodebuffer' });
+    .generate({
+      type: 'nodebuffer'
+    });
 
   var outputFile = path.join(__dirname, '../../../public/docs/') + sceleton.contractNumber + '-2.doc';
   fs.writeFileSync(outputFile, buf);
 
-  res.download(outputFile, sceleton.contractNumber + '-2.doc', function (err) {
-    if (err) {
-      res.send('Нет файла!');
-    }
-  });
+  if (isCopyFile) {
+    let copiedFile = `${cfg.pathToNAS}\\${sceleton.contractNumber}-2.doc`;
+    fs.copyFileSync(outputFile, copiedFile);
+    return copiedFile;
+  }
+
+  return outputFile;
+
 };
 
 function replaceErrors(key, value) {
@@ -959,7 +949,9 @@ function replaceErrors(key, value) {
 }
 
 function errorHandler(error) {
-  console.log(JSON.stringify({ error: error }, replaceErrors));
+  console.log(JSON.stringify({
+    error: error
+  }, replaceErrors));
 
   if (error.properties && error.properties.errors instanceof Array) {
     const errorMessages = error.properties.errors.map(function (error) {
@@ -978,10 +970,24 @@ var Filters = function () {
       start: '',
       end: ''
     },
-    city: { id: 0, name: '' },
-    street: { id: 0, name: '', cityId: 0 },
-    house: { id: 0, number: '', streetId: 0 },
-    porch: { number: 0, houseId: 0 },
+    city: {
+      id: 0,
+      name: ''
+    },
+    street: {
+      id: 0,
+      name: '',
+      cityId: 0
+    },
+    house: {
+      id: 0,
+      number: '',
+      streetId: 0
+    },
+    porch: {
+      number: 0,
+      houseId: 0
+    },
     number: {
       order: 0,
       prolongedOrder: 0
@@ -1152,19 +1158,21 @@ var filterRecords = function (req, res) {
     ' WHERE (a.card_id > 0) AND (a.is_deleted = 0)' +
     add.whereSQL +
     add.orderBy +
-    ' LIMIT ' + visibleRows;
+    ' LIMIT ' + cfg.visibleRows;
 
   db.get().getConnection(function (err, connection) {
     connection.query(
-      countRecordsQuery, [], function (err, rows) {
+      countRecordsQuery, [],
+      function (err, rows) {
         connection.release();
         countRecords = rows[0].count;
         pageCount =
-          (rows[0].count / visibleRows) < 1 ? 0 : Math.ceil(rows[0].count / visibleRows);
+          (rows[0].count / cfg.visibleRows) < 1 ? 0 : Math.ceil(rows[0].count / cfg.visibleRows);
 
         db.get().getConnection(function (err, connection) {
           connection.query(
-            fullQuery, [], function (err, rows) {
+            fullQuery, [],
+            function (err, rows) {
               if (err) {
                 throw err;
               }
@@ -1180,7 +1188,7 @@ var filterRecords = function (req, res) {
                   data: rows,
                   pageCount: pageCount,
                   currentPage: currentPage,
-                  visibleRows: visibleRows,
+                  visibleRows: cfg.visibleRows,
                   countRecords: countRecords,
                   moment: moment,
                   utils: utils,
@@ -1227,7 +1235,8 @@ module.exports = function () {
 
           db.get().getConnection(function (err, connection) {
             connection.query(
-              queryOrder, [id], function (err, rows) {
+              queryOrder, [id],
+              function (err, rows) {
 
                 connection.release();
 
@@ -1348,12 +1357,13 @@ module.exports = function () {
                       data: orderModel,
                       moment: moment,
                       utils: utils,
+                      hostIP: hostIP,
+                      hostPort: hostPort,
                       errors: {},
                       // apartments: apartments,
                       user: req.session.userName
                     });
-                  }
-                  else {
+                  } else {
                     res.render('404', {
                       user: req.session.userName
                     });
@@ -1374,6 +1384,8 @@ module.exports = function () {
       data: orderModel,
       moment: moment,
       utils: utils,
+      hostIP: hostIP,
+      hostPort: hostPort,
       errors: {},
       // apartments: [],
       user: req.session.userName
@@ -1382,7 +1394,9 @@ module.exports = function () {
 
   router.get('/table', function (req, res) {
     var id = req.query.id;
-    res.status(200).send({ 'table': id });
+    res.status(200).send({
+      'table': id
+    });
   });
 
   router.get('/filter', function (req, res) {
@@ -1430,35 +1444,37 @@ module.exports = function () {
       ' WHERE (a.card_id > 0) AND (a.is_deleted = 0)' +
       add.whereSQL +
       add.orderBy +
-      ' LIMIT ' + visibleRows +
+      ' LIMIT ' + cfg.visibleRows +
       ' OFFSET ' + offset;
 
     db.get().getConnection(function (err, connection) {
       connection.query(
-        countRecordsQuery, [], function (err, rows) {
+        countRecordsQuery, [],
+        function (err, rows) {
           connection.release();
           countRecords = rows[0].count;
           pageCount =
-            (rows[0].count / visibleRows) < 1 ? 0 : Math.ceil(rows[0].count / visibleRows);
-          if ((offset > pageCount * visibleRows)) {
-            offset = (pageCount - 1) * visibleRows;
+            (rows[0].count / cfg.visibleRows) < 1 ? 0 : Math.ceil(rows[0].count / cfg.visibleRows);
+          if ((offset > pageCount * cfg.visibleRows)) {
+            offset = (pageCount - 1) * cfg.visibleRows;
           }
 
           db.get().getConnection(function (err, connection) {
             connection.query(
-              fullQuery, [], function (err, rows) {
+              fullQuery, [],
+              function (err, rows) {
                 connection.release();
 
                 if (err) {
                   res.status(500).send(db.showDatabaseError(500, err));
                 } else {
-                  var currentPage = Math.ceil(offset / visibleRows) + 1;
+                  var currentPage = Math.ceil(offset / cfg.visibleRows) + 1;
                   res.render('docs/orders.ejs', {
                     title: 'Договоры',
                     data: rows,
                     pageCount: pageCount,
                     currentPage: currentPage,
-                    visibleRows: visibleRows,
+                    visibleRows: cfg.visibleRows,
                     countRecords: countRecords,
                     moment: moment,
                     utils: utils,
@@ -1491,7 +1507,8 @@ module.exports = function () {
 
             db.get().getConnection(function (err, connection) {
               connection.query(
-                queryOrder, [id], function (err, rows) {
+                queryOrder, [id],
+                function (err, rows) {
 
                   connection.release();
 
@@ -1515,7 +1532,9 @@ module.exports = function () {
                     data.serviceClientData = serviceClientData;
                     data.apartments = apartments;
 
-                    res.status(200).send({ order: data });
+                    res.status(200).send({
+                      order: data
+                    });
                   }
                 });
             });
@@ -1777,19 +1796,16 @@ module.exports = function () {
           await updateApartments(orderModel);
           await checkCurrentPeriod(orderModel.id);
           await checkPreviousPeriod(orderModel.id);
-        }
-        catch (err) {
+        } catch (err) {
           console.log('/save(id != 0)::' + err.message);
         }
-      }
-      else {
+      } else {
         try {
           orderModel.id = await saveOrder(orderModel);
           await insertApartments(orderModel);
           await checkCurrentPeriod(orderModel.id);
           await checkPreviousPeriod(orderModel.id);
-        }
-        catch (err) {
+        } catch (err) {
           console.log('/save(id == 0)::' + err.message);
         }
       }
@@ -1800,13 +1816,14 @@ module.exports = function () {
         res.redirect('/orders/edit/' + orderModel.id);
       }
 
-    }
-    else {
+    } else {
       res.render('docs/forms/order2.ejs', {
         title: 'Договор',
         data: orderModel,
         moment: moment,
         utils: utils,
+        hostIP: hostIP,
+        hostPort: hostPort,
         errors: errors,
         apartments: [],
         user: req.session.userName
@@ -1818,7 +1835,8 @@ module.exports = function () {
     if ((req.body.id) && (isFinite(+req.body.id))) {
       db.get().getConnection(function (err, connection) {
         connection.query(
-          ' DELETE FROM cards WHERE card_id = ?', [+req.body.id], function (err) {
+          ' DELETE FROM cards WHERE card_id = ?', [+req.body.id],
+          function (err) {
             connection.release();
             if (err) {
               res.status(500).send({
@@ -1827,13 +1845,18 @@ module.exports = function () {
                 'err': JSON.stringify(err)
               });
             } else {
-              res.status(200).send({ 'result': 'OK' });
+              res.status(200).send({
+                'result': 'OK'
+              });
             }
           }
         );
       });
     } else {
-      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+      res.status(500).send({
+        code: 500,
+        msg: 'Incorrect parameter'
+      });
     }
   });
 
@@ -1850,11 +1873,12 @@ module.exports = function () {
         queryText += ' WHERE a.name LIKE ' + `'` + suggestion + '%' + `'`;
       }
       queryText += ' ORDER BY a.name ASC';
-      queryText += ' LIMIT ' + ('limit' in data ? data.limit : rowsLimit);
+      queryText += ' LIMIT ' + ('limit' in data ? data.limit : cfg.rowsLimit);
 
       db.get().getConnection(function (err, connection) {
         connection.query(
-          queryText, [], function (err, rows) {
+          queryText, [],
+          function (err, rows) {
             connection.release();
 
             if (err) {
@@ -1871,14 +1895,17 @@ module.exports = function () {
         );
       });
     } else {
-      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+      res.status(500).send({
+        code: 500,
+        msg: 'Incorrect parameter'
+      });
     }
   });
 
   router.post('/find_equipment', function (req, res) {
     var data = req.body;
     if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
-      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      var rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
       var params = {
         suggestion: data.suggestion,
         rowsCount: rowsCount
@@ -1887,14 +1914,17 @@ module.exports = function () {
         res.status(200).send(rows);
       });
     } else {
-      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+      res.status(500).send({
+        code: 500,
+        msg: 'Incorrect parameter'
+      });
     }
   });
 
   router.post('/find_full_address', function (req, res) {
     var data = req.body;
     if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
-      var rowsCount = 'rowsCount' in data ? data.rowsCount : rowsLimit;
+      var rowsCount = 'rowsCount' in data ? data.rowsCount : cfg.rowsLimit;
       var params = {
         suggestion: data.suggestion,
         rowsCount: rowsCount
@@ -1902,16 +1932,18 @@ module.exports = function () {
       common.outFullAddress(params, function (err, rows) {
         res.status(200).send(rows);
       });
-    }
-    else {
-      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    } else {
+      res.status(500).send({
+        code: 500,
+        msg: 'Incorrect parameter'
+      });
     }
   });
 
   router.post('/find_city', function (req, res) {
     var data = req.body;
     if ((data) && (typeof (data) === 'object') && ('cityName' in data)) {
-      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      var rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
       var params = {
         cityName: data.cityName,
         rowsCount: rowsCount
@@ -1920,14 +1952,17 @@ module.exports = function () {
         res.status(200).send(rows);
       });
     } else {
-      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+      res.status(500).send({
+        code: 500,
+        msg: 'Incorrect parameter'
+      });
     }
   });
 
   router.post('/find_street', function (req, res) {
     var data = req.body;
     if ((data) && (typeof (data) === 'object') && ('streetName' in data) && ('cityId' in data)) {
-      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      var rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
       var params = {
         cityId: data.cityId,
         streetName: data.streetName,
@@ -1937,14 +1972,17 @@ module.exports = function () {
         res.status(200).send(rows);
       });
     } else {
-      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+      res.status(500).send({
+        code: 500,
+        msg: 'Incorrect parameter'
+      });
     }
   });
 
   router.post('/find_house', function (req, res) {
     var data = req.body;
     if ((data) && (typeof (data) === 'object') && ('houseNumber' in data) && ('streetId' in data)) {
-      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      var rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
       var params = {
         streetId: data.streetId,
         houseNumber: data.houseNumber,
@@ -1954,14 +1992,17 @@ module.exports = function () {
         res.status(200).send(rows);
       });
     } else {
-      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+      res.status(500).send({
+        code: 500,
+        msg: 'Incorrect parameter'
+      });
     }
   });
 
   router.post('/find_porch', function (req, res) {
     var data = req.body;
     if ((data) && (typeof (data) === 'object') && ('porch' in data) && ('houseId' in data)) {
-      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      var rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
       var params = {
         houseId: data.houseId,
         porch: data.porch,
@@ -1971,7 +2012,10 @@ module.exports = function () {
         res.status(200).send(rows);
       });
     } else {
-      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+      res.status(500).send({
+        code: 500,
+        msg: 'Incorrect parameter'
+      });
     }
   });
 
@@ -1979,12 +2023,15 @@ module.exports = function () {
     var data = req.body;
     if ((data) && (typeof (data) === 'object') && ('orderNumber' in data)) {
       var orderNumber = data.orderNumber;
-      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      var rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
       common.filterOrders(orderNumber, rowsCount, function (err, rows) {
         res.status(200).send(rows);
       });
     } else {
-      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+      res.status(500).send({
+        code: 500,
+        msg: 'Incorrect parameter'
+      });
     }
   });
 
@@ -1992,19 +2039,22 @@ module.exports = function () {
     var data = req.body;
     if ((data) && (typeof (data) === 'object') && ('orderNumber' in data)) {
       var orderNumber = data.orderNumber;
-      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      var rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
       common.filterProlongedOrders(orderNumber, rowsCount, function (err, rows) {
         res.status(200).send(rows);
       });
     } else {
-      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+      res.status(500).send({
+        code: 500,
+        msg: 'Incorrect parameter'
+      });
     }
   });
 
   router.post('/find_client', function (req, res) {
     var data = req.body;
     if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
-      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      var rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
       var params = {
         suggestion: data.suggestion,
         rowsCount: rowsCount
@@ -2012,9 +2062,11 @@ module.exports = function () {
       common.filterClients(params, function (err, rows) {
         res.status(200).send(rows);
       });
-    }
-    else {
-      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    } else {
+      res.status(500).send({
+        code: 500,
+        msg: 'Incorrect parameter'
+      });
     }
   });
 
@@ -2028,7 +2080,7 @@ module.exports = function () {
     };
 
     if ((data) && (typeof (data) === 'object') && ('id' in data)) {
-      // var rowsCount = 'limit' in data ? data.limit : rowsLimit;
+      // var rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
 
       try {
         const rawData = await getApartmentInfo(data.id);
@@ -2040,8 +2092,7 @@ module.exports = function () {
         out.fines = await getPaymentsByRegister(data.id);
         out.prices = await getPrices(data.id);
         res.status(200).send(out);
-      }
-      catch (error) {
+      } catch (error) {
         console.log(error.message);
         res.status(500).send(error.message);
       }
@@ -2063,9 +2114,11 @@ module.exports = function () {
       //     console.log(error.message);
       //     res.status(500).send(error.message);
       //   });
-    }
-    else {
-      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    } else {
+      res.status(500).send({
+        code: 500,
+        msg: 'Incorrect parameter'
+      });
     }
   });
 
@@ -2079,17 +2132,32 @@ module.exports = function () {
       isRegistered: 0
     }
 
-    const data = { ...obj, ...{ payMonth: moment(obj.payDate).month() + 1 }, ...{ payYear: moment(obj.payDate).year() }, ...{ createDate: obj.payDate } };
+    const data = {
+      ...obj,
+      ...{
+        payMonth: moment(obj.payDate).month() + 1
+      },
+      ...{
+        payYear: moment(obj.payDate).year()
+      },
+      ...{
+        createDate: obj.payDate
+      }
+    };
 
     try {
       const uid = await addPayment(data);
       const apartmentInfo = await convertAnApartment(obj.apartmentId);
       const paymentsData = await paymentsHistory(obj.apartmentId);
-      res.status(200).send({ apartmentInfo: apartmentInfo, paymentsHistory: paymentsData });
-    }
-    catch (error) {
+      res.status(200).send({
+        apartmentInfo: apartmentInfo,
+        paymentsHistory: paymentsData
+      });
+    } catch (error) {
       console.log(`Error: (/add_payment) - ${error.message}`);
-      res.status(500).send({ success: 'Bad' });
+      res.status(500).send({
+        success: 'Bad'
+      });
       return;
     }
   });
@@ -2104,16 +2172,30 @@ module.exports = function () {
       isRegistered: 1
     }
 
-    const data = { ...obj, ...{ payMonth: moment(obj.payDate).month() + 1 }, ...{ payYear: moment(obj.payDate).year() }, ...{ createDate: obj.payDate } };
+    const data = {
+      ...obj,
+      ...{
+        payMonth: moment(obj.payDate).month() + 1
+      },
+      ...{
+        payYear: moment(obj.payDate).year()
+      },
+      ...{
+        createDate: obj.payDate
+      }
+    };
 
     try {
       const uid = await addPayment(data);
       const paymentsData = await paymentsHistory(obj.apartmentId);
-      res.status(200).send({ paymentsHistory: paymentsData });
-    }
-    catch (error) {
+      res.status(200).send({
+        paymentsHistory: paymentsData
+      });
+    } catch (error) {
       console.log(`Error: (/add_payment_in_register) - ${error.message}`);
-      res.status(500).send({ success: 'Bad' });
+      res.status(500).send({
+        success: 'Bad'
+      });
       return;
     }
   });
@@ -2137,17 +2219,19 @@ module.exports = function () {
           console.log(error.message);
           res.status(500).send(error.message);
         });
-    }
-    else {
-      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    } else {
+      res.status(500).send({
+        code: 500,
+        msg: 'Incorrect parameter'
+      });
     }
   });
 
   router.post('/print_receipt_for_apartment', function (req, res) {
     var id = req.body.id;
     getOrderIdFromApartment(id).then(function (orderId) {
-      printingReceipts(orderId, res);
-    })
+        printingReceipts(orderId, res);
+      })
       .catch(function (error) {
         console.log(error);
         res.status(500).send(error);
@@ -2156,3 +2240,150 @@ module.exports = function () {
 
   return router;
 };
+
+const buildReportForSetup = (id, isCopyFile, cb) => {
+  let sceleton = new models.ReportModel();
+  getOrderInfo(id)
+    .then(function (order) {
+      if ((Array.isArray(order)) && (order.length === 1)) {
+        sceleton.contractNumber = order[0].contractNumber;
+        sceleton.createDate = order[0].createDate;
+        sceleton.creditTo = order[0].creditTo;
+        sceleton.equipment.name = order[0].equipmentName;
+        sceleton.equipment.guaranteePeriod = order[0].guaranteePeriod;
+        sceleton.city.name = order[0].cityName;
+        sceleton.city.printType = order[0].printType;
+        sceleton.streetName = order[0].streetName;
+        sceleton.houseNumber = order[0].houseNumber;
+        sceleton.porch = order[0].porch;
+        sceleton.numeration = order[0].numeration;
+        sceleton.clientSetupId = order[0].clientSetupId;
+        sceleton.complete.equipment.quantity = order[0].equipment_quantity;
+        sceleton.complete.equipment.price = order[0].equipment_price;
+        sceleton.complete.equipment.cost = order[0].equipment_cost;
+        sceleton.complete.mounting.quantity = order[0].mounting_quantity;
+        sceleton.complete.mounting.price = order[0].mounting_price;
+        sceleton.complete.mounting.cost = order[0].mounting_cost;
+        sceleton.complete.subscriberUnit.quantity = order[0].subscriber_unit_quantity;
+        sceleton.complete.subscriberUnit.price = order[0].subscriber_unit_price;
+        sceleton.complete.subscriberUnit.cost = order[0].subscriber_unit_cost;
+        sceleton.complete.key.quantity = order[0].key_quantity;
+        sceleton.complete.key.price = order[0].key_price;
+        sceleton.complete.key.cost = order[0].key_cost;
+        sceleton.complete.door.quantity = order[0].door_quantity;
+        sceleton.complete.door.price = order[0].door_price;
+        sceleton.complete.door.cost = order[0].door_cost;
+        sceleton.complete.subtotal.cost = order[0].subtotal;
+        sceleton.complete.subtotalForApartment.cost = order[0].subtotal_for_apartment;
+        sceleton.complete.discountForApartment.cost = order[0].discount_for_apartment;
+        sceleton.complete.total.cost = order[0].total;
+      }
+
+      return getAddressInfo(sceleton.clientSetupId, 0);
+    })
+    .then(function (registeredAddress) {
+      if ((Array.isArray(registeredAddress)) && (registeredAddress.length === 1)) {
+        sceleton.client.registeredAddress.city = registeredAddress[0].cityName;
+        sceleton.client.registeredAddress.street = registeredAddress[0].streetName;
+        sceleton.client.registeredAddress.house = registeredAddress[0].houseNumber;
+        sceleton.client.registeredAddress.apartment = registeredAddress[0].apartment;
+      }
+      return getAddressInfo(sceleton.clientSetupId, 1);
+    })
+    .then(function (actualAddress) {
+      if ((Array.isArray(actualAddress)) && (actualAddress.length === 1)) {
+        sceleton.client.actualAddress.city = actualAddress[0].cityName;
+        sceleton.client.actualAddress.street = actualAddress[0].streetName;
+        sceleton.client.actualAddress.house = actualAddress[0].houseNumber;
+        sceleton.client.actualAddress.apartment = actualAddress[0].apartment;
+      }
+      return getClientInfo(sceleton.clientSetupId);
+    })
+    .then(function (passport) {
+      if ((Array.isArray(passport)) && (passport.length === 1)) {
+        sceleton.client.name = passport[0].clientName;
+        sceleton.client.phones = passport[0].phones;
+        sceleton.client.certificate.name = passport[0].certificate;
+        sceleton.client.certificate.series = passport[0].series;
+        sceleton.client.certificate.number = passport[0].number;
+        sceleton.client.certificate.issued = passport[0].issued
+        sceleton.client.certificate.department = passport[0].department;
+      }
+      const outputFile = generateReportForSetup(sceleton, isCopyFile);
+      if (typeof cb === 'function') {
+        cb(outputFile);
+      }
+    })
+    .catch(function (error) {
+      console.log(error.message);
+      if (typeof cb === 'function') {
+        cb(null);
+      }
+    });
+}
+
+const buildReportForService = (id, isCopyFile, cb) => {
+  let sceleton = new models.ReportModel();
+  getOrderInfo(id)
+    .then(function (order) {
+      if ((Array.isArray(order)) && (order.length === 1)) {
+        sceleton.contractNumber = order[0].contractNumber;
+        sceleton.createDate = order[0].createDate;
+        sceleton.creditTo = order[0].creditTo;
+        sceleton.equipment.name = order[0].equipmentName;
+        sceleton.equipment.guaranteePeriod = order[0].guaranteePeriod;
+        sceleton.city.name = order[0].cityName;
+        sceleton.city.printType = order[0].printType;
+        sceleton.streetName = order[0].streetName;
+        sceleton.houseNumber = order[0].houseNumber;
+        sceleton.porch = order[0].porch;
+        sceleton.numeration = order[0].numeration;
+        sceleton.clientSetupId = order[0].clientSetupId;
+        sceleton.clientServiceId = order[0].clientServiceId;
+      }
+
+      return getAddressInfo(sceleton.clientServiceId, 0);
+    })
+    .then(function (registeredAddress) {
+      if ((Array.isArray(registeredAddress)) && (registeredAddress.length === 1)) {
+        sceleton.client.registeredAddress.city = registeredAddress[0].cityName;
+        sceleton.client.registeredAddress.street = registeredAddress[0].streetName;
+        sceleton.client.registeredAddress.house = registeredAddress[0].houseNumber;
+        sceleton.client.registeredAddress.apartment = registeredAddress[0].apartment;
+      }
+      return getAddressInfo(sceleton.clientServiceId, 1);
+    })
+    .then(function (actualAddress) {
+      if ((Array.isArray(actualAddress)) && (actualAddress.length === 1)) {
+        sceleton.client.actualAddress.city = actualAddress[0].cityName;
+        sceleton.client.actualAddress.street = actualAddress[0].streetName;
+        sceleton.client.actualAddress.house = actualAddress[0].houseNumber;
+        sceleton.client.actualAddress.apartment = actualAddress[0].apartment;
+      }
+      return getClientInfo(sceleton.clientServiceId);
+    })
+    .then(function (passport) {
+      if ((Array.isArray(passport)) && (passport.length === 1)) {
+        sceleton.client.name = passport[0].clientName;
+        sceleton.client.phones = passport[0].phones;
+        sceleton.client.certificate.name = passport[0].certificate;
+        sceleton.client.certificate.series = passport[0].series;
+        sceleton.client.certificate.number = passport[0].number;
+        sceleton.client.certificate.issued = passport[0].issued
+        sceleton.client.certificate.department = passport[0].department;
+      }
+      const outputFile = generateReportForService(sceleton, isCopyFile);
+      if (typeof cb === 'function') {
+        cb(outputFile);
+      }
+    })
+    .catch(function (error) {
+      console.log(error);
+      if (typeof cb === 'function') {
+        cb(null);
+      }
+    });
+};
+
+module.exports.buildReportForSetup = buildReportForSetup;
+module.exports.buildReportForService = buildReportForService;

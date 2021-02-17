@@ -1,3 +1,7 @@
+// 'use strict';
+
+var socket;
+
 const ACTION_ADD_APARTMENT = 0;
 const ACTION_EDIT_APARTMENT = 1;
 
@@ -33,9 +37,15 @@ var Application = function () {
   this.actionWithDialog = ACTION_DIALOG_BUILD_APARTMENTS;
 
   this.apartmentId = 0;
+
+  this.hostIP = '';
+  this.hostPort = 0;
 }
 
 var application = new Application();
+
+application.hostIP = document.getElementById('hostIP').value;
+application.hostPort = document.getElementById('hostPort').value;
 
 // $('#tableApartments').floatThead();
 
@@ -70,8 +80,7 @@ function showHistory(ev) {
   axios.post('/orders/payments_history', {
     id: id,
     limit: 15
-  }
-  ).then(function (response) {
+  }).then(function (response) {
     var data = response.data;
     var body = {
       personalAccount: '',
@@ -112,7 +121,7 @@ function showHistory(ev) {
     if ((data.fines) && (Array.isArray(data.fines)) && (data.fines.length > 0)) {
       data.fines.forEach(function (element) {
         body.fines +=
-        `<tr data-uid="${element.uid}">
+          `<tr data-uid="${element.uid}">
           <td class="text-center align-middle">${moment(element.createDate).format('DD.MM.YYYY')}</td>
           <td class="text-center align-middle">${element.uid}</td>
           <td class="text-right align-middle">${element.amount.toFixed(2)}</td>
@@ -192,8 +201,7 @@ function checkApartment(ev, index) {
 
       document.getElementById('apartments').value = JSON.stringify(apartments);
     }
-  }
-  catch (error) {
+  } catch (error) {
     console.log('checkApartment Error: ' + error.message);
   }
 }
@@ -320,8 +328,7 @@ document.getElementById('saveApartment').addEventListener('click', function (e) 
 
 
     $('#changeApartmentDialog').modal('hide');
-  }
-  catch (error) {
+  } catch (error) {
     console.log('saveApartment Click Error: ' + error.message)
   }
 });
@@ -508,9 +515,11 @@ document.getElementById('decide').addEventListener('click', function (e) {
 
     case ACTION_DIALOG_DELETE_PAYMENT:
       deletePayment();
+      break;
 
     case ACTION_DIALOG_DELETE_PAYMENT_FROM_REGISTER:
       deletedPaymentFromRegister();
+      break;
 
     default:
       break;
@@ -539,8 +548,7 @@ function sortApartments() {
           shouldSwitch = true;
           break;
         }
-      }
-      else if (dir == "desc") {
+      } else if (dir == "desc") {
         if (parseInt(x.innerHTML) < parseInt(y.innerHTML)) {
           // if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
           shouldSwitch = true;
@@ -678,8 +686,7 @@ function saveFullAddress(data) {
         break;
     }
     document.getElementById('address').value = JSON.stringify(address);
-  }
-  catch (e) {
+  } catch (e) {
     console.log(e.message);
   }
 }
@@ -806,8 +813,7 @@ $('#equipmentName').typeahead({
     axios.post('/orders/find_equipment', {
       suggestion: query,
       limit: 15
-    }
-    ).then(function (response) {
+    }).then(function (response) {
       var data = response.data;
       data.forEach(function (item) {
         map[item.value] = item;
@@ -829,8 +835,7 @@ $('#equipmentName').typeahead({
       }
 
       document.getElementById('equipment').value = JSON.stringify(equipment);
-    }
-    catch (e) {
+    } catch (e) {
       console.log('equipmentName Error: ' + e.message);
     }
     return element;
@@ -844,9 +849,9 @@ $('#fullAddress').typeahead({
     map = {};
 
     axios.post('/orders/find_full_address', {
-      suggestion: query,
-      rowsCount: 15
-    })
+        suggestion: query,
+        rowsCount: 15
+      })
       .then(function (response) {
         var datas = response.data;
         if ((typeof datas == 'object') && ('items' in datas) && ('level' in datas)) {
@@ -916,8 +921,7 @@ $('#clientContractName').typeahead({
     axios.post('/orders/find_client', {
       suggestion: query,
       limit: 15
-    }
-    ).then(function (response) {
+    }).then(function (response) {
       var data = response.data;
       data.forEach(function (item) {
         map[item.value] = item;
@@ -937,8 +941,7 @@ $('#clientContractName').typeahead({
       document.getElementById('onePerson').checked = (+client.contract.key === +client.service.key);
 
       document.getElementById('client').value = JSON.stringify(client);
-    }
-    catch (e) {
+    } catch (e) {
       console.log(e.message);
     }
     return element;
@@ -954,8 +957,7 @@ $('#clientServiceName').typeahead({
     axios.post('/orders/find_client', {
       suggestion: query,
       limit: 15
-    }
-    ).then(function (response) {
+    }).then(function (response) {
       var data = response.data;
       data.forEach(function (item) {
         map[item.value] = item;
@@ -975,8 +977,7 @@ $('#clientServiceName').typeahead({
 
       document.getElementById('onePerson').checked = (+client.contract.key === +client.service.key);
       document.getElementById('client').value = JSON.stringify(client);
-    }
-    catch (e) {
+    } catch (e) {
       console.log(e.message);
     }
     return element;
@@ -1072,8 +1073,7 @@ function calculateComplete(index) {
     rowTotal.cells[3].innerText = (dataTable.subtotal.cost - dataTable.discountForApartment.cost).toFixed(2)
 
     document.getElementById('complete').value = JSON.stringify(dataTable);
-  }
-  catch (e) {
+  } catch (e) {
     //
   }
 };
@@ -1131,8 +1131,7 @@ document.getElementById('tableComplete').addEventListener('click', function (e) 
         document.getElementById('completeCost').value = dataTable.discountForApartment.cost.toFixed(2);
         break;
     }
-  }
-  catch (e) {
+  } catch (e) {
     //
   }
 
@@ -1248,8 +1247,7 @@ function deletePayment() {
 
   axios.post('/orders/delete_payment', {
     id: application.deletedPayment.uid
-  }
-  ).then(function (response) {
+  }).then(function (response) {
 
     document.getElementById('tablePayments').deleteRow(application.deletedPayment.rowIndex);
 
@@ -1257,7 +1255,7 @@ function deletePayment() {
     let table = document.getElementById('tableApartments');
     if (table) {
       var rowLength = table.rows.length;
-      for (ind = 2; ind < rowLength; ind++) {
+      for (let ind = 2; ind < rowLength; ind++) {
         if ((Number(table.rows.item(ind).getAttribute('data-uid'))) === Number(data.apartmentId)) {
           table.rows.item(ind).classList.remove('info2');
           table.rows.item(ind).classList.remove('warning2');
@@ -1298,8 +1296,7 @@ function deletedPaymentFromRegister() {
 
   axios.post('/orders/delete_payment', {
     id: application.deletedPaymentFromRegister.uid
-  }
-  ).then(function (response) {
+  }).then(function (response) {
 
     document.getElementById('tableRegisters').deleteRow(application.deletedPaymentFromRegister.rowIndex);
 
@@ -1319,15 +1316,14 @@ $('#addPaymentDialog').on('shown.bs.modal', function () {
 })
 
 document.getElementById('actionAddPayment').addEventListener('click', function (e) {
-  let amount = parseFloat(document.getElementById('paymentAmount').value);
+  const amount = parseFloat(document.getElementById('paymentAmount').value);
   if (isNaN(amount)) return;
 
   axios.post('/orders/add_payment', {
     id: application.apartmentId,
     date: document.getElementById('paymentDate').value,
     amount: amount
-  }
-  ).then(function (response) {
+  }).then(function (response) {
 
     $('#addPaymentDialog').modal('hide');
 
@@ -1365,7 +1361,7 @@ document.getElementById('actionAddPayment').addEventListener('click', function (
     let table = document.getElementById('tableApartments');
     if (table) {
       var rowLength = table.rows.length;
-      for (ind = 2; ind < rowLength; ind++) {
+      for (let ind = 2; ind < rowLength; ind++) {
         if ((Number(table.rows.item(ind).getAttribute('data-uid'))) === Number(data.apartmentId)) {
           table.rows.item(ind).classList.remove('info2');
           table.rows.item(ind).classList.remove('warning2');
@@ -1427,7 +1423,6 @@ $('#addPaymentInRegisterDialog').on('shown.bs.modal', function () {
   document.getElementById('amountInRegister').focus();
 });
 
-
 document.getElementById('actionAddPaymentInRegister').addEventListener('click', function (e) {
   let amount = parseFloat(document.getElementById('amountInRegister').value);
   if (isNaN(amount)) return;
@@ -1436,8 +1431,7 @@ document.getElementById('actionAddPaymentInRegister').addEventListener('click', 
     id: application.apartmentId,
     date: document.getElementById('registerDate').value,
     amount: amount
-  }
-  ).then(function (response) {
+  }).then(function (response) {
 
     $('#addPaymentInRegisterDialog').modal('hide');
 
@@ -1467,5 +1461,158 @@ document.getElementById('actionAddPaymentInRegister').addEventListener('click', 
   }).catch(function (error) {
     console.log(error);
   });
-
 });
+
+document.getElementById('generateOrderSetup').addEventListener('click', (e) => {
+  const data = {
+    action: 'generateOrderSetup',
+    data: {
+      id: document.getElementById('id').value
+    }
+  }
+
+  if ((socket) && (socket.readyState === 1)) {
+    socket.send(JSON.stringify(data));
+  }
+});
+
+document.getElementById('generateOrderService').addEventListener('click', (e) => {
+  const data = {
+    action: 'generateOrderService',
+    data: {
+      id: document.getElementById('id').value
+    }
+  }
+
+  if ((socket) && (socket.readyState === 1)) {
+    socket.send(JSON.stringify(data));
+  }
+});
+
+document.getElementById('openOrderSetup').addEventListener('click', (e) => {
+  const data = {
+    action: 'openOrderSetup',
+    data: {
+      contractNumber: document.getElementById('contractNumber').value
+    }
+  }
+
+  if ((socket) && (socket.readyState === 1)) {
+    socket.send(JSON.stringify(data));
+  }
+});
+
+document.getElementById('openOrderService').addEventListener('click', (e) => {
+  const data = {
+    action: 'openOrderService',
+    data: {
+      contractNumber: document.getElementById('contractNumber').value
+    }
+  }
+
+  if ((socket) && (socket.readyState === 1)) {
+    socket.send(JSON.stringify(data));
+  }
+});
+
+function showAlert(date, message) {
+
+  let outDate = (date instanceof Date) ? date.toLocaleString() : '';
+  outDate = outDate.replace(/,/g, '');
+
+  const generateAlert = `<row><div class="alert ${message.style} alert-dismissable fade in" role="alert">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
+    <strong>${outDate}  -  ${message.out}</strong></div></row>`;
+
+  // document.getElementById('firstRow').innerHTML = generateAlert;
+
+  $('#firstRow').after(generateAlert);
+
+  // document.getElementById('firstRow').insertBefore(generateAlert);
+}
+
+function startWebsocket() {
+
+  // socket = new WebSocket('ws://192.168.0.123:5005');
+  socket = new WebSocket(`ws://${application.hostIP}:${application.hostPort}`);
+
+  socket.onopen = () => {
+    console.log('socket.onopen()');
+  }
+
+  socket.onmessage = (message) => {
+    let obj;
+    try {
+      obj = JSON.parse(message.data);
+    } catch (e) {
+      console.log('');
+      console.log('Ошибка при получении сообщения от сервера');
+      console.log('Тип ошибки: ' + e.name);
+      console.log('Описание ошибки: ' + e.message);
+      console.log('Cообщение: ' + message);
+      console.log('Длина сообщения: ' + message.length);
+      console.log('');
+      return;
+    }
+
+    if ('action' in obj) {
+
+      if (obj.action.localeCompare('errorOpenFile') === 0) {
+        showAlert(new Date(), {
+          out: 'Нет договора' + (obj.index === 1 ? ' на установку.' : ' на обслуживание.'),
+          style: 'alert-warning'
+        })
+      }
+
+    }
+  }
+
+  socket.onerror = (e) => {
+    //
+  }
+
+  socket.onclose = (e) => {
+    socket = null;
+    setTimeout(startWebsocket, 2000);
+  }
+}
+
+function editClient(byName) {
+  try {
+    let client = JSON.parse(document.getElementById('client').value);
+
+    let clientId = 0;
+    if ((byName) && (typeof byName === 'string')) {
+      if (byName.localeCompare('editClientByContract') === 0) {
+        clientId = parseInt(client.contract.key);
+      }
+
+      if (byName.localeCompare('editClientByService') === 0) {
+        clientId = parseInt(client.service.key);
+      }
+
+      if (clientId > 0) {
+        window.location.href = `${window.location.origin}/clients/edit/${clientId}`;
+        return;
+      }
+    }
+
+  } catch (error) {
+    console.log(error.message);
+  }
+
+  window.location.href = `${window.location.origin}/clients`;
+}
+
+var refClients = document.getElementsByClassName('edit-client');
+if (refClients) {
+  for (let ind = 0; ind < refClients.length; ind++) {
+    if (refClients[ind].nodeName.localeCompare('BUTTON') === 0) {
+      refClients[ind].addEventListener('click', (e) => {
+        editClient(refClients[ind].getAttribute('id'));
+      })
+    }
+  }
+}
+
+startWebsocket();

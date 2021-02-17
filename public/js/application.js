@@ -472,3 +472,24 @@ $('.select-all').on('focus', function (e) {
 document.getElementById('isTimeRange').addEventListener('click', function (e) {
   document.getElementById('timeRangePanel').hidden = !e.currentTarget.checked;
 });
+
+document.getElementById('isDisablingApartments').addEventListener('click', (e) => {
+  if (e.currentTarget.checked) {
+    let connectionApartments = document.getElementById('isConnectionApartments');
+    if ((connectionApartments) && (isConnectionApartments.checked)) {
+      isConnectionApartments.checked = false;
+    }
+  }
+})
+
+document.getElementById('isConnectionApartments').addEventListener('click', (e) => {
+  if (e.currentTarget.checked) {
+    let disablingApartments = document.getElementById('isDisablingApartments');
+    if ((disablingApartments) && (disablingApartments.checked)) {
+      disablingApartments.checked = false;
+    }
+    if ((parseInt(document.getElementById('kind').value) === 1) && (document.getElementById('porch').value.trim().length > 0)) {
+      addFault(`Подключить кв. ${document.getElementById('porch').value.trim()}`);
+    }
+  }
+})

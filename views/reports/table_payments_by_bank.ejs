@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <!-- <link rel="icon" href="../../../../favicon.ico"> -->
+  <title>Home page - <%= title %>
+  </title>
+
+  <% include ../common/bootstrap_css.ejs %>
+    <link href="/theme.css" rel="stylesheet">
+    <link href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css"
+      rel="stylesheet">
+</head>
+
+<body>
+
+  <% include ../common/full_menu.ejs %>
+
+    <div class="container">
+      <h3>
+        <%= title %>
+      </h3>
+      <div class="alert alert-info" role="alert">
+        Отчетный период: <strong><%= moment(data.startDate).format('DD.MM.YYYY') %> - <%= moment(data.endDate).format('DD.MM.YYYY') %>, <%= data.urbanDirection === 1 ? 'г. Псков' : 'г. Великие Луки' %></strong>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <table class="table table-bordered table-hover table-condensed">
+            <thead>
+              <th class="col-xs-4 text-center active">Организация</th>
+              <th class="col-xs-2 text-center active">Сумма</th>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Сбербанк</td>
+                <td class="text-right"><%= payments[0].sberbank ? payments[0].sberbank.toFixed(2) : 0 %></td>
+              </tr>
+              <tr>
+                <td>Россельхозбанк</td>
+                <td class="text-right"><%= payments[0].rosselhozbank ? payments[0].rosselhozbank.toFixed(2) : 0 %></td>
+              </tr>
+              <tr>
+                <td>Славия</td>
+                <td class="text-right"><%= payments[0].slavia ? payments[0].slavia.toFixed(2) : 0 %></td>
+              </tr>
+              <tr>
+                <td>Квитанция</td>
+                <td class="text-right"><%= payments[0].kvitanzia ? payments[0].kvitanzia.toFixed(2) : 0 %></td>
+              </tr>
+              <tr>
+                <td>Вручную</td>
+                <td class="text-right"><%= payments[0].vrucnuju ? payments[0].vrucnuju.toFixed(2) : 0 %></td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <script src="/bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+
+</body>
+
+</html>

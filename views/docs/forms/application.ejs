@@ -110,7 +110,77 @@
               <div class="form-group">
                 <label class="control-label" for="phone">Телефон</label>
                 <input type="text" class="form-control" id="phone" name="phone" placeholder=""
-                  value="<%= typeof data !== 'undefined' ? data.phone : '' %>">
+                  value="<%= data.phone %>">
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="isDisablingApartments" name="isDisablingApartments"
+                    <%=data.isDisablingApartments == 1 ? 'checked' : '' %> >
+                  <label class="form-check-label" for="isDisablingApartments">
+                    Есть отключение квартир
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="isConnectionApartments" name="isConnectionApartments"
+                    <%=data.isDisablingApartments == 2 ? 'checked' : '' %> >
+                  <label class="form-check-label" for="isConnectionApartments">
+                    Есть подключение квартир
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="isTimeRange" name="isTimeRange"
+                    <%=data.isTimeRange ? 'checked' : '' %>>
+                  <label class="form-check-label" for="isTimeRange">
+                    Временный интервал
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="timeRangePanel" <%=data.isTimeRange ? '' : 'hidden' %>>
+            <div class="row">
+              <div class="col-md-1">
+                <div class="form-group">
+                  <label for="hourFrom">Час c</label>
+                  <select class="form-control" id="hourFrom" name="hourFrom">
+                    <% [9, 10, 11, 12, 13, 14, 15, 16, 17, 18].forEach( (item)=> { %>
+                    <option value="<%= item %>" <%=data.hourFrom===item ? 'selected' : '' %>><%= item %>
+                    </option>
+                    <% }); %>
+                  </select>
+                </div>
+              </div>
+
+              <div class="col-md-1">
+                <div class="form-group">
+                  <label for="hourTo">Час по</label>
+                  <select class="form-control" id="hourTo" name="hourTo">
+                    <% [10, 11, 12, 13, 14, 15, 16, 17, 18, 19].forEach( (item)=> { %>
+                    <option value="<%= item %>" <%=data.hourTo===item ? 'selected' : '' %>><%= item %>
+                    </option>
+                    <% }); %>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -182,61 +252,6 @@
             </div>
           </div>
 
-          <div class="row">
-            <div class="col-md-6">
-              <div class="form-group">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="isDisablingApartments" name="isDisablingApartments"
-                    <%=data.isDisablingApartments ? 'checked' : '' %> >
-                  <label class="form-check-label" for="isDisablingApartments">
-                    Есть отключение квартир
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="col-md-6">
-              <div class="form-group">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="isTimeRange" name="isTimeRange"
-                    <%=data.isTimeRange ? 'checked' : '' %>>
-                  <label class="form-check-label" for="isTimeRange">
-                    Временный интервал
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div id="timeRangePanel" <%=data.isTimeRange ? '' : 'hidden' %>>
-            <div class="row">
-              <div class="col-md-1">
-                <div class="form-group">
-                  <label for="hourFrom">Час c</label>
-                  <select class="form-control" id="hourFrom" name="hourFrom">
-                    <% [11, 12, 13, 14, 15, 16, 17, 18, 19].forEach( (item)=> { %>
-                    <option value="<%= item %>" <%=data.hourFrom===item ? 'selected' : '' %>><%= item %>
-                    </option>
-                    <% }); %>
-                  </select>
-                </div>
-              </div>
-
-              <div class="col-md-1">
-                <div class="form-group">
-                  <label for="hourTo">Час по</label>
-                  <select class="form-control" id="hourTo" name="hourTo">
-                    <% [12, 13, 14, 15, 16, 17, 18, 19].forEach( (item)=> { %>
-                    <option value="<%= item %>" <%=data.hourTo===item ? 'selected' : '' %>><%= item %>
-                    </option>
-                    <% }); %>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
 
           <div class="row">
             <div class="col-md-12">

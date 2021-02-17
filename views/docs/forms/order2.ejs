@@ -21,6 +21,10 @@
   <% include ../../common/full_menu.ejs %>
 
   <div class="container">
+
+    <div class="row" id="firstRow">
+    </div>
+
     <div class="form-header">
       <h3><%= title %></h3>
       <% if (Object.keys(errors).length > 0) { %>
@@ -52,6 +56,8 @@
             <div class="tab-content">
 
               <div role="tabpanel" class="tab-pane in active" id="core">
+                <input type="text" hidden id="hostIP" value="<%= hostIP %>">
+                <input type="text" hidden id="hostPort" value="<%= hostPort %>">
                 <input type="text" hidden id="id" name="id" value="<%= data.id %>">
                 <input type="text" hidden id="equipment" name="equipment" value="<%= JSON.stringify(data.equipment) %>">
                 <input type="text" hidden id="address" name="address" value="<%= JSON.stringify(data.address) %>">
@@ -144,6 +150,11 @@
                         </span>
                         <input type="text" class="form-control select-all" id="fullAddress" name="fullAddress"
                           value="<%= data.fullAddress %>">
+                        <span class="input-group-btn">
+                          <button class="btn btn-default" type="button" id="editAddress">
+                            <span class="glyphicon glyphicon-share" aria-hidden="true"></span>
+                          </button>
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -175,6 +186,11 @@
                         <input type="text" class="form-control select-all" id="clientContractName"
                           name="clientContractName" placeholder="ФИО по договору"
                           value="<%= data.client.contract.value %>">
+                        <span class="input-group-btn">
+                          <button class="btn btn-default edit-client" type="button" id="editClientByContract">
+                            <span class="glyphicon glyphicon-share" aria-hidden="true"></span>
+                          </button>
+                        </span>
                       </div>
                     </div>
                     <div class="col-md-3">
@@ -213,6 +229,11 @@
                         </span>
                         <input type="text" class="form-control select-all" id="clientServiceName"
                           name="clientServiceName" placeholder="ФИО по ТО" value="<%= data.client.service.value %>">
+                        <span class="input-group-btn">
+                          <button class="btn btn-default edit-client" type="button" id="editClientByService">
+                            <span class="glyphicon glyphicon-share" aria-hidden="true"></span>
+                          </button>
+                        </span>
                       </div>
                     </div>
                     <div class="col-md-3">
@@ -609,26 +630,26 @@
                 <div class="col-12">
                   <button type="submit" class="btn btn-success" id="save_and_close" name="save_and_close">Записать и выйти</button>
                   <button type="submit" class="btn btn-success" id="save" name="save">Записать</button>
-                  <div class="btn-group dropup">
-                    <!-- <button type="button" class="btn btn-default dropdown-toggle disabled" data-toggle="dropdown"> -->
+                  <div class="btn-group dropup" id="reports">
                     <button class="btn btn-default dropdown-toggle" data-toggle="dropdown">
                       Действия <span class="caret"></span>
                     </button>
-                    <ul class="dropdown-menu" role="menu">
-                      <!-- <li ><a href="#">Сформировать договор на установку</a></li> -->
-                      <!-- <li class="disabled"><a href="#">Сформировать договор на обслуживание</a></li> -->
-                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
-                          href="/orders/generate_order_setup/<%= data.id %>">Сформировать договор на установку</a></li>
-                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
-                          href="/orders/generate_order_service/<%= data.id %>">Сформировать договор на обслуживание</a>
+                    <ul class="dropdown-menu" role="menu" id="qwerty">
+                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %> id="generateOrderSetup"><a
+                          href="#">Сформировать договор на установку</a></li>
+                          <!-- href="/orders/generate_order_setup/<%= data.id %>">Сформировать договор на установку</a></li> -->
+                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %> id="generateOrderService"><a
+                          href="#">Сформировать договор на обслуживание</a>
+                          <!-- href="/orders/generate_order_service/<%= data.id %>">Сформировать договор на обслуживание</a> -->
                       </li>
                       <li class="divider"></li>
-                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
-                          href="/orders/open_order_setup/<%= data.contractNumber %>">Открыть договор на установку</a>
+                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %> id="openOrderSetup">
+                        <a href="#">Открыть договор на установку</a>
                       </li>
-                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %>><a
-                          href="/orders/open_order_service/<%= data.contractNumber %>">Открыть договор на
-                          обслуживание</a></li>
+                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %> id="openOrderService">
+                        <a href="#">Открыть договор на
+                          обслуживание</a>
+                        </li>
                     </ul>
                   </div>
                   <button type="submit" class="btn btn-info" id="printingReceipts" name="printingReceipts">Печать квитанций</button>

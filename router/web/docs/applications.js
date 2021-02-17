@@ -14,6 +14,7 @@ var queryGetCard = require('../../../queries/applications').getCard;
 var common = require('../../common/typeheads');
 const { application } = require('express');
 var ApplicationModel = require('../../../models/application').ApplicationModel;
+const logger = require('../../../lib/winston');
 
 function findContract(queryText) {
   return new Promise(function (resolve, reject) {
@@ -1364,7 +1365,6 @@ module.exports = function () {
   });
 
   router.post('/save', function (req, res) {
-
     // var tableFaults = [];
 
     if (req.body.generateReport) {
@@ -1376,6 +1376,8 @@ module.exports = function () {
       res.redirect('/applications');
       return;
     }
+
+
 
     var applicationModel = new ApplicationModel();
     applicationModel.id = Number(req.body.documentId);
@@ -1393,6 +1395,7 @@ module.exports = function () {
     applicationModel.order.id = Number(req.body.cardId);
     applicationModel.isDone = Number(req.body.isDone);
     applicationModel.isDisablingApartments = req.body.isDisablingApartments ? 1 : 0;
+    applicationModel.isDisablingApartments = req.body.isDisablingApartments ? 1 : (req.body.isConnectionApartments ? 2 : 0);
     applicationModel.isTimeRange = req.body.isTimeRange ? 1 : 0;
     applicationModel.hourFrom = parseInt(req.body.hourFrom);
     applicationModel.hourTo = parseInt(req.body.hourTo);
@@ -1424,6 +1427,22 @@ module.exports = function () {
 
     var errors = req.validationErrors();
     if (!errors) {
+
+      logger.info('Действие: Запись заявки');
+      if ((req.session) && (req.session.userName)) {
+        logger.info(`Автор: ${req.session.userName}`);
+      }
+      logger.info(`Адрес: ${req.connection.remoteAddress}:${req.connection.remotePort}`);
+
+      logger.info(applicationModel.id > 0 ? `Существующая заявка. ID = ${applicationModel.id} ` : 'Новая заявка');
+      logger.info(`Создана: ${req.body.createDate}`);
+      logger.info(`Адрес: ${applicationModel.address.full}`);
+      logger.info(`Город: ${applicationModel.address.city.id}`);
+      logger.info(`Улица: ${applicationModel.address.street.id}`);
+      logger.info(`Дом: ${applicationModel.address.house.id}`);
+      logger.info(`Тип: ${applicationModel.address.kind === 0 ? 'Подъезд' : 'Квартира'}`);
+      logger.info(`Номер: ${applicationModel.address.number}`);
+      logger.info(`Телефон: ${applicationModel.phone}`);
 
       if (applicationModel.performer.id > 0) {
         applicationModel.weight = 2;

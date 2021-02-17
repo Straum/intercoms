@@ -53,6 +53,9 @@ module.exports = function () {
   router.use('/info', require('./docs/infos')());
   router.use('/removed_for_repair', require('./docs/removed_for_repair')());
 
+  // Reports
+  router.use('/report_payments_by_banks', require('./reports/payments_by_banks')());
+
   // API
   router.use('/api', require('./api/index')());
 
