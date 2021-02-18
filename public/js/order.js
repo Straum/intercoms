@@ -40,6 +40,23 @@ var Application = function () {
 
   this.hostIP = '';
   this.hostPort = 0;
+
+  this.address = {
+    city: {
+      key: 0,
+      value: '',
+    },
+    street: {
+      key: 0,
+      value: '',
+      cityId: 0,
+    },
+    house: {
+      key: 0,
+      value: '',
+      streetId: 0,
+    },
+  }
 }
 
 var application = new Application();
@@ -448,6 +465,7 @@ document.getElementById('decide').addEventListener('click', function (e) {
       getLockeds(apartments);
       getApartmentsCount(apartments);
       break;
+
     case ACTION_DIALOG_PROLONG_ORDER:
       var rows = document.getElementById('tableApartments').rows;
       if (rows.length > 0) {
@@ -482,6 +500,7 @@ document.getElementById('decide').addEventListener('click', function (e) {
       document.getElementById('receiptPrinting').value = moment(new Date()).format('DD.MM.YYYY');
       //
       break;
+
     case ACTION_DIALOG_DELETE_APARTMENT:
       document.getElementById('tableApartments').deleteRow(application.deletedApartment.rowIndex);
       if ((application.deletedApartment.rowIndex - 2) < apartments.table.length) {
@@ -1614,5 +1633,24 @@ if (refClients) {
     }
   }
 }
+
+document.getElementById('editAddress').addEventListener('click', (e) => {
+  $('#editFullAddressDialog').modal();
+})
+
+$('#editFullAddressDialog').on('shown.bs.modal', () => {
+  try {
+    const address = JSON.parse(document.getElementById('address').value);
+    application.address = {
+      ...address
+    };
+    document.getElementById('editCity').value = application.address.city.value;
+    document.getElementById('editStreet').value = application.address.street.value;
+    document.getElementById('editHouse').value = application.address.house.value;
+  } catch (e) {
+    console.log(e.message);
+  }
+  document.getElementById('editStreet').focus();
+})
 
 startWebsocket();
