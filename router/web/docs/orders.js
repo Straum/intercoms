@@ -1203,6 +1203,23 @@ var filterRecords = function (req, res) {
 
 };
 
+function changeAddress(data) {
+  var {operation, value, parentId} = data;
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query('CALL change_address(?,?,?)', [operation, value, parentId],
+        function (err, rows) {
+          connection.release();
+          if (err) {
+            reject(err);
+          } else {
+            resolve(rows[0]);
+          }
+        });
+    });
+  });
+}
+
 module.exports = function () {
   var router = express.Router();
 
@@ -1940,15 +1957,12 @@ module.exports = function () {
     }
   });
 
-  router.post('/find_city', function (req, res) {
-    var data = req.body;
+  router.post('/find_city', (req, res) => {
+    const data = req.body;
     if ((data) && (typeof (data) === 'object') && ('cityName' in data)) {
-      var rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
-      var params = {
-        cityName: data.cityName,
-        rowsCount: rowsCount
-      };
-      common.filterCities(params, function (err, rows) {
+      const rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
+      const params = {...data, rowsCount: rowsCount};
+      common.filterCities(params, (err, rows) => {
         res.status(200).send(rows);
       });
     } else {
@@ -1959,16 +1973,12 @@ module.exports = function () {
     }
   });
 
-  router.post('/find_street', function (req, res) {
-    var data = req.body;
+  router.post('/find_street', (req, res) => {
+    const data = req.body;
     if ((data) && (typeof (data) === 'object') && ('streetName' in data) && ('cityId' in data)) {
-      var rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
-      var params = {
-        cityId: data.cityId,
-        streetName: data.streetName,
-        rowsCount: rowsCount
-      };
-      common.filterStreets(params, function (err, rows) {
+      const rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
+      const params = {...data, rowsCount: rowsCount};
+      common.filterStreets(params, (err, rows) => {
         res.status(200).send(rows);
       });
     } else {
@@ -1979,16 +1989,12 @@ module.exports = function () {
     }
   });
 
-  router.post('/find_house', function (req, res) {
-    var data = req.body;
+  router.post('/find_house', (req, res) => {
+    const data = req.body;
     if ((data) && (typeof (data) === 'object') && ('houseNumber' in data) && ('streetId' in data)) {
-      var rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
-      var params = {
-        streetId: data.streetId,
-        houseNumber: data.houseNumber,
-        rowsCount: rowsCount
-      };
-      common.filterHouses(params, function (err, rows) {
+      const rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
+      const params = {...data, rowsCount: rowsCount};
+      common.filterHouses(params, (err, rows) => {
         res.status(200).send(rows);
       });
     } else {
@@ -1999,16 +2005,18 @@ module.exports = function () {
     }
   });
 
-  router.post('/find_porch', function (req, res) {
-    var data = req.body;
+  router.post('/find_porch', (req, res) => {
+    const data = req.body;
     if ((data) && (typeof (data) === 'object') && ('porch' in data) && ('houseId' in data)) {
-      var rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
-      var params = {
-        houseId: data.houseId,
-        porch: data.porch,
-        rowsCount: rowsCount
-      };
-      common.filterPorches(params, function (err, rows) {
+      const rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
+      const params = {...data, rowsCount: rowsCount};
+      // var params = {
+      //   houseId: data.houseId,
+      //   porch: data.porch,
+      //   rowsCount: rowsCount
+      // };
+
+      common.filterPorches(params, (err, rows) => {
         res.status(200).send(rows);
       });
     } else {
@@ -2235,8 +2243,18 @@ module.exports = function () {
       .catch(function (error) {
         console.log(error);
         res.status(500).send(error);
-      });;
+      });
   });
+
+  router.post('/change_address', (req, res) => {
+    changeAddress(req.body).then( (data) => {
+      res.status(200).send(data);
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).send(error);
+    });
+  })
 
   return router;
 };

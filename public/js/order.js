@@ -42,29 +42,32 @@ var Application = function () {
   this.hostPort = 0;
 
   this.address = {
-    city: {
-      key: 0,
-      value: '',
+      city: {
+        key: 0,
+        value: '',
+      },
+      street: {
+        key: 0,
+        value: '',
+        cityId: 0,
+      },
+      house: {
+        key: 0,
+        value: '',
+        streetId: 0,
+      },
     },
-    street: {
-      key: 0,
-      value: '',
-      cityId: 0,
-    },
-    house: {
-      key: 0,
-      value: '',
-      streetId: 0,
-    },
-  }
+
+    this.doubleAddress = {
+      ...this.address
+    };
+
 }
 
 var application = new Application();
 
 application.hostIP = document.getElementById('hostIP').value;
 application.hostPort = document.getElementById('hostPort').value;
-
-// $('#tableApartments').floatThead();
 
 $('[data-toggle="tooltip"]').tooltip();
 
@@ -684,16 +687,20 @@ function saveFullAddress(data) {
         address.city.value = data.cityName;
         address.street.key = 0;
         address.street.value = '';
+        address.street.cityId = 0;
         address.house.key = 0;
         address.house.value = '';
+        address.house.streetId = 0;
         break;
       case 1:
         address.city.key = data.cityId;
         address.city.value = data.cityName;
         address.street.key = data.streetId;
         address.street.value = data.streetName;
+        address.street.cityId = data.cityId;
         address.house.key = 0;
         address.house.value = '';
+        address.house.streetId = 0;
         break;
       case 2:
         address.city.key = data.cityId;
@@ -702,6 +709,7 @@ function saveFullAddress(data) {
         address.street.value = data.streetName;
         address.house.key = data.houseId;
         address.house.value = data.houseNumber;
+        address.house.streetId = data.streetId;
         break;
     }
     document.getElementById('address').value = JSON.stringify(address);
@@ -1611,6 +1619,7 @@ function editClient(byName) {
       }
 
       if (clientId > 0) {
+        // window.open(`${window.location.origin}/clients/edit/${clientId}`, '_blank');
         window.location.href = `${window.location.origin}/clients/edit/${clientId}`;
         return;
       }
@@ -1644,13 +1653,162 @@ $('#editFullAddressDialog').on('shown.bs.modal', () => {
     application.address = {
       ...address
     };
-    document.getElementById('editCity').value = application.address.city.value;
-    document.getElementById('editStreet').value = application.address.street.value;
-    document.getElementById('editHouse').value = application.address.house.value;
+    document.getElementById('textCity').value = application.address.city.value;
+    document.getElementById('textStreet').value = application.address.street.value;
+    document.getElementById('textHouse').value = application.address.house.value;
   } catch (e) {
     console.log(e.message);
   }
-  document.getElementById('editStreet').focus();
+  document.getElementById('textStreet').focus();
 })
+
+$('#textStreet').typeahead({
+  items: 15,
+  source: (query, process) => {
+    var results = [];
+    map = {};
+
+    axios.post('/orders/find_street', {
+      streetName: query,
+      cityId: application.address.city.key,
+      limit: 15
+    }).then((response) => {
+      const data = response.data;
+      data.forEach((item) => {
+        map[item.value] = item;
+        results.push(item.value);
+      });
+      process(results);
+    }).catch((error) => {
+      console.log(error);
+    });
+  },
+  updater: (element) => {
+    try {
+      application.address.street.key = map[element].id;
+      application.address.street.value = map[element].value;
+      application.address.street.cityId = map[element].cityId;
+
+      if (application.address.house.streetId != application.address.street.key) {
+        application.address.house.key = 0;
+        application.address.house.value = '';
+        application.address.house.streetId = 0;
+
+        document.getElementById('textHouse').value = '';
+        document.getElementById('textHouse').focus();
+      }
+    } catch (e) {
+      console.log('equipmentName Error: ' + e.message);
+    }
+    return element;
+  }
+});
+
+$('#textHouse').typeahead({
+  items: 15,
+  source: (query, process) => {
+    var results = [];
+    map = {};
+
+    axios.post('/orders/find_house', {
+      houseNumber: query,
+      streetId: application.address.street.key,
+      limit: 15
+    }).then((response) => {
+      const data = response.data;
+      data.forEach((item) => {
+        map[item.value] = item;
+        results.push(item.value);
+      });
+      process(results);
+    }).catch((error) => {
+      console.log(error);
+    });
+  },
+  updater: (element) => {
+    try {
+      application.address.house.key = map[element].id;
+      application.address.house.value = map[element].value;
+      application.address.house.cityId = map[element].streetId;
+    } catch (e) {
+      console.log('equipmentName Error: ' + e.message);
+    }
+    return element;
+  }
+});
+
+document.getElementById('addStreet').addEventListener('click', (e) => {
+  var parentId = application.address.city.key;
+
+  axios.post('/orders/change_address', {
+    operation: 'street',
+    value: document.getElementById('textStreet').value,
+    parentId: parentId
+  }).then((response) => {
+
+    const data = response.data;
+    if ((Array.isArray(data)) && (data.length === 1)) {
+      let row = {...data[0]};
+
+      if (application.address.house.streetId != row.uid) {
+        application.address.house.key = 0;
+        application.address.house.value = '';
+        document.getElementById('textHouse').value = '';
+      }
+      application.address.street.key = row.uid;
+      application.address.street.value = row.caption;
+
+      if (row.isExists === 0) {
+        showTemporaryMessage('Добавлена новая улица!', 2000);
+      }
+
+    }
+    document.getElementById('textHouse').focus();
+
+  }).catch((error) => {
+    console.log(error);
+  });
+
+})
+
+document.getElementById('addHouse').addEventListener('click', (e) => {
+  var parentId = application.address.street.key;
+
+  axios.post('/orders/change_address', {
+    operation: 'house',
+    value: document.getElementById('textHouse').value,
+    parentId: parentId
+  }).then((response) => {
+
+    const data = response.data;
+    if ((Array.isArray(data)) && (data.length === 1)) {
+      let row = {...data[0]};
+
+      application.address.house.key = row.uid;
+      application.address.house.value = row.caption;
+
+      if (row.isExists === 0) {
+        showTemporaryMessage('Добавлен новый дом!', 2000);
+      }
+    }
+
+  }).catch((error) => {
+    console.log(error);
+  });
+})
+
+document.getElementById('changeAddress').addEventListener('click', (e) => {
+  const address = application.address;
+  document.getElementById('fullAddress').value = `${address.city.value}, ${address.street.value}, ${address.house.value}`;
+  document.getElementById('address').value = JSON.stringify(address);
+  $('#editFullAddressDialog').modal('hide');
+});
+
+function showTemporaryMessage(htmlText, ms) {
+  var msg = document.getElementById('temporaryMessage');
+  msg.innerHTML = htmlText;
+  msg.hidden = false;
+  setTimeout(() => msg.hidden = true, ms);
+}
 
 startWebsocket();

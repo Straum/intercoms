@@ -442,7 +442,7 @@ $("#orderInformation").click(function (e) {
         document.getElementById("brick").style.visibility = (isShowBrick ? "visible" : "hidden");
       }
     } else {
-      $('#linkToOrder').attr('href', link).text('#');
+      $('#linkToOrder').attr('href', '').text('#');
       if ($('#linkToOrder').hasClass('visible')) {
         $('#linkToOrder').removeClass('visible');
         $('#linkToOrder').addClass('invisible');

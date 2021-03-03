@@ -1590,15 +1590,11 @@ module.exports = function () {
     }
   });
 
-  router.post('/find_city', function (req, res) {
-    var data = req.body;
+  router.post('/find_city', (req, res) => {
+    const data = req.body;
     if ((data) && (typeof (data) === 'object') && ('cityName' in data)) {
-      var rowsCount = 'limit' in data ? data.limit : rowsLimit;
-      var params = {
-        cityName: data.cityName,
-        rowsCount: rowsCount
-      };
-      common.filterCities(params, function (err, rows) {
+      var params = {...data};
+      common.filterCities(params, (err, rows) => {
         res.status(200).send(rows);
       });
     }

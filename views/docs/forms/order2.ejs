@@ -661,7 +661,7 @@
     </div>
   </div>
 
-  <div class="modal bs-example-modal-normal" id="completeDialog" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal bs-example-modal-normal" id="completeDialog" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-sm">
       <div class="modal-content">
         <div class="modal-header">
@@ -702,7 +702,7 @@
     </div>
   </div>
 
-  <div class="modal bs-example-modal" id="historyDialog" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal bs-example-modal" id="historyDialog" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
@@ -821,7 +821,7 @@
     </div>
   </div>
 
-  <div class="modal bs-example-modal-normal" id="changeApartmentDialog" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal bs-example-modal-normal" id="changeApartmentDialog" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-sm">
       <div class="modal-content">
         <div class="modal-header">
@@ -862,7 +862,7 @@
     </div>
   </div>
 
-  <div class="modal bs-example-modal-normal" id="addPaymentDialog" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal bs-example-modal-normal" id="addPaymentDialog" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-sm">
       <div class="modal-content">
         <div class="modal-header">
@@ -900,7 +900,7 @@
     </div>
   </div>
 
-  <div class="modal bs-example-modal-normal" id="addPaymentInRegisterDialog" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal bs-example-modal-normal" id="addPaymentInRegisterDialog" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-sm">
       <div class="modal-content">
         <div class="modal-header">
@@ -938,7 +938,7 @@
     </div>
   </div>
 
-  <div class="modal bs-example-modal-normal" id="editFullAddressDialog" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal bs-example-modal-normal" id="editFullAddressDialog" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -950,8 +950,8 @@
           <div class="row">
             <div class="col-xs-12">
               <div class="form-group">
-                <label for="editCity" class="control-label">Город</label>
-                <input type="text" class="form-control" name="editCity" id="editCity" readonly>
+                <label for="textCity" class="control-label">Город</label>
+                <input type="text" class="form-control" name="textCity" id="textCity" readonly>
               </div>
             </div>
           </div>
@@ -960,14 +960,9 @@
               <div class="form-group">
                 <label for="editStreet">Улица</label>
                 <div class="input-group">
-                  <input type="text" class="form-control" name="editStreet" id="editStreet" />
+                  <input type="text" class="form-control select-all" id="textStreet" />
                   <span class="input-group-btn">
-                    <button class="btn btn-default" type="button" id="editStreet">
-                      <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
-                    </button>
-                  </span>
-                  <span class="input-group-btn">
-                    <button class="btn btn-default" type="button" id="addStreet">
+                    <button class="btn btn-default" type="button" id="addStreet" data-toggle="tooltip" data-placement="top" title="Добавить улицу">
                       <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
                     </button>
                   </span>
@@ -980,14 +975,9 @@
               <div class="form-group">
                 <label for="editHouse">Дом</label>
                 <div class="input-group">
-                  <input type="text" class="form-control" name="editHouse" id="editHouse" />
+                  <input type="text" class="form-control select-all" id="textHouse" />
                   <span class="input-group-btn">
-                    <button class="btn btn-default" type="button" id="editHouse">
-                      <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
-                    </button>
-                  </span>
-                  <span class="input-group-btn">
-                    <button class="btn btn-default" type="button" id="addHouse">
+                    <button class="btn btn-default" type="button" id="addHouse" data-toggle="tooltip" data-placement="top" title="Добавить дом">
                       <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
                     </button>
                   </span>
@@ -995,7 +985,17 @@
               </div>
             </div>
           </div>
+
+          <div class="row">
+            <div class="col-xs-12">
+              <div class="alert alert-success alert-dismissible" role="alert" id=temporaryMessage hidden>
+
+              </div>
+            </div>
+          </div>
+
         </div>
+
         <div class="modal-footer">
           <button class="btn btn-success" id="changeAddress">&nbsp;Занести&nbsp;</button>
         </div>
@@ -1013,7 +1013,6 @@
   <script src="/bower_components/bootstrap/js/collapse.js"></script>
   <script src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
   <script src="/bower_components/axios/dist/axios.min.js"></script>
-  <!-- <script src="/js/jquery.floatThead.min.js"></script> -->
   <script src="/js/order.js"></script>
 
 </body>

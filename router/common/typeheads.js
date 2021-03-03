@@ -80,23 +80,37 @@ var getHouses = function (cityId, streetName, houseNumber, rowsLimit, callback) 
   });
 };
 
-module.exports.filterCities = function (params, callback) {
+module.exports.filterCities = (params, callback) => {
+  let isWhere = false;
+  let queryText = `SELECT a.city_id AS id, a.name AS value FROM cities a`;
 
-  var queryText =
-    ' SELECT a.city_id AS id, a.name AS value' +
-    ' FROM cities a';
-
-  if (params.cityName.length > 0) {
-    queryText += ' WHERE a.name LIKE ' + `'` + params.cityName + '%' + `'`;
+  if (('cityName' in params) && (params.cityName.length > 0)) {
+    queryText += ` WHERE (a.name LIKE '${params.cityName}%')`;
+    isWhere = !isWhere;
+  }
+  if (('core' in params) && (parseInt(params.core) === 1)) {
+    if (isWhere) {
+      queryText += ` AND (a.core = 1)`;
+    } else {
+      queryText += ` WHERE (a.core = 1)`;
+      isWhere = !isWhere;
+    }
+  }
+  if (isWhere) {
+    queryText += ` AND (a.is_deleted = 0)`;
+  } else {
+    queryText += ` WHERE (a.is_deleted = 0)`;
+    isWhere = !isWhere
   }
 
-  queryText += ' ORDER BY a.name ASC';
-  queryText += ' LIMIT ' + params.rowsCount;
+  queryText += ` ORDER BY a.name ASC`;
+  if (('rowsCount' in params) && (parseInt(params.rowsCount) > 0)) {
+    queryText += ` LIMIT ${params.rowsCount}`;
+  }
 
-  db.get().getConnection(function (err, connection) {
+  db.get().getConnection((err, connection) => {
     connection.query(
-      queryText, [],
-      function (err, rows) {
+      queryText, [], (err, rows) => {
         connection.release();
 
         if (err) {
@@ -112,25 +126,37 @@ module.exports.filterCities = function (params, callback) {
   });
 };
 
-module.exports.filterStreets = function (params, callback) {
+module.exports.filterStreets = (params, callback) => {
+  let isWhere = false;
+  let queryText = ` SELECT a.street_id AS id, a.name AS value, city_id AS cityId FROM streets a`;
 
-  var queryText =
-    ' SELECT a.street_id AS id, a.name AS value, city_id AS cityId' +
-    ' FROM streets a';
-
-  queryText += ' WHERE a.is_deleted = 0 AND a.city_id = ' + params.cityId;
-
-  if (params.streetName.length > 0) {
-    queryText += ' AND a.name LIKE ' + `'` + params.streetName + '%' + `'`;
+  if (('cityId' in params) && (parseInt(params.cityId) > 0)) {
+    queryText += ` WHERE (a.city_id = ${params.cityId})`;
+    isWhere = !isWhere
+  }
+  if (('streetName' in params) && (params.streetName.length > 0)) {
+    if (isWhere) {
+      queryText += ` AND (a.name LIKE '${params.streetName}%')`;
+    } else {
+      queryText += ` WHERE (a.name LIKE '${params.streetName}%')`;
+      isWhere = !isWhere;
+    }
+  }
+  if (isWhere) {
+    queryText += ` AND (a.is_deleted = 0)`;
+  } else {
+    queryText += ` WHERE (a.is_deleted = 0)`;
+    isWhere = !isWhere
   }
 
-  queryText += ' ORDER BY a.name ASC';
-  queryText += ' LIMIT ' + params.rowsCount;
+  queryText += ` ORDER BY a.name ASC`;
+  if (('rowsCount' in params) && (parseInt(params.rowsCount) > 0)) {
+    queryText += ` LIMIT ${params.rowsCount}`;
+  }
 
-  db.get().getConnection(function (err, connection) {
+  db.get().getConnection((err, connection) => {
     connection.query(
-      queryText, [],
-      function (err, rows) {
+      queryText, [], (err, rows) => {
         connection.release();
 
         if (err) {
