@@ -19,8 +19,27 @@ var OrderModel = require('../../../models/order').OrderModel;
 var models = require('../../../models/order');
 var PrintOrderReceipts = require('../../../lib/print_order_receipts').PrintOrderReceipts;
 const {hostIP, hostPort} = require('../../../lib/config').config;
+var ClientModel = require('../../../models/client').ClientModel;
+const operationsWithClient = require('../../common/operations_with_client');
 
 require('shelljs/global');
+
+const isExistsContractNumber = (contractNumber) => {
+  return new Promise((resolve, reject) => {
+    db.get().getConnection((err, connection) => {
+      connection.query(
+        'SELECT a.card_id AS uid FROM cards a WHERE a.contract_number = ?', [contractNumber],
+         (err, rows) => {
+          connection.release();
+          if (err) {
+            reject();
+          } else {
+            resolve(rows.length > 0 ? rows[0].uid : null);
+          }
+        });
+    });
+  });
+}
 
 const paymentsHistory = async (apartmentId) => {
   let out = {
@@ -357,7 +376,8 @@ function updateOrder(data) {
         ' subtotal = ?,' +
         ' subtotal_for_apartment = ?,' +
         ' discount_for_apartment = ?,' +
-        ' total = ?' +
+        ' total = ?,' +
+        ' first_year = ?' +
         ' WHERE card_id = ?', [
           data.contractNumber,
           data.createDate,
@@ -404,6 +424,7 @@ function updateOrder(data) {
           data.complete.subtotalForApartment.cost,
           data.complete.discountForApartment.cost,
           data.complete.total.cost,
+          data.firstYear,
           data.id
         ],
         function (err) {
@@ -538,9 +559,9 @@ function saveOrder(data) {
         ' subscriber_unit_quantity, subscriber_unit_price, subscriber_unit_cost,' +
         ' key_quantity, key_price, key_cost,' +
         ' door_quantity, door_price, door_cost,' +
-        ' subtotal, subtotal_for_apartment, discount_for_apartment, total)' +
+        ' subtotal, subtotal_for_apartment, discount_for_apartment, total, first_year)' +
         ' VALUES (' +
-        ' ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [
+        ' ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [
           data.contractNumber,
           data.createDate,
           data.equipment.key,
@@ -585,7 +606,8 @@ function saveOrder(data) {
           data.complete.subtotal.cost,
           data.complete.subtotalForApartment.cost,
           data.complete.discountForApartment.cost,
-          data.complete.total.cost
+          data.complete.total.cost,
+          data.firstYear
         ],
         function (err, rows) {
           connection.release();
@@ -1233,8 +1255,6 @@ module.exports = function () {
     var serviceClientData = null;
     var apartments = [];
 
-    console.log('id = ' + id);
-
     let orderId = parseInt(id);
     if (orderId != NaN) {
       // await checkCurrentPeriod(orderId);
@@ -1367,6 +1387,8 @@ module.exports = function () {
                     orderModel.complete.subtotalForApartment.cost = data.subtotalForApartmentCost;
                     orderModel.complete.discountForApartment.cost = data.discountForApartmentCost;
                     orderModel.complete.total.cost = data.totalCost;
+
+                    orderModel.firstYear = data.firstYear;
 
                     // res.render('docs/forms/order.ejs', {
                     res.render('docs/forms/order2.ejs', {
@@ -1757,6 +1779,7 @@ module.exports = function () {
     orderModel.receiptPrinting = ((req.body.receiptPrinting != null) && (req.body.receiptPrinting.trim().length > 0)) ? moment(req.body.receiptPrinting, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
     orderModel.contractInfo = req.body.contractInfo;
     orderModel.serviceInfo = req.body.serviceInfo;
+    orderModel.firstYear = req.body.firstYear === 'on' ? 1 : 0;
 
     try {
       orderModel.equipment = JSON.parse(req.body.equipment);
@@ -1768,10 +1791,20 @@ module.exports = function () {
       console.log(error);
     }
 
+    const uid = await isExistsContractNumber(orderModel.contractNumber);
+
     req.assert('contractNumber', 'Номер договора не введен').notEmpty();
+    req.assert('contractNumber', 'Такой номер уже существует!').custom((data) => {
+      if (orderModel.id > 0) {
+        return (orderModel.id === uid) && (parseInt(orderModel.contractNumber) === parseInt(data));
+      }
+      else {
+        return (uid === null) || ((uid) && (uid === 0));
+      }
+    });
     req.assert('createDate', 'Дата создания не заполнена').notEmpty();
     req.assert('equipment', 'Оборудование не заполнено').custom(function (data) {
-      var result = false
+      var result = false;
       try {
         var equipment = JSON.parse(data);
         result = +equipment.key > 0;
@@ -1782,7 +1815,7 @@ module.exports = function () {
     });
     req.assert('creditTo', 'Дата кредита не заполнена').notEmpty();
     req.assert('address', 'Адрес не заполнен').custom(function (data) {
-      var result = false
+      var result = false;
       try {
         var address = JSON.parse(data);
         result = (+address.city.key > 0) && (+address.street.key > 0) && (+address.house.key > 0);
@@ -1939,12 +1972,13 @@ module.exports = function () {
   });
 
   router.post('/find_full_address', function (req, res) {
-    var data = req.body;
-    if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
-      var rowsCount = 'rowsCount' in data ? data.rowsCount : cfg.rowsLimit;
+    const {rowsCount, suggestion, core} = {...req.body}
+    // var data = req.body;
+    if (suggestion) {
       var params = {
-        suggestion: data.suggestion,
-        rowsCount: rowsCount
+        suggestion: suggestion,
+        rowsCount: rowsCount,
+        core: core
       };
       common.outFullAddress(params, function (err, rows) {
         res.status(200).send(rows);
@@ -2254,7 +2288,11 @@ module.exports = function () {
       console.log(error);
       res.status(500).send(error);
     });
-  })
+  });
+
+  router.post('/save_client', (req, res) => {
+    saveClientData(req.body, res);
+  });
 
   return router;
 };
@@ -2402,6 +2440,56 @@ const buildReportForService = (id, isCopyFile, cb) => {
       }
     });
 };
+
+const saveClientData = async (data, res) => {
+  var clientModel = new ClientModel();
+  clientModel.id = data.id;
+  clientModel.lastName = data.lastName;
+
+  clientModel.certificate.typeId = data.certificateId;
+  clientModel.certificate.series = data.certificateSeries;
+  clientModel.certificate.number = data.certificateNumber;
+  clientModel.certificate.issued =  ((data.issued != null) && (data.issued.trim().length > 0)) ? moment(data.issued, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
+  clientModel.certificate.department = data.department;
+  clientModel.certificate.phones = data.phones;
+
+  clientModel.registeredAddress.city.key = data.registeredAddress.cityId;
+  clientModel.registeredAddress.street.key = data.registeredAddress.streetId;
+  clientModel.registeredAddress.house.key = data.registeredAddress.houseId;
+  clientModel.registeredAddress.apartment = data.registeredAddress.apartment;
+
+  clientModel.actualAddress.city.key = data.actualAddress.cityId;
+  clientModel.actualAddress.street.key = data.actualAddress.streetId;
+  clientModel.actualAddress.house.key = data.actualAddress.houseId;
+  clientModel.actualAddress.apartment = data.actualAddress.apartment;
+
+  try {
+    if (clientModel.id > 0) {
+      await operationsWithClient.updateClient(clientModel);
+      await operationsWithClient.updateClientFace(clientModel);
+      await operationsWithClient.updateClientRegisteredAddress(clientModel);
+      await operationsWithClient.updateClientActualAddress(clientModel);
+    }
+    else {
+      let uid = await operationsWithClient.addClient(clientModel);
+      clientModel.id = uid;
+      await operationsWithClient.addClientFace(clientModel);
+      await operationsWithClient.addClientRegisteredAddress(clientModel);
+      await operationsWithClient.addClientActualAddress(clientModel);
+    }
+    res.status(200).send({id: clientModel.id});
+  }
+  catch (error) {
+    if (clientModel.id > 0) {
+      console.log('Client update Error');
+    }
+    else {
+      console.log('Client insert Error');
+    }
+    res.status(500);
+  }
+
+}
 
 module.exports.buildReportForSetup = buildReportForSetup;
 module.exports.buildReportForService = buildReportForService;

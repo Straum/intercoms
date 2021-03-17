@@ -112,6 +112,7 @@ module.exports.OrderModel = function () {
       cost: 0.00
     }
   };
+  this.firstYear = 0;
 
   return this;
 };

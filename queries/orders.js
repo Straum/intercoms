@@ -62,7 +62,8 @@ exports.getOrder = `
     a.subtotal AS subtotalCost,
     a.subtotal_for_apartment AS subtotalForApartmentCost,
     a.discount_for_apartment AS discountForApartmentCost,
-    a.total AS totalCost
+    a.total AS totalCost,
+    a.first_year AS firstYear
   FROM
     cards a
   LEFT JOIN cities b ON a.city_id = b.city_id

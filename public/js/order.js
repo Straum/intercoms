@@ -11,6 +11,9 @@ const ACTION_DIALOG_DELETE_APARTMENT = 4;
 const ACTION_DIALOG_DELETE_PAYMENT = 5;
 const ACTION_DIALOG_DELETE_PAYMENT_FROM_REGISTER = 6;
 
+const ACTION_CLIENT_CONTRACT = 7;
+const ACTION_CLIENT_SERVICE = 8;
+
 var Application = function () {
   this.deletedApartment = {
     uid: 0,
@@ -60,7 +63,9 @@ var Application = function () {
 
     this.doubleAddress = {
       ...this.address
-    };
+    },
+
+    this.clientChannel = ACTION_CLIENT_CONTRACT;
 
 }
 
@@ -877,7 +882,8 @@ $('#fullAddress').typeahead({
 
     axios.post('/orders/find_full_address', {
         suggestion: query,
-        rowsCount: 15
+        rowsCount: 15,
+        core: 1
       })
       .then(function (response) {
         var datas = response.data;
@@ -972,6 +978,48 @@ $('#clientContractName').typeahead({
       console.log(e.message);
     }
     return element;
+  },
+  highlighter: function (element) {
+    const selectedElement = map[element];
+    var html = [];
+    html.push('<div class="typeahead">');
+    html.push('<div class="pull-left margin-small">');
+
+    html.push(`<div class="text-left"><strong>${selectedElement.value}</strong></div>`);
+
+    var address = '';
+    if (selectedElement.cityId > 0) {
+      address = `${selectedElement.cityName}`;
+    }
+    if (selectedElement.streetId > 0) {
+      if (address === '') {
+        address = `${selectedElement.streetName}`;
+      }
+      else {
+        address += `, ${selectedElement.streetName}`;
+      }
+    }
+    if (selectedElement.houseId > 0) {
+      if (address === '') {
+        address = 'Нет данных';
+      }
+      else {
+        address += `, ${selectedElement.houseNumber}`;
+        if (selectedElement.roomApartment.trim() != '') {
+          address += `,  кв. ${selectedElement.roomApartment}`;
+        }
+        if (selectedElement.phones.trim() != '') {
+          address += `,  тел. ${selectedElement.phones}`;
+        }
+      }
+    }
+
+    html.push(`<div class="text-left"><small>${address}</small></div>`);
+
+    html.push('</div>');
+    html.push('<div class="clearfix"></div>');
+    html.push('</div>');
+    return html.join('');
   }
 });
 
@@ -1008,6 +1056,48 @@ $('#clientServiceName').typeahead({
       console.log(e.message);
     }
     return element;
+  },
+  highlighter: function (element) {
+    const selectedElement = map[element];
+    var html = [];
+    html.push('<div class="typeahead">');
+    html.push('<div class="pull-left margin-small">');
+
+    html.push(`<div class="text-left"><strong>${selectedElement.value}</strong></div>`);
+
+    var address = '';
+    if (selectedElement.cityId > 0) {
+      address = `${selectedElement.cityName}`;
+    }
+    if (selectedElement.streetId > 0) {
+      if (address === '') {
+        address = `${selectedElement.streetName}`;
+      }
+      else {
+        address += `, ${selectedElement.streetName}`;
+      }
+    }
+    if (selectedElement.houseId > 0) {
+      if (address === '') {
+        address = 'Нет данных';
+      }
+      else {
+        address += `, ${selectedElement.houseNumber}`;
+        if (selectedElement.roomApartment.trim() != '') {
+          address += `,  кв. ${selectedElement.roomApartment}`;
+        }
+        if (selectedElement.phones.trim() != '') {
+          address += `,  тел. ${selectedElement.phones}`;
+        }
+      }
+    }
+
+    html.push(`<div class="text-left"><small>${address}</small></div>`);
+
+    html.push('</div>');
+    html.push('<div class="clearfix"></div>');
+    html.push('</div>');
+    return html.join('');
   }
 });
 
@@ -1605,31 +1695,87 @@ function startWebsocket() {
 }
 
 function editClient(byName) {
+  // $('#modalClient').modal('show');
+
+
   try {
     let client = JSON.parse(document.getElementById('client').value);
 
-    let clientId = 0;
+    var clientId = 0;
     if ((byName) && (typeof byName === 'string')) {
       if (byName.localeCompare('editClientByContract') === 0) {
         clientId = parseInt(client.contract.key);
+        application.clientChannel = ACTION_CLIENT_CONTRACT;
+        // $('#modalClient').modal('show');
       }
 
       if (byName.localeCompare('editClientByService') === 0) {
         clientId = parseInt(client.service.key);
+        application.clientChannel = ACTION_CLIENT_SERVICE;
+        // $('#modalClient').modal('show');
       }
 
-      if (clientId > 0) {
+      axios.post('/clients/client_info', {
+        id : clientId,
+      }).then((response) => {
+        const data = response.data;
+
+        let lastName = document.getElementById('lastName');
+        lastName.value = data.lastName;
+        lastName.dataset.id = data.id;
+
+        document.getElementById('certificate').selectedIndex = data.certificate.typeId;
+        document.getElementById('certificateSeries').value = data.certificate.series;
+        document.getElementById('certificateNumber').value = data.certificate.number;
+        document.getElementById('issued').value = data.certificate.issued ? moment(data.certificate.issued).format('DD.MM.YYYY') : '';
+        document.getElementById('department').value = data.certificate.department;
+
+        let registeredAddress = document.getElementById('registeredAddress');
+        registeredAddress.value = data.registeredAddress.fullAddress;
+        registeredAddress.dataset.cityKey = data.registeredAddress.city.key;
+        registeredAddress.dataset.cityValue = data.registeredAddress.city.value;
+        registeredAddress.dataset.streetKey = data.registeredAddress.street.key;
+        registeredAddress.dataset.streetValue = data.registeredAddress.street.value;
+        registeredAddress.dataset.houseKey = data.registeredAddress.house.key;
+        registeredAddress.dataset.houseValue = data.registeredAddress.house.value;
+        document.getElementById('registeredApartment').value = data.registeredAddress.apartment;
+
+        let actualAddress = document.getElementById('actualAddress');
+        actualAddress.value = data.actualAddress.fullAddress;
+        actualAddress.dataset.cityKey = data.actualAddress.city.key;
+        actualAddress.dataset.cityValue = data.actualAddress.city.value;
+        actualAddress.dataset.streetKey = data.actualAddress.street.key;
+        actualAddress.dataset.streetValue = data.actualAddress.street.value;
+        actualAddress.dataset.houseKey = data.actualAddress.house.key;
+        actualAddress.dataset.houseValue = data.actualAddress.house.value;
+        document.getElementById('actualApartment').value = data.actualAddress.apartment;
+
+        document.getElementById('phones').value = data.certificate.phones;
+
+        $('#modalClient').modal('show');
+
+        // data.forEach((item) => {
+        //   map[item.value] = item;
+        //   results.push(item.value);
+        // });
+        // process(results);
+      }).catch((error) => {
+        console.log(error);
+      });
+
+
+      // if (clientId > 0) {
         // window.open(`${window.location.origin}/clients/edit/${clientId}`, '_blank');
-        window.location.href = `${window.location.origin}/clients/edit/${clientId}`;
-        return;
-      }
+        // window.location.href = `${window.location.origin}/clients/edit/${clientId}`;
+        // return;
+      // }
     }
 
   } catch (error) {
     console.log(error.message);
   }
 
-  window.location.href = `${window.location.origin}/clients`;
+  // window.location.href = `${window.location.origin}/clients/add`;
 }
 
 var refClients = document.getElementsByClassName('edit-client');
@@ -1759,7 +1905,7 @@ document.getElementById('addStreet').addEventListener('click', (e) => {
       application.address.street.value = row.caption;
 
       if (row.isExists === 0) {
-        showTemporaryMessage('Добавлена новая улица!', 2000);
+        showTemporaryMessage('<strong>Добавлена новая улица!</strong>', 2000);
       }
 
     }
@@ -1788,7 +1934,7 @@ document.getElementById('addHouse').addEventListener('click', (e) => {
       application.address.house.value = row.caption;
 
       if (row.isExists === 0) {
-        showTemporaryMessage('Добавлен новый дом!', 2000);
+        showTemporaryMessage('<strong>Добавлен новый дом!</strong>', 2000);
       }
     }
 
@@ -1810,5 +1956,291 @@ function showTemporaryMessage(htmlText, ms) {
   msg.hidden = false;
   setTimeout(() => msg.hidden = true, ms);
 }
+
+document.getElementById('clearRegisteredAddress').addEventListener('click', (e) => {
+  let registeredAddress = document.getElementById('registeredAddress');
+  registeredAddress.value = '';
+  registeredAddress.dataset.cityKey = 0;
+  registeredAddress.dataset.cityValue = '';
+  registeredAddress.dataset.streetKey = 0
+  registeredAddress.dataset.streetValue = '';
+  registeredAddress.dataset.houseKey = 0;
+  registeredAddress.dataset.houseValue = '';
+  registeredAddress.focus();
+});
+
+document.getElementById('clearActualAddress').addEventListener('click', (e) => {
+  let actualAddress = document.getElementById('actualAddress');
+  actualAddress.value = '';
+  actualAddress.dataset.cityKey = 0;
+  actualAddress.dataset.cityValue = '';
+  actualAddress.dataset.streetKey = 0
+  actualAddress.dataset.streetValue = '';
+  actualAddress.dataset.houseKey = 0;
+  actualAddress.dataset.houseValue = '';
+  actualAddress.focus();
+});
+
+$('#registeredAddress').typeahead({
+  items: 15,
+  source: (query, process) => {
+    var results = [];
+    map = {};
+
+    axios.post('/orders/find_full_address', {
+        suggestion: query,
+        rowsCount: 15,
+        core: 1
+      })
+      .then((response) => {
+        var datas = response.data;
+        if ((typeof datas == 'object') && ('items' in datas) && ('level' in datas)) {
+          const level = datas.level;
+          const data = datas.items;
+          var text;
+          if (Array.isArray(data)) {
+            data.forEach((item, index) => {
+              item.level = level;
+              switch (level) {
+                case 0:
+                  text = item.cityName;
+                  map[text] = item;
+                  results.push(text);
+                  break;
+                case 1:
+                  text = `${item.cityName}, ${item.streetName}`;
+                  if (item.streetName.trim() !== '') {
+                    map[text] = item;
+                    results.push(text);
+                  }
+                  break;
+                case 2:
+                  text = `${item.cityName}, ${item.streetName}, ${item.houseNumber}`;
+                  if (item.houseNumber.trim() !== '') {
+                    map[text] = item;
+                    results.push(text);
+                  }
+                  break;
+                default:
+              }
+            });
+          }
+        }
+        process(results);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  },
+  updater: (element) => {
+    const selectedElement = map[element];
+
+    switch (selectedElement.level) {
+      case 0:
+        saveClientAddress(selectedElement, 0);
+        return `${selectedElement.cityName}, `;
+      case 1:
+        saveClientAddress(selectedElement, 0);
+        return `${selectedElement.cityName}, ${selectedElement.streetName}, `;
+      case 2:
+        saveClientAddress(selectedElement, 0);
+        return `${selectedElement.cityName}, ${selectedElement.streetName}, ${selectedElement.houseNumber}`;
+      default:
+        saveClientAddress(selectedElement, 0);
+        return selectedElement.cityName;
+    }
+  }
+});
+
+$('#actualAddress').typeahead({
+  items: 15,
+  source: (query, process) => {
+    var results = [];
+    map = {};
+
+    axios.post('/orders/find_full_address', {
+        suggestion: query,
+        rowsCount: 15,
+        core: 1
+      })
+      .then((response) => {
+        var datas = response.data;
+        if ((typeof datas == 'object') && ('items' in datas) && ('level' in datas)) {
+          const level = datas.level;
+          const data = datas.items;
+          var text;
+          if (Array.isArray(data)) {
+            data.forEach((item, index) => {
+              item.level = level;
+              switch (level) {
+                case 0:
+                  text = item.cityName;
+                  map[text] = item;
+                  results.push(text);
+                  break;
+                case 1:
+                  text = `${item.cityName}, ${item.streetName}`;
+                  if (item.streetName.trim() !== '') {
+                    map[text] = item;
+                    results.push(text);
+                  }
+                  break;
+                case 2:
+                  text = `${item.cityName}, ${item.streetName}, ${item.houseNumber}`;
+                  if (item.houseNumber.trim() !== '') {
+                    map[text] = item;
+                    results.push(text);
+                  }
+                  break;
+                default:
+              }
+            });
+          }
+        }
+        process(results);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  },
+  updater: (element) => {
+    const selectedElement = map[element];
+
+    switch (selectedElement.level) {
+      case 0:
+        saveClientAddress(selectedElement, 1);
+        return `${selectedElement.cityName}, `;
+      case 1:
+        saveClientAddress(selectedElement, 1);
+        return `${selectedElement.cityName}, ${selectedElement.streetName}, `;
+      case 2:
+        saveClientAddress(selectedElement, 1);
+        return `${selectedElement.cityName}, ${selectedElement.streetName}, ${selectedElement.houseNumber}`;
+      default:
+        saveClientAddress(selectedElement, 1);
+        return selectedElement.cityName;
+    }
+  }
+});
+
+function saveClientAddress(data, index) {
+  let address = index === 0 ? document.getElementById('registeredAddress') : document.getElementById('actualAddress');
+  switch (data.level) {
+    case 0:
+      address.dataset.cityKey = data.cityId;
+      address.dataset.cityValue = data.cityName;
+      address.dataset.streetKey = 0
+      address.dataset.streetValue = '';
+      address.dataset.houseKey = 0;
+      address.dataset.houseValue = '';
+      break;
+    case 1:
+      address.dataset.cityKey = data.cityId;
+      address.dataset.cityValue = data.cityName;
+      address.dataset.streetKey = data.streetId
+      address.dataset.streetValue = data.streetName;
+      address.dataset.houseKey = 0;
+      address.dataset.houseValue = '';
+      break;
+    case 2:
+      address.dataset.cityKey = data.cityId;
+      address.dataset.cityValue = data.cityName;
+      address.dataset.streetKey = data.streetId;
+      address.dataset.streetValue = data.streetName;
+      address.dataset.houseKey = data.houseId;
+      address.dataset.houseValue = data.houseNumber;
+      break;
+  }
+
+}
+
+document.getElementById('saveClient').addEventListener('click', (e) => {
+
+  var msg = document.getElementById('alertForClient');
+  if (document.getElementById('lastName').value.trim().length === 0) {
+    msg.innerHTML ='<strong>Не заполнено ФИО клиента</strong>';
+    msg.hidden = false;
+    setTimeout(() => msg.hidden = true, 2000);
+    return;
+  }
+
+  const registeredAddress = document.getElementById('registeredAddress');
+  const actualAddress = document.getElementById('actualAddress');
+
+  axios.post('/orders/save_client', {
+    id: document.getElementById('lastName').dataset.id,
+    lastName: document.getElementById('lastName').value,
+    certificateId: document.getElementById('certificate').selectedIndex,
+    certificateSeries: document.getElementById('certificateSeries').value,
+    certificateNumber: document.getElementById('certificateNumber').value,
+    issued: document.getElementById('issued').value,
+    department: document.getElementById('department').value,
+    phones: document.getElementById('phones').value,
+    registeredAddress: {
+      cityId: registeredAddress.dataset.cityKey,
+      streetId: registeredAddress.dataset.streetKey,
+      houseId: registeredAddress.dataset.houseKey,
+      apartment: document.getElementById('registeredApartment').value,
+    },
+    actualAddress: {
+      cityId: actualAddress.dataset.cityKey,
+      streetId: actualAddress.dataset.streetKey,
+      houseId: actualAddress.dataset.houseKey,
+      apartment: document.getElementById('actualApartment').value,
+    },
+  }).then((response) => {
+
+    var datas = response.data;
+    var client = JSON.parse(document.getElementById('client').value);
+
+    if (application.clientChannel === ACTION_CLIENT_CONTRACT) {
+      try {
+        // client.contract.key = document.getElementById('lastName').dataset.id;
+        client.contract.key = datas.id;
+        client.contract.value = document.getElementById('lastName').value;
+        client.contract.phones = document.getElementById('phones').value;
+
+        document.getElementById('clientContractName').value = client.contract.value;
+        document.getElementById('clientContractPhones').value = client.contract.phones;
+
+        if (document.getElementById('onePerson').checked) {
+          // client.service.key = client.contract.key;
+          client.service.key = datas.id;
+          client.service.value = client.contract.value;
+          client.service.phones = client.contract.phones;
+
+          document.getElementById('clientServiceName').value = client.contract.value;
+          document.getElementById('clientServicePhones').value = client.contract.phones;
+        }
+
+        document.getElementById('client').value = JSON.stringify(client);
+      } catch (error) {
+        console.log('clearClientContract Error: ' + error.message);
+      }
+    }
+
+    if (application.clientChannel === ACTION_CLIENT_SERVICE) {
+      try {
+        // client.service.key = document.getElementById('lastName').dataset.id;
+        client.service.key = datas.id;
+        client.service.value = document.getElementById('lastName').value;
+        client.service.phones = document.getElementById('phones').value;
+        document.getElementById('client').value = JSON.stringify(client);
+
+        document.getElementById('clientServiceName').value = client.service.value;
+        document.getElementById('clientServicePhones').value = client.service.phones;
+
+      } catch (error) {
+        console.log('clearClientContract Error: ' + error.message);
+      }
+    }
+
+    $('#modalClient').modal('hide')
+
+  }).catch((error) => {
+    console.log(error);
+  });
+
+});
 
 startWebsocket();

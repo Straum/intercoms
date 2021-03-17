@@ -9,6 +9,7 @@ var moment = require('moment');
 var enumCertificates = require('../../../lib/utils').enumCertificates;
 var ClientModel = require('../../../models/client').ClientModel;
 var utils = require('../../../lib/utils');
+const operationsWithClient = require('../../common/operations_with_client');
 
 var Filters = function () {
   this.conditions = {
@@ -164,224 +165,6 @@ var getClientInfo = function (clientId) {
   });
 };
 
-var updateClient = function (client) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
-      connection.query(
-        ' UPDATE clients SET name = ?' +
-        ' WHERE client_id = ?', [client.lastName, client.id], function (err) {
-          connection.release();
-          if (err) {
-            reject();
-          } else {
-            resolve();
-          }
-        });
-    });
-  });
-};
-
-var updateClientFace = function (client) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
-      connection.query(
-        ' UPDATE faces SET ' +
-        ' doc_type_id = ?,' +
-        ' series = ?,' +
-        ' number = ?,' +
-        ' issue_date = ?,' +
-        ' issue = ?,' +
-        ' phones = ?' +
-        ' WHERE client_id = ?', [
-            client.certificate.typeId,
-            client.certificate.series,
-            client.certificate.number,
-            client.certificate.issued,
-            client.certificate.department,
-            client.certificate.phones,
-            client.id], function (err) {
-          connection.release();
-          if (err) {
-            reject();
-          } else {
-            resolve();
-          }
-        });
-    });
-  });
-};
-
-var updateClientRegisteredAddress = function (client) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
-      connection.query(
-        ' UPDATE residence_clients SET ' +
-        ' city_id = ?,' +
-        ' street_id = ?,' +
-        ' house_id = ?,' +
-        ' room_apartment = ?' +
-        ' WHERE (client_id = ?)' +
-        ' AND (residence_type_id = ?)', [
-            client.registeredAddress.city.key,
-            client.registeredAddress.street.key,
-            client.registeredAddress.house.key,
-            client.registeredAddress.apartment,
-            client.id,
-            0,
-          ], function (err) {
-              connection.release();
-              if (err) {
-                reject();
-              } else {
-                resolve();
-              }
-            }
-      );
-    });
-  });
-};
-
-var updateClientActualAddress = function (client) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
-      connection.query(
-        ' UPDATE residence_clients SET ' +
-        ' city_id = ?,' +
-        ' street_id = ?,' +
-        ' house_id = ?,' +
-        ' room_apartment = ?' +
-        ' WHERE (client_id = ?)' +
-        ' AND (residence_type_id = ?)', [
-            client.actualAddress.city.key,
-            client.actualAddress.street.key,
-            client.actualAddress.house.key,
-            client.actualAddress.apartment,
-            client.id,
-            1,
-          ], function (err) {
-              connection.release();
-              if (err) {
-                reject();
-              } else {
-                resolve();
-              }
-            }
-      );
-    });
-  });
-};
-
-var addClient = function (client) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
-      connection.query(
-        ' INSERT INTO clients (name)' +
-        ' VALUES (?)', [client.lastName], function (err, rows) {
-          connection.release();
-          if (err) {
-            reject();
-          } else {
-            resolve(rows.insertId);
-          }
-        });
-    });
-  });
-};
-
-var addClientFace = function (client) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
-      connection.query(
-        ' INSERT INTO faces (' +
-        ' doc_type_id,' +
-        ' series,' +
-        ' number,' +
-        ' issue_date,' +
-        ' issue,' +
-        ' phones,' +
-        ' client_id)' +
-        ' VALUES (?,?,?,?,?,?,?)',
-          [
-            client.certificate.typeId,
-            client.certificate.series,
-            client.certificate.number,
-            client.certificate.issued,
-            client.certificate.department,
-            client.certificate.phones,
-            client.id], function (err) {
-          connection.release();
-          if (err) {
-            reject();
-          } else {
-            resolve();
-          }
-        });
-    });
-  });
-};
-
-var addClientRegisteredAddress = function (client) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
-      connection.query(
-        ' INSERT INTO residence_clients (' +
-        ' city_id,' +
-        ' street_id,' +
-        ' house_id,' +
-        ' room_apartment,' +
-        ' client_id,' +
-        ' residence_type_id)' +
-        ' VALUES (?,?,?,?,?,?)', [
-            client.registeredAddress.city.key,
-            client.registeredAddress.street.key,
-            client.registeredAddress.house.key,
-            client.registeredAddress.apartment,
-            client.id,
-            0,
-          ], function (err) {
-              connection.release();
-              if (err) {
-                reject();
-              } else {
-                resolve();
-              }
-            }
-      );
-    });
-  });
-};
-
-var addClientActualAddress = function (client) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
-      connection.query(
-        ' INSERT INTO residence_clients (' +
-        ' city_id,' +
-        ' street_id,' +
-        ' house_id,' +
-        ' room_apartment,' +
-        ' client_id,' +
-        ' residence_type_id)' +
-        ' VALUES (?,?,?,?,?,?)', [
-            client.actualAddress.city.key,
-            client.actualAddress.street.key,
-            client.actualAddress.house.key,
-            client.actualAddress.apartment,
-            client.id,
-            1,
-          ], function (err) {
-              connection.release();
-              if (err) {
-                reject();
-              } else {
-                resolve();
-              }
-            }
-      );
-    });
-  });
-};
-
 module.exports = function () {
   var router = express.Router();
 
@@ -407,7 +190,6 @@ module.exports = function () {
           clientModel.registeredAddress.house.key = registered[0].houseId;
           clientModel.registeredAddress.house.value = registered[0].houseNumber;
           clientModel.registeredAddress.apartment = registered[0].apartment;
-          // clientModel.registeredAddress.fullAddress = '123';
           if (registered[0].cityId > 0) {
             clientModel.registeredAddress.fullAddress = registered[0].cityName.trim();
             if (registered[0].streetId) {
@@ -430,7 +212,6 @@ module.exports = function () {
           clientModel.actualAddress.house.key = actual[0].houseId;
           clientModel.actualAddress.house.value = actual[0].houseNumber;
           clientModel.actualAddress.apartment = actual[0].apartment;
-          // clientModel.actualAddress.fullAddress = '456';
           if (actual[0].cityId > 0) {
             clientModel.actualAddress.fullAddress = actual[0].cityName.trim();
             if (actual[0].streetId) {
@@ -546,7 +327,7 @@ module.exports = function () {
     });
   });
 
-  router.post('/save', function (req, res) {
+  router.post('/save', async function (req, res) {
 
     var client = new ClientModel();
 
@@ -588,73 +369,48 @@ module.exports = function () {
     }
 
     if (client.id > 0) {
-      updateClient(client)
-      .then(function() {
-        updateClientFace(client);
-      })
-      .then(function() {
-        updateClientRegisteredAddress(client);
-      })
-      .then(function() {
-        updateClientActualAddress(client);
-        res.redirect('/clients');
-      })
-      .catch(function(error) {
-        console.log(error);
-      });
+      await operationsWithClient.updateClient(client);
+      await operationsWithClient.updateClientFace(client);
+      await operationsWithClient.updateClientRegisteredAddress(client);
+      await operationsWithClient.updateClientActualAddress(client);
+      // updateClient(client)
+      // .then(function() {
+      //   updateClientFace(client);
+      // })
+      // .then(function() {
+      //   updateClientRegisteredAddress(client);
+      // })
+      // .then(function() {
+      //   updateClientActualAddress(client);
+      //   res.redirect('/clients');
+      // })
+      // .catch(function(error) {
+      //   console.log(error);
+      // });
     }
     else {
-      addClient(client)
-      .then(function(newId) {
-        client.id = newId;
-        console.log('newId_1: ' + newId);
-        console.log('newId_2: ' + client.id);
-        addClientFace(client);
-      })
-      .then(function() {
-        addClientRegisteredAddress(client);
-      }).
-      then(function() {
-        addClientActualAddress(client);
-        res.redirect('/clients');
-      })
-      .catch(function(error) {
-        console.log(error);
-      });
+      let newId = await operationsWithClient.addClient(client);
+      client.id = newId;
+      await operationsWithClient.addClientFace(client);
+      await operationsWithClient.addClientRegisteredAddress(client);
+      await operationsWithClient.addClientActualAddress(client);
+      // addClient(client)
+      // .then(function(newId) {
+      //   client.id = newId;
+      //   addClientFace(client);
+      // })
+      // .then(function() {
+      //   addClientRegisteredAddress(client);
+      // }).
+      // then(function() {
+      //   addClientActualAddress(client);
+      //   res.redirect('/clients');
+      // })
+      // .catch(function(error) {
+      //   console.log(error);
+      // });
     }
-
-
-
-    // if ((req.body.id > 0)) {
-    //   db.get().getConnection(function (err, connection) {
-    //     connection.query(
-    //       ' UPDATE clients SET name = ?' +
-    //       ' WHERE client_id = ?', [req.body.name, req.body.id], function (err) {
-    //         connection.release();
-    //         if (err) {
-    //           res.status(500).send({ 'code': 500, 'msg': 'Database Error' });
-    //         } else {
-    //           res.redirect('/clients');
-    //         }
-    //       }
-    //     );
-    //   });
-    // }
-    // else {
-    //   db.get().getConnection(function (err, connection) {
-    //     connection.query(
-    //       ' INSERT INTO clients (name)' +
-    //       ' VALUE(?)', [req.body.name], function (err) {
-    //         connection.release();
-    //         if (err) {
-    //           res.status(500).send({ 'code': 500, 'msg': 'Database Error' });
-    //         } else {
-    //           res.redirect('/clients');
-    //         }
-    //       }
-    //     );
-    //   });
-    // }
+    res.redirect('/clients');
   });
 
   router.post('/delete', function (req, res) {
@@ -713,6 +469,74 @@ module.exports = function () {
     else {
       res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
     }
+  });
+
+  router.post('/client_info', async (req, res) => {
+    const {id} = {...req.body} || 0;
+    var clientModel = new ClientModel();
+    if (id === 0) {
+      res.status(200).send(clientModel);
+      return;
+    }
+
+    const registeredAddress = await getAddressInfo(id, 0);
+    const actualAddress = await getAddressInfo(id, 1);
+    const client = await getClientInfo(id);
+
+    if ((Array.isArray(registeredAddress)) && (registeredAddress.length === 1)) {
+      let regAddress = registeredAddress[0];
+      clientModel.registeredAddress.city.key = regAddress.cityId;
+      clientModel.registeredAddress.city.value = regAddress.cityName;
+      clientModel.registeredAddress.street.key = regAddress.streetId;
+      clientModel.registeredAddress.street.value = regAddress.streetName;
+      clientModel.registeredAddress.house.key = regAddress.houseId;
+      clientModel.registeredAddress.house.value = regAddress.houseNumber;
+      clientModel.registeredAddress.apartment = regAddress.apartment;
+      if (regAddress.cityId > 0) {
+        clientModel.registeredAddress.fullAddress = regAddress.cityName.trim();
+        if (regAddress.streetId) {
+          clientModel.registeredAddress.fullAddress += ', ' + regAddress.streetName.trim();
+          if (regAddress.houseId > 0) {
+            clientModel.registeredAddress.fullAddress += ', ' + regAddress.houseNumber.trim();
+          }
+        }
+      }
+    }
+
+    if ((Array.isArray(actualAddress)) && (actualAddress.length === 1)) {
+      let actAddress = actualAddress[0];
+      clientModel.actualAddress.city.key = actAddress.cityId;
+      clientModel.actualAddress.city.value = actAddress.cityName;
+      clientModel.actualAddress.street.key = actAddress.streetId;
+      clientModel.actualAddress.street.value = actAddress.streetName;
+      clientModel.actualAddress.house.key = actAddress.houseId;
+      clientModel.actualAddress.house.value = actAddress.houseNumber;
+      clientModel.actualAddress.apartment = actAddress.apartment;
+      if (actAddress.cityId > 0) {
+        clientModel.actualAddress.fullAddress = actAddress.cityName.trim();
+        if (actAddress.streetId) {
+          clientModel.actualAddress.fullAddress += ', ' + actAddress.streetName.trim();
+          if (actAddress.houseId > 0) {
+            clientModel.actualAddress.fullAddress += ', ' + actAddress.houseNumber.trim();
+          }
+        }
+      }
+    }
+
+    if ((client) && (Array.isArray(client)) && client.length === 1) {
+      clientModel.lastName = client[0].lastName;
+      clientModel.certificate.typeId = client[0].certificateId;
+      clientModel.certificate.series = client[0].series;
+      clientModel.certificate.number = client[0].number;
+      clientModel.certificate.issued = client[0].issued;
+      clientModel.certificate.department = client[0].department;
+      clientModel.certificate.phones = client[0].phones;
+    }
+
+    clientModel.id = id;
+
+    res.status(200).send(clientModel);
+
   });
 
   return router;

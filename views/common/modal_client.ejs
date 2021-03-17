@@ -1,0 +1,136 @@
+<div class="modal bs-example-modal bs-example-modal-lg" id="modalClient" data-target=".bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+            aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="clientContract">Старший по договору</h4>
+        </div>
+
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-12">
+                <div class="form-group">
+                  <label for="lastName">ФИО клиента</label>
+                  <input type="text" class="form-control" id="lastName" name="lastName" placeholder="" autofocus="autofocus"
+                    value="<%= data.client.contract.value %>">
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-5">
+                <div class="form-group">
+                  <label for="certificate">Документ</label>
+                  <select class="form-control" id="certificate" name="certificate">
+                    <% utils.enumCertificates.forEach((element) => { %>
+                      <option value="<%= element.id %>">
+                        <%= element.value %></option>
+                    <% }); %>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="form-group">
+                  <label for="certificateSeries">Серия</label>
+                  <input type="text" class="form-control" id="certificateSeries" name="certificateSeries"
+                    value="">
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="form-group">
+                  <label for="certificateNumber">Номер</label>
+                  <input type="text" class="form-control" id="certificateNumber" name="certificateNumber"
+                    value="">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label for="issued" class="control-label">Выдано</label>
+                  <div class="input-group date only-date" id="dtIssued">
+                    <input type="text" class="form-control" name="issued" id="issued"
+                      value="">
+                    <span class="input-group-addon">
+                      <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-12">
+                <div class="form-group">
+                  <label for="department">Кем</label>
+                  <input type="text" class="form-control" id="department" name="department"
+                    value="">
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-8">
+                <div class="form-group">
+                  <label for="registeredAddress">Адрес прописки</label>
+                  <div class="input-group">
+                    <span class="input-group-btn">
+                      <button class="btn btn-default" type="button" id="clearRegisteredAddress">
+                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                      </button>
+                    </span>
+                    <input type="text" class="form-control select-all full-address" id="registeredAddress" name="registeredAddress"
+                      value="">
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="form-group">
+                  <label for="registeredApartment">Квартира</label>
+                  <input type="text" class="form-control" id="registeredApartment" name="registeredApartment"
+                    value="">
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-8">
+                <div class="form-group">
+                  <label for="actualAddress">Фактический адрес</label>
+                  <div class="input-group">
+                    <span class="input-group-btn">
+                      <button class="btn btn-default" type="button" id="clearActualAddress">
+                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                      </button>
+                    </span>
+                    <input type="text" class="form-control select-all full-address" id="actualAddress" name="actualAddress"
+                      value="">
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="form-group">
+                  <label for="actualApartment">Квартира</label>
+                  <input type="text" class="form-control" id="actualApartment" name="actualApartment"
+                    value="">
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-12">
+                <div class="form-group">
+                  <label for="phones">Телефоны</label>
+                  <input type="text" class="form-control" id="phones" name="phones"
+                    value="">
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xs-12">
+                <div class="alert alert-danger alert-dismissible" role="alert" id="alertForClient" hidden>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-info" id="saveClient">Записать</button>
+          </div>
+
+        </div>
+      </div>
+   </div>

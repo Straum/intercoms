@@ -374,26 +374,30 @@ module.exports.filterPerformers = function (params, callback) {
   });
 };
 
-module.exports.filterClients = function (params, callback) {
+module.exports.filterClients = (params, callback) => {
 
   var queryText =
-    ' SELECT a.client_id AS id, a.name AS `value`, b.phones' +
-    ' FROM clients a' +
-    ' LEFT JOIN faces b ON b.client_id = a.client_id' +
-    ' WHERE (a.is_deleted = 0)';
+    `SELECT a.client_id AS id, a.name AS value, b.phones,
+      d.city_id AS cityId, e.street_id AS streetId, f.house_id AS houseId, d.name AS cityName, e.name AS streetName, f.number AS houseNumber,
+      c.room_apartment AS roomApartment
+      FROM clients a
+      LEFT JOIN faces b ON b.client_id = a.client_id
+      LEFT JOIN residence_clients c ON c.client_id = a.client_id
+      LEFT JOIN cities d ON d.city_id = c.city_id
+      LEFT JOIN streets e ON e.street_id = c.street_id
+      LEFT JOIN houses f ON f.house_id = c.house_id
+      WHERE (a.is_deleted = 0) AND (c.residence_type_id = 1)`;
 
   if (params.suggestion.length > 0) {
-    queryText += ' AND a.name LIKE ' + `'` + params.suggestion.trim() + '%' + `'`;
+    queryText += ` AND a.name LIKE '${params.suggestion}%'`;
   }
 
-  queryText += ' ORDER BY a.name ASC';
-  queryText += ' LIMIT ' + params.rowsCount;
+  queryText += ` ORDER BY a.name ASC LIMIT ${params.rowsCount}`;
 
-
-  db.get().getConnection(function (err, connection) {
+  db.get().getConnection((err, connection) => {
     connection.query(
       queryText, [],
-      function (err, rows) {
+      (err, rows) => {
         connection.release();
 
         if (err) {
@@ -409,6 +413,7 @@ module.exports.filterClients = function (params, callback) {
 };
 
 module.exports.outFullAddress = function (params, callback) {
+
   var words = params.suggestion.split(', ');
   if (!Array.isArray(words)) {
     return;
@@ -419,15 +424,29 @@ module.exports.outFullAddress = function (params, callback) {
   var items = [];
 
   if (words.length === 1) {
-    queryText =
-      ' SELECT a.city_id, a.name AS city_name' +
-      ' FROM cities a';
+    let isWhere = false;
+    queryText = `SELECT a.city_id, a.name AS city_name FROM cities a`;
 
     if (words[0].trim().length > 0) {
-      queryText += ' WHERE a.name LIKE ' + `'` + words[0].trim() + '%' + `'`;
+      queryText += ` WHERE (a.name LIKE '${words[0].trim()}%')`;
+      isWhere = true;
     }
-    queryText += ' ORDER BY a.name ASC';
-    queryText += ' LIMIT ' + params.rowsCount;
+    if (('core' in params) && (parseInt(params.core) === 1)) {
+      if (isWhere) {
+        queryText += ` AND (a.core = 1)`;
+      } else {
+        queryText += ` WHERE (a.core = 1)`;
+        isWhere = !isWhere;
+      }
+    }
+    if (isWhere) {
+      queryText += ` AND (a.is_deleted = 0)`;
+    } else {
+      queryText += ` WHERE (a.is_deleted = 0)`;
+      isWhere = !isWhere
+    }
+
+    queryText += ` ORDER BY a.name ASC LIMIT ${params.rowsCount}`;
 
     db.get().getConnection(function (err, connection) {
       connection.query(
