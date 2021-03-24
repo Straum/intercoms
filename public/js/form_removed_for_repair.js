@@ -73,7 +73,15 @@ $('#fullAddress').typeahead({
             break;
 
           case 4:
-            uniqueIndex = `${item.areaName}, ${item.cityName}, ${item.streetName}`;
+            if ((!item.noStreets) && (!item.noHouses)) {
+              uniqueIndex = `${item.areaName}, ${item.cityName}, ${item.streetName}`;
+            }
+            if ((item.noStreets) && (!item.noHouses)) {
+              uniqueIndex = `${item.areaName}, ${item.cityName}, ${item.houseNumber}`;
+            }
+            if ((item.noStreets) && (item.noHouses)) {
+              uniqueIndex = `${item.areaName}, ${item.cityName}`;
+            }
             break;
 
           case 5:
@@ -136,9 +144,15 @@ $('#fullAddress').typeahead({
         address.city.id = selectedElement.cityId;
         address.city.name = selectedElement.cityName;
         address.noStreets = selectedElement.noStreets;
+        address.noHouses = selectedElement.noHouses;
 
         if (selectedElement.noStreets) {
-          caption = `${selectedElement.areaName}, ${selectedElement.cityName}`;
+          if (selectedElement.noHouses) {
+            caption = `${selectedElement.areaName}, ${selectedElement.cityName}`;
+          }
+          else {
+            caption = `${selectedElement.areaName}, ${selectedElement.cityName}, `;
+          }
         }
         else {
           caption = `${selectedElement.areaName}, ${selectedElement.cityName}, `;
@@ -151,13 +165,26 @@ $('#fullAddress').typeahead({
         address.city.name = selectedElement.cityName;
         address.street.id = selectedElement.streetId;
         address.street.name = selectedElement.streetName;
+        address.noStreets = selectedElement.noStreets;
         address.noHouses = selectedElement.noHouses;
 
-        if (selectedElement.noHouses) {
-          caption = `${selectedElement.areaName}, ${selectedElement.cityName}, ${selectedElement.streetName}`;
+        if (selectedElement.noStreets) {
+          if (selectedElement.noHouses) {
+            caption = `${selectedElement.areaName}, ${selectedElement.cityName}`;
+          }
+          else {
+            address.house.id = selectedElement.houseId;
+            address.house.number = selectedElement.houseNumber;
+            caption = `${selectedElement.areaName}, ${selectedElement.cityName}, ${selectedElement.houseNumber}`;
+          }
         }
         else {
-          caption = `${selectedElement.areaName}, ${selectedElement.cityName}, ${selectedElement.streetName}, `;
+          if (selectedElement.noHouses) {
+            caption = `${selectedElement.areaName}, ${selectedElement.cityName}, ${selectedElement.streetName}`;
+          }
+          else {
+            caption = `${selectedElement.areaName}, ${selectedElement.cityName}, ${selectedElement.streetName}, `;
+          }
         }
         break;
       case 5:
@@ -407,3 +434,111 @@ $('#equipmentDialog').on('hidden.bs.modal', function (e) {
   input.focus();
   input.selectionStart = input.value.length;
 })
+
+document.getElementById('editAddress').addEventListener('click', (e) => {
+  $('#editFullAddressDialog').modal();
+})
+
+$('#editFullAddressDialog').on('shown.bs.modal', () => {
+  try {
+    const address = JSON.parse(document.getElementById('address').value);
+    gAddress = {
+      ...address
+    };
+    document.getElementById('textCity').value = gAddress.area.id > 0  ? `${gAddress.area.name}, ${gAddress.city.name}` : gAddress.city.name;
+    document.getElementById('rowStreet').hidden = gAddress.noStreets;
+    document.getElementById('textStreet').value = gAddress.street.name;
+    document.getElementById('rowHouse').hidden = gAddress.noHouses;
+    document.getElementById('textHouse').value = gAddress.house.number;
+  } catch (e) {
+    console.log(e.message);
+  }
+  if (!gAddress.noStreets) {
+    document.getElementById('textStreet').focus();
+  }
+  if ((gAddress.noStreets) && (!gAddress.noHouses)) {
+    document.getElementById('textHouse').focus();
+  }
+
+  document.getElementById('changeAddress').disabled = (gAddress.noStreets && gAddress.noHouses) || (gAddress.area.id === 0 || gAddress.city.id === 0) ;
+})
+
+document.getElementById('addStreet').addEventListener('click', (e) => {
+  var parentId = gAddress.city.id;
+
+  axios.post('/orders/change_address', {
+    operation: 'street',
+    value: document.getElementById('textStreet').value,
+    parentId: parentId
+  }).then((response) => {
+
+    const data = response.data;
+    if ((Array.isArray(data)) && (data.length === 1)) {
+      let row = {...data[0]};
+
+      if (gAddress.street.id != row.uid) {
+        gAddress.house.id = 0;
+        gAddress.house.number = '';
+        document.getElementById('textHouse').value = '';
+      }
+      gAddress.street.id = row.uid;
+      gAddress.street.name = row.caption;
+
+      if (row.isExists === 0) {
+        showTemporaryMessage('<strong>Добавлена новая улица!</strong>', 2000);
+      }
+
+    }
+    document.getElementById('textHouse').focus();
+
+  }).catch((error) => {
+    console.log(error);
+  });
+});
+
+document.getElementById('addHouse').addEventListener('click', (e) => {
+  var parentId = gAddress.street.id;
+
+  axios.post('/orders/change_address', {
+    operation: 'house',
+    value: document.getElementById('textHouse').value,
+    parentId: parentId
+  }).then((response) => {
+
+    const data = response.data;
+    if ((Array.isArray(data)) && (data.length === 1)) {
+      let row = {...data[0]};
+
+      gAddress.house.id = row.uid;
+      gAddress.house.number = row.caption;
+
+      if (row.isExists === 0) {
+        showTemporaryMessage('<strong>Добавлен новый дом!</strong>', 2000);
+      }
+    }
+
+  }).catch((error) => {
+    console.log(error);
+  });
+});
+
+document.getElementById('changeAddress').addEventListener('click', (e) => {
+  let address = gAddress.area.id > 0 ? `${gAddress.area.name}, ` : '';
+  address += gAddress.city.name;
+  if (!gAddress.noStreets) {
+    address += `, ${gAddress.street.name}`;
+  }
+  if (!gAddress.noHouses) {
+    address += `, ${gAddress.house.number}`;
+  }
+  document.getElementById('fullAddress').value = address;
+  document.getElementById('address').value = JSON.stringify(gAddress);
+  $('#editFullAddressDialog').modal('hide');
+});
+
+function showTemporaryMessage(htmlText, ms) {
+  var msg = document.getElementById('temporaryMessage');
+  msg.innerHTML = htmlText;
+  msg.hidden = false;
+  setTimeout(() => msg.hidden = true, ms);
+}

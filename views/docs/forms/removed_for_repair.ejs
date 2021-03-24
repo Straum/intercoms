@@ -83,12 +83,12 @@
                   </span>
                   <% let address = ''; %>
                   <% address = data.address.area.id > 0 ? `${data.address.area.name}, ` : '' %>
-                  <% address += data.address.city.id > 0 ? `${data.address.city.name}, ` : '' %>
-                  <% address += data.address.street.id > 0 ? `${data.address.street.name}, ` : '' %>
-                  <% address += data.address.house.id > 0 ? `${data.address.house.number}` : '' %>
+                  <% address += data.address.city.id > 0 ? `${data.address.city.name}` : '' %>
+                  <% address += ((data.address.street.id > 0) && (!data.address.noStreets)) ? `, ${data.address.street.name}` : '' %>
+                  <% address += ((data.address.house.id > 0) && (!data.address.noHouses)) ? `, ${data.address.house.number}` : '' %>
                   <input type="text" class="form-control" id="fullAddress" name="fullAddress" value="<%= address %>">
                   <span class="input-group-btn">
-                    <button class="btn btn-default" type="button" id="addAddress">
+                    <button class="btn btn-default" type="button" id="editAddress">
                       <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
                     </button>
                   </span>
@@ -223,6 +223,7 @@
       </div>
     </div>
 
+    <% include ../../common/address.ejs %>
     <% include ../../common/info.ejs %>
 
   </div>

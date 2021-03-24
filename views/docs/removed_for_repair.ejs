@@ -81,9 +81,9 @@
           </td>
           <% let address = ''; %>
           <% address = item.areaId > 0 ? `${item.areaName}, ` : '' %>
-          <% address += item.cityId > 0 ? `${item.cityName}, ` : '' %>
-          <% address += item.streetId > 0 ? `${item.streetName}, ` : '' %>
-          <% address += item.houseId > 0 ? `${item.houseNumber}` : '' %>
+          <% address += item.cityId > 0 ? `${item.cityName}` : '' %>
+          <% address += ((item.streetId > 0) && (!item.noStreets)) ? `, ${item.streetName}` : '' %>
+          <% address += ((item.houseId > 0) && (!item.noHouses)) ? `, ${item.houseNumber}` : '' %>
           <td class="text-left align-middle">
             <%= address %>
           </td>

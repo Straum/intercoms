@@ -337,6 +337,7 @@ var filterRecords = async function (req, res) {
   const queryRecords =
     `SELECT a.removed_for_repair_id AS id, a.create_date AS createDate, a.office,
     f.parent_id AS areaId, UPPER(k.name) AS areaName, a.city_id AS cityId, UPPER(f.name) AS cityName,
+    f.no_streets AS noStreets, f.no_houses AS noHouses,
     a.street_id AS streetId, UPPER(g.name) AS streetName, a.house_id AS houseId, UPPER(h.number) AS houseNumber,
     e.type_of_equipment_id AS equipmentTypeId, e.name AS equipmentType,
     b.name AS equipmentName, c.name AS workerName, d.short_name AS serviceName,
@@ -498,6 +499,7 @@ module.exports = function () {
     const queryRecords =
       `SELECT a.removed_for_repair_id AS id, a.create_date AS createDate, a.office,
       f.parent_id AS areaId, UPPER(k.name) AS areaName, a.city_id AS cityId, UPPER(f.name) AS cityName,
+      f.no_streets AS noStreets, f.no_houses AS noHouses,
       a.street_id AS streetId, UPPER(g.name) AS streetName, a.house_id AS houseId, UPPER(h.number) AS houseNumber,
       e.type_of_equipment_id AS equipmentTypeId, e.name AS equipmentType,
       b.name AS equipmentName, c.name AS workerName, d.short_name AS serviceName,

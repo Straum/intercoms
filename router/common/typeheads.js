@@ -684,7 +684,9 @@ function filterCities(word, limit) {
   return new Promise(function (resolve, reject) {
 
     let queryText =
-      `SELECT a.city_id AS cityId, UPPER(a.name) AS cityName, a.parent_id AS parentId, a.is_city AS isCity FROM cities a
+      `SELECT a.city_id AS cityId, UPPER(a.name) AS cityName, a.parent_id AS parentId,
+      a.is_city AS isCity, a.no_streets As noStreets, a.no_houses AS noHouses
+      FROM cities a
       WHERE (a.city_id > 0) AND (a.parent_id = 0) AND (a.is_deleted = 0)`;
     if (word.length > 0) {
       queryText += ` AND (a.name LIKE '${word}%')`;
@@ -746,7 +748,7 @@ function filterHouses(streetId, houseNumber, limit) {
   return new Promise(function (resolve, reject) {
 
     let queryText =
-      `SELECT a.house_id AS houseId, UPPER(a.number) AS houseNumber, b.street_id AS streetId, UPPER(b.name) AS streetName, d.parent_id AS areaId, UPPER(d.name) AS areaName,
+      `SELECT a.house_id AS houseId, UPPER(a.number) AS houseNumber, b.street_id AS streetId, UPPER(b.name) AS streetName, c.parent_id AS areaId, UPPER(d.name) AS areaName,
       UPPER(c.name) AS cityName, c.city_id AS cityId FROM houses a
       LEFT JOIN streets b ON b.street_id = a.street_id
       LEFT JOIN cities c ON c.city_id = b.city_id
@@ -758,6 +760,39 @@ function filterHouses(streetId, houseNumber, limit) {
       connection.query(
         queryText, [],
         function (err, rows) {
+          connection.release();
+
+          if (err) {
+            reject();
+          } else {
+            let items = [];
+            if (Array.isArray(rows)) {
+              items = [...rows];
+            }
+            resolve(items);
+          }
+        })
+    })
+  });
+}
+
+const filterHousesByVillage = (cityId, limit) => {
+  return new Promise((resolve, reject) => {
+
+    let queryText =
+      `SELECT a.house_id AS houseId, UPPER(a.number) AS houseNumber, b.street_id AS streetId, UPPER(b.name) AS streetName,
+      c.parent_id AS areaId, UPPER(d.name) AS areaName,
+      UPPER(c.name) AS cityName, c.city_id AS cityId, c.no_streets AS noStreets, c.no_houses AS noHouses
+      FROM houses a
+      LEFT JOIN streets b ON b.street_id = a.street_id
+      LEFT JOIN cities c ON c.city_id = b.city_id
+      LEFT JOIN cities d ON d.city_id = c.parent_id
+      WHERE a.street_id IN (SELECT street_id FROM streets WHERE city_id = ${cityId})
+      ORDER BY a.number ASC LIMIT ${limit}`;
+
+    db.get().getConnection((err, connection) => {
+      connection.query(
+        queryText, [], (err, rows) => {
           connection.release();
 
           if (err) {
@@ -985,6 +1020,10 @@ module.exports.getFullAddress2 = async function (params, callback) {
             .catch(function (error) {
               console.log('Error filterStreets: ' + error);
             })
+        }
+        else {
+          let items = await filterHousesByVillage(village.id, params.limit);
+          outputData.items = items;
         }
 
         outputData.level = 4;
