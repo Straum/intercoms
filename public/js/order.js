@@ -1805,6 +1805,7 @@ $('#editFullAddressDialog').on('shown.bs.modal', () => {
   } catch (e) {
     console.log(e.message);
   }
+  document.getElementById('changeAddress').disabled = application.address.city.key === 0;
   document.getElementById('textStreet').focus();
 })
 
@@ -1830,22 +1831,19 @@ $('#textStreet').typeahead({
     });
   },
   updater: (element) => {
-    try {
-      application.address.street.key = map[element].id;
-      application.address.street.value = map[element].value;
-      application.address.street.cityId = map[element].cityId;
+    application.address.street.key = map[element].id;
+    application.address.street.value = map[element].value;
+    application.address.street.cityId = map[element].cityId;
 
-      if (application.address.house.streetId != application.address.street.key) {
-        application.address.house.key = 0;
-        application.address.house.value = '';
-        application.address.house.streetId = 0;
+    if (application.address.house.streetId != application.address.street.key) {
+      application.address.house.key = 0;
+      application.address.house.value = '';
+      application.address.house.streetId = 0;
 
-        document.getElementById('textHouse').value = '';
-        document.getElementById('textHouse').focus();
-      }
-    } catch (e) {
-      console.log('equipmentName Error: ' + e.message);
+      document.getElementById('textHouse').value = '';
+      document.getElementById('textHouse').focus();
     }
+
     return element;
   }
 });
@@ -1872,13 +1870,10 @@ $('#textHouse').typeahead({
     });
   },
   updater: (element) => {
-    try {
-      application.address.house.key = map[element].id;
-      application.address.house.value = map[element].value;
-      application.address.house.cityId = map[element].streetId;
-    } catch (e) {
-      console.log('equipmentName Error: ' + e.message);
-    }
+    application.address.house.key = map[element].id;
+    application.address.house.value = map[element].value;
+    application.address.house.cityId = map[element].streetId;
+
     return element;
   }
 });

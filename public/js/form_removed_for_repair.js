@@ -460,8 +460,73 @@ $('#editFullAddressDialog').on('shown.bs.modal', () => {
     document.getElementById('textHouse').focus();
   }
 
-  document.getElementById('changeAddress').disabled = (gAddress.noStreets && gAddress.noHouses) || (gAddress.area.id === 0 || gAddress.city.id === 0) ;
+  document.getElementById('changeAddress').disabled = (gAddress.noStreets && gAddress.noHouses) || (gAddress.area.id === 0 || gAddress.city.id === 0);
 })
+
+$('#textStreet').typeahead({
+  items: 15,
+  source: (query, process) => {
+    var results = [];
+    map = {};
+
+    axios.post('/orders/find_street', {
+      streetName: query,
+      cityId: gAddress.city.id,
+      limit: 15
+    }).then((response) => {
+      const data = response.data;
+      data.forEach((item) => {
+        map[item.value] = item;
+        results.push(item.value);
+      });
+      process(results);
+    }).catch((error) => {
+      console.log(error);
+    });
+  },
+  updater: (element) => {
+    if (gAddress.street.id != map[element].id) {
+      gAddress.house.id = 0;
+      gAddress.house.number = '';
+      document.getElementById('textHouse').value = '';
+      document.getElementById('textHouse').focus();
+    }
+
+    gAddress.street.id = map[element].id;
+    gAddress.street.name = map[element].value;
+
+    return element;
+  }
+});
+
+$('#textHouse').typeahead({
+  items: 15,
+  source: (query, process) => {
+    var results = [];
+    map = {};
+
+    axios.post('/orders/find_house', {
+      houseNumber: query,
+      streetId: gAddress.street.id,
+      limit: 15
+    }).then((response) => {
+      const data = response.data;
+      data.forEach((item) => {
+        map[item.value] = item;
+        results.push(item.value);
+      });
+      process(results);
+    }).catch((error) => {
+      console.log(error);
+    });
+  },
+  updater: (element) => {
+    gAddress.house.id = map[element].id;
+    gAddress.house.number = map[element].value;
+
+    return element;
+  }
+});
 
 document.getElementById('addStreet').addEventListener('click', (e) => {
   var parentId = gAddress.city.id;
