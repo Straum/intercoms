@@ -29,12 +29,12 @@
       </div>
       <div class="col-xs-3">
         <ul class="nav nav-pills pull-right">
-          <li role="presentation" class="active"><a href="#">Текущие</a></li>
-          <li role="presentation"><a href="/removed_for_repair/completed">Выполненные</a></li>
+          <li role="presentation"><a href="/removed_for_repair">Текущие</a></li>
+          <li role="presentation" class="active"><a href="#">Выполненные</a></li>
         </ul>
       </div>
     </div>
-    <form class="form-inline" role="form" method="post" action="/removed_for_repair/filter">
+    <form class="form-inline" role="form" method="post" action="/removed_for_repair/filter_completed">
       <div class="input-group date my-tooltip" id="startDate" data-toggle="tooltip" data-placement="top"
         title="Начальная дата">
         <input type="text" class="form-control" name="startDate"
@@ -53,8 +53,6 @@
       </div>
       &nbsp;
       <button type="submit" class="btn btn-success" data-apply-filter="apply-filter" name="applyFilter">&nbsp;Применить фильтр&nbsp;</button>
-      <a href="/removed_for_repair/add" class="btn btn-default" data-toggle="tooltip" data-placement="top"
-        title="Новый документ"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
     </form>
     <p>
     <table class="table table-bordered table-condensed table-hover">
@@ -124,7 +122,7 @@
         </li>
         <% } else { %>
         <li class="page-item">
-          <a class="page-link" href="/removed_for_repair">&laquo;
+          <a class="page-link" href="/removed_for_repair/completed">&laquo;
           </a>
         </li>
         <% } %>
@@ -144,7 +142,7 @@
         </li>
         <% } else { %>
         <li class="page-item">
-          <a class="page-link" href="/removed_for_repair/<%= (i == 1) ? '' : (i - 1) * Number(indication.visibleRows) %>">
+          <a class="page-link" href="/removed_for_repair/completed/<%= (i == 1) ? '' : (i - 1) * Number(indication.visibleRows) %>">
             <%= i %>
           </a>
         </li>
@@ -161,7 +159,7 @@
         </li>
         <% } else { %>
         <li class="page-item">
-          <a class="page-link" href="/removed_for_repair/<%= (indication.pageCount - 1) * Number(indication.visibleRows) %>">&raquo;</a>
+          <a class="page-link" href="/removed_for_repair/completed/<%= (indication.pageCount - 1) * Number(indication.visibleRows) %>">&raquo;</a>
         </li>
         <% } %>
       </ul>

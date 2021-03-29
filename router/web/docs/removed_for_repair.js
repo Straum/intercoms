@@ -8,8 +8,155 @@ const visibleRows = require('../../../lib/config').config.visibleRows;
 const rowsLimit = require('../../../lib/config').config.rowsLimit;
 let moment = require('moment');
 var common = require('../../common/typeheads');
-const { query } = require('express-validator/check');
-const { RemovedForRepairModel } = require('../../../models/removed_for_repair');
+const queries = require('../../../queries/removed_for_repair');
+// const {query} = require('express-validator/check');
+const {
+  RemovedForRepairModel
+} = require('../../../models/removed_for_repair');
+
+class Filters {
+  conditions = {
+    period: {
+      start: '',
+      end: ''
+    },
+  };
+  whereSQL = '';
+  orderBy = '';
+};
+
+var filterBuilder = (req, underRepair) => {
+
+  var filters = new Filters();
+  var cloneFilters = new Filters();
+
+  var startDate = moment('2000-01-01').format('YYYY-MM-DD');
+  var endDate = moment().endOf('month').toDate();
+
+  if (underRepair) {
+    if (!('filtersUnderRepair' in req.session)) {
+      req.session.filtersUnderRepair = filters;
+    }
+    cloneFilters = req.session.filtersUnderRepair;
+    if (cloneFilters.conditions.period.start === '') {
+      cloneFilters.conditions.period.start = moment(startDate).format('YYYY-MM-DD');
+    }
+    if (cloneFilters.conditions.period.end === '') {
+      cloneFilters.conditions.period.end = moment(endDate).format('YYYY-MM-DD');
+    }
+
+    if ((req.body) && (req.body.startDate) && (req.body.endDate)) {
+      cloneFilters.conditions.period.start = moment(req.body.startDate, 'DD.MM.YYYY').format('YYYY-MM-DD');
+      cloneFilters.conditions.period.end = moment(req.body.endDate, 'DD.MM.YYYY').format('YYYY-MM-DD');
+    }
+
+    req.session.filtersUnderRepair = cloneFilters;
+  } else {
+    if (!('filtersRepairIsDone' in req.session)) {
+      req.session.RepairIsDone = filters;
+    }
+    cloneFilters = req.session.RepairIsDone;
+
+    if (cloneFilters.conditions.period.start === '') {
+      cloneFilters.conditions.period.start = moment(startDate).format('YYYY-MM-DD HH:mm');
+    }
+    if (cloneFilters.conditions.period.end === '') {
+      cloneFilters.conditions.period.end = moment(endDate).format('YYYY-MM-DD HH:mm');
+    }
+
+    if ((req.body) && (req.body.startDate) && (req.body.endDate)) {
+      cloneFilters.conditions.period.start = moment(req.body.startDate, 'DD.MM.YYYY HH:mm').format('YYYY-MM-DD HH:mm');
+      cloneFilters.conditions.period.end = moment(req.body.endDate, 'DD.MM.YYYY HH:mm').format('YYYY-MM-DD HH:mm');
+    }
+
+    req.session.RepairIsDone = cloneFilters;
+  }
+
+  cloneFilters.whereSQL = `AND a.create_date BETWEEN '${cloneFilters.conditions.period.start}' AND '${cloneFilters.conditions.period.end}'`;
+  cloneFilters.orderBy = `ORDER BY a.create_date ASC`;
+
+  return cloneFilters;
+};
+
+const findRecordsUnderRepair = async (req, res, offset) => {
+  let indication = {
+    status: 'underRepair',
+    countRecords: 0,
+    pageCount: 0,
+    currentPage: 1,
+    visibleRows: visibleRows,
+  }
+
+  const add = filterBuilder(req, true);
+
+  const queryRecordsCount = `${queries.getCountRecordsUnderRepair} ${add.whereSQL}`;
+  const {
+    count
+  } = await getRecordsCount(queryRecordsCount);
+  indication.countRecords = count;
+  indication.pageCount = (indication.countRecords / visibleRows) < 1 ? 0 : Math.ceil(indication.countRecords / visibleRows);
+  if (offset > 0) {
+    indication.currentPage = Math.ceil(offset / visibleRows) + 1;
+    if (indication.pageCount >= 1) {
+      indication.currentPage = Math.min(indication.currentPage, indication.pageCount);
+    }
+  }
+
+  const queryRecords = offset > 0 ?
+    `${queries.getRecordsUnderRepair} ${add.whereSQL} ${add.orderBy} LIMIT ${visibleRows} OFFSET ${offset}` :
+    `${queries.getRecordsUnderRepair} ${add.whereSQL} ${add.orderBy} LIMIT ${visibleRows}`;
+  const rows = await getRecords(queryRecords);
+
+  res.render('docs/removed_for_repair.ejs', {
+    title: 'Снято в ремонт',
+    data: rows,
+    indication: indication,
+    moment: moment,
+    user: req.session.userName,
+    filters: add.conditions
+  });
+
+}
+
+const findRecordsCompleted = async (req, res, offset) => {
+  let indication = {
+    status: 'completed',
+    countRecords: 0,
+    pageCount: 0,
+    currentPage: 1,
+    visibleRows: visibleRows,
+  }
+
+  const add = filterBuilder(req, false);
+
+  const queryRecordsCount = `${queries.getCountRecordsCompleted} ${add.whereSQL}`;
+  const {
+    count
+  } = await getRecordsCount(queryRecordsCount);
+  indication.countRecords = count;
+  indication.pageCount = (indication.countRecords / visibleRows) < 1 ? 0 : Math.ceil(indication.countRecords / visibleRows);
+  if (offset > 0) {
+    indication.currentPage = Math.ceil(offset / visibleRows) + 1;
+    if (indication.pageCount >= 1) {
+      indication.currentPage = Math.min(indication.currentPage, indication.pageCount);
+    }
+  }
+
+  const queryRecords = offset > 0 ?
+    `${queries.getRecordsCompleted} ${add.whereSQL} ${add.orderBy} LIMIT ${visibleRows} OFFSET ${offset}` :
+    `${queries.getRecordsCompleted} ${add.whereSQL} ${add.orderBy} LIMIT ${visibleRows}`;
+  const rows = await getRecords(queryRecords);
+
+  res.render('docs/removed_for_repair_completed.ejs', {
+    title: 'Снято в ремонт',
+    data: rows,
+    indication: indication,
+    moment: moment,
+    user: req.session.userName,
+    filters: add.conditions
+  });
+
+}
 
 function getRecordsCount(queryText) {
   return new Promise(function (resolve, reject) {
@@ -19,9 +166,10 @@ function getRecordsCount(queryText) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
-            const data = rows ? (rows.length === 1 ? { ...rows[0] } : null) : null;
+          } else {
+            const data = rows ? (rows.length === 1 ? {
+              ...rows[0]
+            } : null) : null;
             resolve(data);
           }
         });
@@ -37,8 +185,7 @@ function getRecords(textQuery) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve(rows);
           }
         });
@@ -56,8 +203,7 @@ function getEquipmentTypes(includeNoData) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve(rows);
           }
         });
@@ -91,9 +237,10 @@ function getData(id) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
-            const data = rows ? (rows.length === 1 ? { ...rows[0] } : null) : null;
+          } else {
+            const data = rows ? (rows.length === 1 ? {
+              ...rows[0]
+            } : null) : null;
             resolve(data);
           }
         });
@@ -121,26 +268,27 @@ function updateData(data) {
         service_id = ?,
         is_done =?
         WHERE removed_for_repair_id = ?`, [
-        data.createDate,
-        data.personalData,
-        data.phones,
-        data.office,
-        data.address.city.id,
-        data.address.street.id,
-        data.address.house.id,
-        data.equipmentType,
-        data.equipment.id,
-        data.series,
-        data.repair,
-        data.worker.id,
-        data.service.id,
-        data.isDone,
-        data.id], function (err) {
+          data.createDate,
+          data.personalData,
+          data.phones,
+          data.office,
+          data.address.city.id,
+          data.address.street.id,
+          data.address.house.id,
+          data.equipmentType,
+          data.equipment.id,
+          data.series,
+          data.repair,
+          data.worker.id,
+          data.service.id,
+          data.isDone,
+          data.id
+        ],
+        function (err) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve();
           }
         });
@@ -156,170 +304,32 @@ function insertData(data) {
         city_id, street_id, house_id,
         equipment_type, equipment_model, series, repair, worker_id, service_id, is_done)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, [
-        data.createDate,
-        data.personalData,
-        data.phones,
-        data.office,
-        data.address.city.id,
-        data.address.street.id,
-        data.address.house.id,
-        data.equipmentType,
-        data.equipment.id,
-        data.series,
-        data.repair,
-        data.worker.id,
-        data.service.id,
-        data.isDone], function (err, rows) {
+          data.createDate,
+          data.personalData,
+          data.phones,
+          data.office,
+          data.address.city.id,
+          data.address.street.id,
+          data.address.house.id,
+          data.equipmentType,
+          data.equipment.id,
+          data.series,
+          data.repair,
+          data.worker.id,
+          data.service.id,
+          data.isDone
+        ],
+        function (err, rows) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve(rows.insertId);
           }
         });
     });
   });
 }
-
-var Filters = function () {
-  this.conditions = {
-    period: {
-      start: '',
-      end: ''
-    },
-    // city: { id: 0, name: '' },
-    // street: { id: 0, name: '', cityId: 0 },
-    // house: { id: 0, number: '', streetId: 0 },
-    // porch: { number: 0, houseId: 0 },
-    // number: {
-    //   order: 0,
-    //   prolongedOrder: 0
-    // },
-    // onlyMaintenanceService: false
-  };
-  this.whereSQL = '';
-  this.orderBy = '';
-};
-
-var filterBuilder = function (req) {
-
-  var obj = {};
-  var filters = new Filters();
-  var cloneFilters = new Filters();
-  var where = '';
-
-  // var startDate = moment().startOf('month').toDate();
-  var startDate = moment('2000-01-01').format('YYYY-MM-DD');
-  var endDate = moment().endOf('month').toDate();
-
-  if (!('filtersRemovedForRepair' in req.session)) {
-    req.session.filtersRemovedForRepair = filters;
-  }
-  cloneFilters = req.session.filtersRemovedForRepair;
-
-  if (cloneFilters.conditions.period.start === '') {
-    cloneFilters.conditions.period.start = moment(startDate).format('YYYY-MM-DD HH:mm');
-  }
-  if (cloneFilters.conditions.period.end === '') {
-    cloneFilters.conditions.period.end = moment(endDate).format('YYYY-MM-DD HH:mm');
-  }
-
-  //   try {
-  //     if (req.query) {
-  //       if ('filters' in req.query) {
-  //         obj = JSON.parse(req.query.filters);
-
-  //         if (+obj.city.id > 0) {
-  //           where += ' AND (a.city_id = ' + obj.city.id + ')';
-  //         }
-  //         cloneFilters.conditions.city = {
-  //           id: obj.city.id,
-  //           name: obj.city.name
-  //         };
-
-  //         if (+obj.street.id > 0) {
-  //           where += ' AND (a.street_id = ' + obj.street.id + ')';
-  //         }
-  //         cloneFilters.conditions.street = {
-  //           id: obj.street.id,
-  //           name: obj.street.name,
-  //           cityId: obj.street.cityId
-  //         };
-
-  //         if (+obj.house.id > 0) {
-  //           where += ' AND (a.house_id = ' + obj.house.id + ')';
-  //         }
-  //         cloneFilters.conditions.house = {
-  //           id: obj.house.id,
-  //           number: obj.house.number,
-  //           streetId: obj.house.streetId
-  //         };
-
-  //         if (+obj.porch.number > 0) { // + add "No data"
-  //           where += ' AND (a.porch = ' + obj.porch.number + ')';
-  //           cloneFilters.conditions.porch = {
-  //             number: obj.porch.number
-  //           };
-  //         }
-
-  //         if (+obj.number.order > 0) {
-  //           where += ' AND (a.contract_number = ' + obj.number.order + ')';
-  //         }
-  //         cloneFilters.conditions.number.order = obj.number.order;
-
-  //         if (+obj.number.prolongedOrder > 0) {
-  //           where += ' AND (a.m_contract_number = ' + obj.number.prolongedOrder + ')';
-  //         }
-  //         cloneFilters.conditions.number.prolongedOrder = obj.number.prolongedOrder;
-
-  //         if ('onlyMaintenanceService' in obj) {
-  //           cloneFilters.conditions.onlyMaintenanceService = obj.onlyMaintenanceService;
-  //         }
-
-  //         var _start = obj.period.start; // YYYY-MM-DD HH:mm
-  //         if (typeof _start === 'string') {
-  //           if (_start.length > 0) {
-  //             cloneFilters.conditions.period.start = _start;
-  //           } else {
-  //             cloneFilters.conditions.period.start = moment(startDate).format('YYYY-MM-DD HH:mm');
-  //           }
-  //         }
-
-  //         var _end = obj.period.end; // YYYY-MM-DD HH:mm
-  //         if (typeof _end === 'string') {
-  //           if (_end.length > 0) {
-  //             cloneFilters.conditions.period.end = _end;
-  //           } else {
-  //             cloneFilters.conditions.period.end = endDate;
-  //           }
-  //         }
-
-  //         if (cloneFilters.conditions.onlyMaintenanceService) {
-  //           where += ' AND (maintenance_contract >= 1)';
-  //           where += ' AND (a.end_service >= ' + '"' + cloneFilters.conditions.period.start + '")';
-  //           where += ' AND (a.end_service <= ' + '"' + cloneFilters.conditions.period.end + '")';
-
-  //           cloneFilters.orderBy = ' ORDER BY a.end_service DESC, a.contract_number DESC';
-  //         } else {
-  //           where += ' AND (a.create_date >= ' + '"' + cloneFilters.conditions.period.start + '")';
-  //           where += ' AND (a.create_date <= ' + '"' + cloneFilters.conditions.period.end + '")';
-
-  //           cloneFilters.orderBy = ' ORDER BY a.create_date DESC, a.contract_number DESC';
-  //         }
-
-  //         cloneFilters.whereSQL = where;
-  //       }
-  //     }
-
-  //     req.session.filtersOrders = cloneFilters;
-
-  //   } catch (err) {
-  //     throw (err);
-  //   }
-  return cloneFilters;
-  // return req.session.filtersOrders;
-};
 
 var filterRecords = async function (req, res) {
 
@@ -371,7 +381,6 @@ var filterRecords = async function (req, res) {
       console.log('Error getRecords: ' + error);
     });
 
-
   const currentPage = 1;
   res.render('docs/removed_for_repair.ejs', {
     title: 'Снято в ремонт',
@@ -392,7 +401,8 @@ module.exports = function () {
   var router = express.Router();
 
   router.get('/', function (req, res) {
-    filterRecords(req, res);
+    // filterRecords(req, res);
+    findRecordsUnderRepair(req, res);
   });
 
   router.get('/edit/:id', async function (req, res) {
@@ -400,46 +410,45 @@ module.exports = function () {
     let model = new RemovedForRepairModel();
 
     let equipmentTypes = [];
-    await getEquipmentTypes(false).then((data) => equipmentTypes = [...data]
-    )
+    await getEquipmentTypes(false).then((data) => equipmentTypes = [...data])
       .catch((error) => {
         console.log(error.message);
         res.status(500).send(error.message);
       });
 
     await getData(id).then(function (data) {
-      if (data) {
-        model.id = data.id;
-        model.createDate = data.createDate;
-        model.personalData = data.personalData;
-        model.phones = data.phones;
-        model.office = data.office;
+        if (data) {
+          model.id = data.id;
+          model.createDate = data.createDate;
+          model.personalData = data.personalData;
+          model.phones = data.phones;
+          model.office = data.office;
 
-        model.address.area.id = data.areaId;
-        model.address.area.name = data.areaName;
-        model.address.city.id = data.cityId;
-        model.address.city.name = data.cityName;
-        model.address.street.id = data.streetId;
-        model.address.street.name = data.streetName;
-        model.address.house.id = data.houseId;
-        model.address.house.number = data.houseNumber;
-        model.address.isCity = data.isCity;
-        model.address.noStreets = data.noStreets;
-        model.address.noHouses = data.noHouses;
+          model.address.area.id = data.areaId;
+          model.address.area.name = data.areaName;
+          model.address.city.id = data.cityId;
+          model.address.city.name = data.cityName;
+          model.address.street.id = data.streetId;
+          model.address.street.name = data.streetName;
+          model.address.house.id = data.houseId;
+          model.address.house.number = data.houseNumber;
+          model.address.isCity = data.isCity;
+          model.address.noStreets = data.noStreets;
+          model.address.noHouses = data.noHouses;
 
-        model.equipmentType = data.equipmentType;
-        model.equipment.id = data.equipmentId || 0;
-        model.equipment.name = data.equipmentName || '';
-        model.series = data.series;
-        model.repair = data.repair;
-        model.worker.id = data.workerId || 0;
-        model.worker.name = data.workerName || '';
-        model.service.id = data.serviceId || 0;
-        model.service.name = data.serviceName || '';
+          model.equipmentType = data.equipmentType;
+          model.equipment.id = data.equipmentId || 0;
+          model.equipment.name = data.equipmentName || '';
+          model.series = data.series;
+          model.repair = data.repair;
+          model.worker.id = data.workerId || 0;
+          model.worker.name = data.workerName || '';
+          model.service.id = data.serviceId || 0;
+          model.service.name = data.serviceName || '';
 
-        model.isDone = data.isDone;
-      }
-    })
+          model.isDone = data.isDone;
+        }
+      })
       .catch(function (error) {
         console.log(error.message);
         res.status(500).send(error.message);
@@ -460,8 +469,7 @@ module.exports = function () {
     var model = new RemovedForRepairModel();
 
     let equipmentTypes = [];
-    await getEquipmentTypes(false).then((data) => equipmentTypes = [...data]
-    )
+    await getEquipmentTypes(false).then((data) => equipmentTypes = [...data])
       .catch((error) => {
         console.log(error.message);
         res.status(500).send(error.message);
@@ -477,75 +485,32 @@ module.exports = function () {
     });
   });
 
-  router.get('/filter', function (req, res) {
-    filterRecords(req, res);
+  // router.get('/filter', function (req, res) {
+  //   // filterRecords(req, res);
+  //   findRecordsUnderRepair(req, res, 0);
+  // });
+
+  router.get('/completed', (req, res) => {
+    findRecordsCompleted(req, res, 0);
+  });
+
+  router.get('/completed/:offset', (req, res) => {
+    const offset = +req.params.offset;
+    findRecordsCompleted(req, res, offset);
   });
 
   router.get('/:offset', async function (req, res) {
-
-    const add = filterBuilder(req);
-
-    let offset = +req.params.offset;
-    let currentPage = Math.ceil(offset / visibleRows) + 1;
-    let countRecords = 0;
-    let isDoneRecords = 0;
-    let pageCount = 0;
-    let rows = [];
-
-    const queryRecordsCount =
-      `SELECT COUNT(*) AS count, COUNT(CASE WHEN a.is_done = 1 THEN 1 END) AS isDone
-      FROM removed_for_repair a WHERE (a.removed_for_repair_id > 0) AND (a.is_deleted = 0) ${add.whereSQL}`;
-
-    const queryRecords =
-      `SELECT a.removed_for_repair_id AS id, a.create_date AS createDate, a.office,
-      f.parent_id AS areaId, UPPER(k.name) AS areaName, a.city_id AS cityId, UPPER(f.name) AS cityName,
-      f.no_streets AS noStreets, f.no_houses AS noHouses,
-      a.street_id AS streetId, UPPER(g.name) AS streetName, a.house_id AS houseId, UPPER(h.number) AS houseNumber,
-      e.type_of_equipment_id AS equipmentTypeId, e.name AS equipmentType,
-      b.name AS equipmentName, c.name AS workerName, d.short_name AS serviceName,
-      a.is_done AS isDone
-      FROM removed_for_repair a
-      LEFT JOIN equipments b ON b.equipment_id = a.equipment_model
-      LEFT JOIN workers c ON c.worker_id = a.worker_id
-      LEFT JOIN services d ON d.service_id = a.service_id
-      LEFT JOIN types_of_equipment e ON e.type_of_equipment_id = a.equipment_type
-      LEFT JOIN cities f ON f.city_id = a.city_id
-      LEFT JOIN streets g ON g.street_id = a.street_id
-      LEFT JOIN houses h ON h.house_id = a.house_id
-      LEFT JOIN cities k ON k.city_id = f.parent_id
-      WHERE (a.removed_for_repair_id > 0) AND (a.is_deleted = 0) ${add.whereSQL} ${add.orderBy} LIMIT ${visibleRows} OFFSET ${offset}`;
-
-    await getRecordsCount(queryRecordsCount)
-      .then(function (result) {
-        countRecords = result ? result.count : 0;
-        isDoneRecords = result ? result.isDone : 0;
-        pageCount = (countRecords / visibleRows) < 1 ? 0 : Math.ceil(countRecords / visibleRows);
-      })
-      .catch(function (error) {
-        console.log('Error getRecordsCount: ' + error);
-      });
-
-    await getRecords(queryRecords)
-      .then(function (result) {
-        rows = result;
-      })
-      .catch(function (error) {
-        console.log('Error getRecords: ' + error);
-      });
-
-    res.render('docs/removed_for_repair.ejs', {
-      title: 'Снято в ремонт',
-      data: rows,
-      pageCount: pageCount,
-      currentPage: currentPage,
-      visibleRows: visibleRows,
-      countRecords: countRecords,
-      isDoneRecords: isDoneRecords,
-      moment: moment,
-      user: req.session.userName,
-      filters: add.conditions
-    });
+    const offset = +req.params.offset;
+    findRecordsUnderRepair(req, res, offset);
   });
+
+  router.post('/filter', (req, res) => {
+    findRecordsUnderRepair(req, res, 0);
+  })
+
+  router.post('/filter_completed', (req, res) => {
+    findRecordsCompleted(req, res, 0);
+  })
 
   router.post('/save', async function (req, res) {
 
@@ -630,16 +595,14 @@ module.exports = function () {
             console.log(error.message);
             res.status(500).send(error.message);
           });
-      }
-      else {
+      } else {
         await insertData(model).then(() => res.redirect('/removed_for_repair'))
           .catch(function (error) {
             console.log(error.message);
             res.status(500).send(error.message);
           });
       }
-    }
-    else {
+    } else {
       res.render('docs/forms/removed_for_repair.ejs', {
         title: 'Снято в ремонт',
         data: model,
@@ -655,7 +618,8 @@ module.exports = function () {
     if ((req.body.id) && (isFinite(+req.body.id))) {
       db.get().getConnection(function (err, connection) {
         connection.query(
-          'UPDATE removed_for_repair SET is_deleted = 1 WHERE removed_for_repair_id = ?', [+req.body.id], function (err) {
+          'UPDATE removed_for_repair SET is_deleted = 1 WHERE removed_for_repair_id = ?', [+req.body.id],
+          function (err) {
             connection.release();
             if (err) {
               connection.release();
@@ -665,13 +629,18 @@ module.exports = function () {
                 err: JSON.stringify(err)
               });
             } else {
-              res.status(200).send({ result: 'OK' });
+              res.status(200).send({
+                result: 'OK'
+              });
             }
           }
         );
       });
     } else {
-      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+      res.status(500).send({
+        code: 500,
+        msg: 'Incorrect parameter'
+      });
     }
   });
 
@@ -687,9 +656,11 @@ module.exports = function () {
       common.filterEquipment(params, function (err, rows) {
         res.status(200).send(rows);
       });
-    }
-    else {
-      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    } else {
+      res.status(500).send({
+        code: 500,
+        msg: 'Incorrect parameter'
+      });
     }
   });
 
@@ -705,9 +676,11 @@ module.exports = function () {
       common.fastFilter(params, function (err, rows) {
         res.status(200).send(rows);
       });
-    }
-    else {
-      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    } else {
+      res.status(500).send({
+        code: 500,
+        msg: 'Incorrect parameter'
+      });
     }
   });
 
@@ -722,9 +695,11 @@ module.exports = function () {
       common.editEquipment(params, function (err, data) {
         res.status(200).send(data);
       });
-    }
-    else {
-      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    } else {
+      res.status(500).send({
+        code: 500,
+        msg: 'Incorrect parameter'
+      });
     }
   });
 
@@ -736,11 +711,15 @@ module.exports = function () {
         kind: data.kind
       };
       common.addEquipment(params, function (err, insertId) {
-        res.status(200).send({ insertId: insertId });
+        res.status(200).send({
+          insertId: insertId
+        });
       });
-    }
-    else {
-      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    } else {
+      res.status(500).send({
+        code: 500,
+        msg: 'Incorrect parameter'
+      });
     }
   });
 
@@ -754,12 +733,13 @@ module.exports = function () {
       common.getFullAddress2(params, function (err, items) {
         res.status(200).send(items);
       });
-    }
-    else {
-      res.status(500).send({ code: 500, msg: 'Incorrect parameter' });
+    } else {
+      res.status(500).send({
+        code: 500,
+        msg: 'Incorrect parameter'
+      });
     }
   });
-
 
   return router;
 
