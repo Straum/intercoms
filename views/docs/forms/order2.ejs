@@ -95,7 +95,7 @@
                           </button>
                         </span>
                         <input type="text" class="form-control select-all" id="equipmentName" name="equipmentName"
-                          placeholder="Выберите оборудование" value="<%= data.equipment.value %>">
+                          placeholder="Выберите оборудование" value="<%= data.equipment.value %>" autocomplete="off">
                       </div>
                     </div>
                   </div>
@@ -149,7 +149,7 @@
                           </button>
                         </span>
                         <input type="text" class="form-control select-all" id="fullAddress" name="fullAddress"
-                          value="<%= data.fullAddress %>">
+                          value="<%= data.fullAddress %>" autocomplete="off">
                         <span class="input-group-btn">
                           <button class="btn btn-default" type="button" id="editAddress">
                             <span class="glyphicon glyphicon-share" aria-hidden="true"></span>
@@ -185,7 +185,7 @@
                         </span>
                         <input type="text" class="form-control select-all" id="clientContractName"
                           name="clientContractName" placeholder="ФИО по договору"
-                          value="<%= data.client.contract.value %>">
+                          value="<%= data.client.contract.value %>" autocomplete="off">
                         <span class="input-group-btn">
                           <button class="btn btn-default edit-client" type="button" id="editClientByContract">
                             <span class="glyphicon glyphicon-share" aria-hidden="true"></span>
@@ -228,7 +228,7 @@
                           </button>
                         </span>
                         <input type="text" class="form-control select-all" id="clientServiceName"
-                          name="clientServiceName" placeholder="ФИО по ТО" value="<%= data.client.service.value %>">
+                          name="clientServiceName" placeholder="ФИО по ТО" value="<%= data.client.service.value %>" autocomplete="off">
                         <span class="input-group-btn">
                           <button class="btn btn-default edit-client" type="button" id="editClientByService">
                             <span class="glyphicon glyphicon-share" aria-hidden="true"></span>
