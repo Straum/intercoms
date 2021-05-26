@@ -327,6 +327,28 @@ function getPrices(id) {
   });
 }
 
+function getPaymentOptions() {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        `
+        SELECT a.organization_id AS id, a.name AS description
+        FROM organizations a
+        WHERE
+        a.for_receipt > 0
+        ORDER BY a.for_receipt ASC`, [],
+        function (err, rows) {
+          connection.release();
+          if (err) {
+            reject(err);
+          } else {
+            resolve(rows);
+          }
+        });
+    });
+  });
+}
+
 function updateOrder(data) {
   return new Promise(function (resolve, reject) {
     db.get().getConnection(function (err, connection) {
@@ -2118,7 +2140,8 @@ module.exports = function () {
       personalAccount: '',
       payments: [],
       fines: [],
-      prices: []
+      prices: [],
+      paymentOptions: [],
     };
 
     if ((data) && (typeof (data) === 'object') && ('id' in data)) {
@@ -2133,6 +2156,8 @@ module.exports = function () {
         out.payments = await getPayments(data.id);
         out.fines = await getPaymentsByRegister(data.id);
         out.prices = await getPrices(data.id);
+        out.paymentOptions = await getPaymentOptions();
+
         res.status(200).send(out);
       } catch (error) {
         console.log(error.message);
@@ -2170,7 +2195,8 @@ module.exports = function () {
       apartmentId: parseInt(req.body.id),
       amount: parseFloat(req.body.amount),
       payDate: moment(req.body.date, 'DD.MM.YYYY').format('YYYY-MM-DD'),
-      mode: 2,
+      // mode: 2,
+      mode: parseInt(req.body.option),
       isRegistered: 0
     }
 

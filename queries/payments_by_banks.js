@@ -5,7 +5,8 @@ exports.paymentsByBanks = `
     SUM(CASE WHEN a.mode = 1 THEN a.amount END) AS kvitanzia,
     SUM(CASE WHEN a.mode = 2 THEN a.amount END) AS vrucnuju,
     SUM(CASE WHEN a.mode = 3 THEN a.amount END) AS rosselhozbank,
-    SUM(CASE WHEN a.mode = 4 THEN a.amount END) AS slavia
+    SUM(CASE WHEN a.mode = 4 THEN a.amount END) AS slavia,
+    SUM(CASE WHEN a.mode = 6 THEN a.amount END) AS otkritie
   FROM
     payments a
   LEFT JOIN apartments b ON b.apartment_id = a.apartment_id

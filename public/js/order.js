@@ -45,27 +45,29 @@ var Application = function () {
   this.hostPort = 0;
 
   this.address = {
-      city: {
-        key: 0,
-        value: '',
-      },
-      street: {
-        key: 0,
-        value: '',
-        cityId: 0,
-      },
-      house: {
-        key: 0,
-        value: '',
-        streetId: 0,
-      },
+    city: {
+      key: 0,
+      value: '',
     },
-
-    this.doubleAddress = {
-      ...this.address
+    street: {
+      key: 0,
+      value: '',
+      cityId: 0,
     },
+    house: {
+      key: 0,
+      value: '',
+      streetId: 0,
+    },
+  };
 
-    this.clientChannel = ACTION_CLIENT_CONTRACT;
+  this.doubleAddress = {
+    ...this.address
+  };
+
+  this.clientChannel = ACTION_CLIENT_CONTRACT;
+
+  this.paymentOptions = [];
 
 }
 
@@ -111,7 +113,8 @@ function showHistory(ev) {
       personalAccount: '',
       payments: '',
       fines: '',
-      prices: ''
+      prices: '',
+      paymentOptions: [],
     };
 
     if (('personalAccount' in data) && (typeof data.personalAccount === 'string')) {
@@ -174,6 +177,11 @@ function showHistory(ev) {
     }
     var bodyPricesRef = document.getElementById('tablePrices').getElementsByTagName('tbody')[0];
     bodyPricesRef.innerHTML = body.prices;
+
+    application.paymentOptions = [];
+    if ((data.paymentOptions) && (Array.isArray(data.paymentOptions)) && (data.paymentOptions.length > 0)) {
+      application.paymentOptions = [...data.paymentOptions];
+    }
 
     document.getElementById('historyDialogCapton').textContent = 'История по квартире № ' + apartmentInfo;
     document.getElementById('printReceiptForApartment').setAttribute('href', `/orders/print_receipt_for_apartment/${id}`);
@@ -1428,6 +1436,19 @@ document.getElementById('addPayment').addEventListener('click', function (e) {
 
 $('#addPaymentDialog').on('shown.bs.modal', function () {
   document.getElementById('paymentDate').value = moment(new Date()).format('DD.MM.YYYY');
+  const paymentsOptions = document.getElementById('paymentOptions');
+  while (paymentsOptions.childNodes.length) {
+    paymentsOptions.removeChild(paymentsOptions.firstChild);
+  }
+  if (Array.isArray(application.paymentOptions)) {
+    application.paymentOptions.forEach((item) => {
+      var opt = document.createElement('option');
+      opt.value = item.id;
+      opt.innerHTML = item.description;
+      paymentsOptions.appendChild(opt);
+    })
+
+  }
   document.getElementById('paymentAmount').value = '';
   document.getElementById('paymentAmount').focus();
 })
@@ -1436,9 +1457,11 @@ document.getElementById('actionAddPayment').addEventListener('click', function (
   const amount = parseFloat(document.getElementById('paymentAmount').value);
   if (isNaN(amount)) return;
 
+  const selectedIndex = document.getElementById('paymentOptions').options.selectedIndex;
   axios.post('/orders/add_payment', {
     id: application.apartmentId,
     date: document.getElementById('paymentDate').value,
+    option: document.getElementById('paymentOptions').options[selectedIndex].value,
     amount: amount
   }).then(function (response) {
 
