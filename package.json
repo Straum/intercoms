@@ -40,6 +40,6 @@
     "svg-to-pdfkit": "^0.1.8",
     "winston": "^3.3.3",
     "winston-daily-rotate-file": "^4.5.0",
-    "ws": "^7.4.2"
+    "ws": "^7.4.6"
   }
 }
