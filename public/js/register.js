@@ -1,4 +1,3 @@
-
 // Basic foundation
 // http://carlofontanos.com/nodejs-ajax-pagination-with-mongodb-search-sort-filter/
 
@@ -187,37 +186,57 @@ var listenerClearProlonedContract = function (e) {
 var listenerBuildRegister = function (e) {
   document.getElementById('progress').hidden = false;
   axios.post('/registers/build_register', {
-    name: 'buildRegister',
-    startFrom: document.getElementById('startFrom').value,
-    endTo: document.getElementById('endTo').value
-  }
-  ).then(function (response) {
-    var data = response.data;
+      name: 'buildRegister',
+      startFrom: document.getElementById('startFrom').value,
+      endTo: document.getElementById('endTo').value
+    }).then(function (response) {
+      var data = response.data;
 
-    var bodyContractsRef = document.getElementById('tableContracts').getElementsByTagName('tbody')[0];
-    bodyContractsRef.innerHTML = data.contentContractsTable.join('');
+      var bodyContractsRef = document.getElementById('tableContracts').getElementsByTagName('tbody')[0];
+      bodyContractsRef.innerHTML = data.contentContractsTable.join('');
 
-    var bodyPaymentsRef = document.getElementById('tablePayments').getElementsByTagName('tbody')[0];
-    bodyPaymentsRef.innerHTML = data.contentPaymentsTable.join('');
+      var bodyPaymentsRef = document.getElementById('tablePayments').getElementsByTagName('tbody')[0];
+      bodyPaymentsRef.innerHTML = data.contentPaymentsTable.join('');
 
-    // var badges = document.getElementsByClassName('badge badge-info');
-    // if ((badges) && (badges instanceof HTMLCollection)) {
-    //   badges[0].textContent = data.contentTable.length;
-    // }
-    document.getElementById('orders_count').textContent = data.contentContractsTable.length;
-    document.getElementById('payments_count').textContent = data.contentPaymentsTable.length; //data.contentTable.length;
+      // var badges = document.getElementsByClassName('badge badge-info');
+      // if ((badges) && (badges instanceof HTMLCollection)) {
+      //   badges[0].textContent = data.contentTable.length;
+      // }
+      document.getElementById('orders_count').textContent = data.contentContractsTable.length;
+      document.getElementById('payments_count').textContent = data.contentPaymentsTable.length; //data.contentTable.length;
 
-    document.getElementById('orders').value = JSON.stringify(data.orders);
-    document.getElementById('payments').value = JSON.stringify(data.payments);
-    document.getElementById('progress').hidden = true;
-  })
-  .catch( function(error) {
-    document.getElementById('progress').hidden = true;
-  });
+      document.getElementById('orders').value = JSON.stringify(data.orders);
+      document.getElementById('payments').value = JSON.stringify(data.payments);
+      document.getElementById('progress').hidden = true;
+    })
+    .catch(function (error) {
+      document.getElementById('progress').hidden = true;
+    });
 }
 
 var listenerSaveRegister = function (e) {
   document.getElementById('progress').hidden = false;
+}
+
+const listenerNewMethod = (e) => {
+  if (e.target.checked) {
+
+    const dt = new Date();
+    switch (dt.getDay()) {
+      case 5:
+        document.getElementById('endTo').value = moment(dt).add(2, 'days').format('DD.MM.YYYY');
+        break;
+      case 6:
+        document.getElementById('endTo').value = moment(dt).add(1, 'days').format('DD.MM.YYYY');
+        break;
+      default:
+        document.getElementById('endTo').value = moment(dt).format('DD.MM.YYYY');
+    }
+    document.getElementById('startFrom').value = moment(dt).format('DD.MM.YYYY');
+  } else {
+    document.getElementById('startFrom').value = moment().startOf('month').format('DD.MM.YYYY');
+    document.getElementById('endTo').value = moment().endOf('month').format('DD.MM.YYYY');
+  }
 }
 
 window.onload = function () {
@@ -230,6 +249,8 @@ window.onload = function () {
   document.getElementById('buidRegister').addEventListener('click', listenerBuildRegister);
   document.getElementById('save').addEventListener('click', listenerSaveRegister);
   document.getElementById('saveAndClose').addEventListener('click', listenerSaveRegister);
+
+  document.getElementById('newMethod').addEventListener('click', listenerNewMethod);
 }
 
 window.onunload = function () {
@@ -242,4 +263,6 @@ window.onunload = function () {
   document.getElementById('buidRegister').removeEventListener('click', listenerBuildRegister);
   document.getElementById('save').removeEventListener('click', listenerSaveRegister);
   document.getElementById('saveAndClose').removeEventListener('click', listenerSaveRegister);
+
+  document.getElementById('newMethod').removeEventListener('click', listenerNewMethod);
 }

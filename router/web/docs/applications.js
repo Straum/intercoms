@@ -85,7 +85,7 @@ var getCity = function (cityName, callback) {
     connection.query(
       ' SELECT a.city_id AS cityId' +
       ' FROM cities a' +
-      ' WHERE a.name = ?' +
+      ' WHERE (a.name = ?) AND (a.is_deleted = 0) AND (a.core = 1)' +
       ' LIMIT 1', [cityName], function (err, rows) {
         connection.release();
 
@@ -105,7 +105,7 @@ var getCity = function (cityName, callback) {
 var getStreets = function (cityId, streetName, rowsLimit, callback) {
   var queryText = ' SELECT a.street_id AS streetId, a.name AS streetName' +
     ' FROM streets a' +
-    ' WHERE (a.city_id = ' + cityId + ')';
+    ' WHERE (a.city_id = ' + cityId + ') AND (a.is_deleted = 0)';
 
   if ((typeof streetName === 'string') && (streetName.trim() !== '')) {
     queryText += ' AND (a.name LIKE ' + `'` + streetName.trim() + '%' + `'` + ')';
@@ -133,7 +133,7 @@ var getHouses = function (cityId, streetName, houseNumber, rowsLimit, callback) 
 
       var queryText = ' SELECT a.house_id, a.number AS house_number, a.street_id' +
         ' FROM houses a' +
-        ' WHERE (a.street_id = ' + streetId + ')';
+        ' WHERE (a.street_id = ' + streetId + ') AND (a.is_deleted = 0)';
 
       if ((typeof houseNumber === 'string') && (houseNumber.trim().length > 0)) {
         queryText += ' AND (a.number LIKE ' + `'` + houseNumber.trim() + '%' + `'` + ')';
@@ -1732,7 +1732,7 @@ module.exports = function () {
           ' FROM cities a';
 
         if (words[0].trim().length > 0) {
-          queryText += ' WHERE a.name LIKE ' + `'` + words[0].trim() + '%' + `'`;
+          queryText += ' WHERE (a.name LIKE ' + `'` + words[0].trim() + '%' + `') AND (a.is_deleted = 0) AND (a.core = 1)`;
         }
         queryText += ' ORDER BY a.name ASC';
         queryText += ' LIMIT ' + ('limit' in data ? data.limit : rowsLimit);

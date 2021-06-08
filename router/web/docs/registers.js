@@ -91,7 +91,12 @@ module.exports = function () {
 
   router.get('/upload/:id', function (req, res) {
     let registersLogic = new RegistersLogic(req, res);
-    registersLogic.upload(req.params.id);
+    registersLogic.upload2(req.params.id);
+  });
+
+  router.get('/build', function (req, res) {
+    let registersLogic = new RegistersLogic(req, res);
+    registersLogic.build();
   });
 
   router.get('/:offset', function (req, res) {

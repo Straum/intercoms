@@ -33,6 +33,7 @@ module.exports.RegisterModel = function () {
   }
   this.contracts = [];
   this.payments = [];
+  this.newMethod = 0;
 };
 
 module.exports.DataModel = function () {
@@ -48,6 +49,7 @@ module.exports.PrintModelForRegister = function () {
   'use strict';
   this.startFrom = null;
   this.endTo = null;
+  this.newMethod = 0;
   this.data = [];
 };
 

@@ -109,6 +109,20 @@
               </div>
             </div>
 
+            <div class="row">
+              <div class="col-md-3">
+                <div class="form-group">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="newMethod" name="newMethod"
+                      <%= data.newMethod ? (+data.newMethod === 1 ? ' checked' : '') : '' %>>
+                    <label class="form-check-label" for="newMethod">
+                      Новый режим
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <ul class="nav nav-pills">
               <li class="active"><a data-toggle="tab" href="#contracts">Договора&nbsp;<span class="badge badge-info" id="orders_count"><%= data.contracts.length %></span></a></li>
               <li><a data-toggle="tab" href="#payments_for_register">Платежи&nbsp;<span class="badge badge-info" id="payments_count"><%= data.payments.length %></span></a></li>

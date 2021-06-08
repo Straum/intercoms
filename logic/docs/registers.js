@@ -4,8 +4,12 @@ var fs = require('fs');
 var db = require('../../lib/db');
 var iconvlite = require('iconv-lite');
 
-const { relativeTimeThreshold } = require('moment');
-const { query } = require('express-validator/check');
+const {
+  relativeTimeThreshold
+} = require('moment');
+const {
+  query
+} = require('express-validator/check');
 const payments = require('../../router/web/docs/payments');
 var RegisterModel = require('../../models/register').RegisterModel;
 var PaymentModelForRegister = require('../../models/register').PaymentModelForRegister;
@@ -20,13 +24,12 @@ function getPeriodFromRegister(id) {
   return new Promise(function (resolve, reject) {
     db.get().getConnection(function (err, connection) {
       connection.query(
-        'SELECT a.start_date AS startFrom, a.end_date AS endTo FROM registers a WHERE a.register_id = ?', [id],
+        'SELECT a.start_date AS startFrom, a.end_date AS endTo, a.new_method AS newMethod FROM registers a WHERE a.register_id = ?', [id],
         function (err, rows) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve(rows[0]);
           }
         });
@@ -59,8 +62,7 @@ function getDataFromCards(id) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve(rows);
           }
         });
@@ -88,9 +90,78 @@ function getDataFromPayments(id) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve(rows);
+          }
+        });
+    });
+  });
+}
+
+function pullOutOrders(id) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        `SELECT a.card_id AS id, b.m_duplicate AS isDuplicate,
+        b.m_contract_number AS prolongedContractNumber,
+        c.name AS cityName, CONCAT(d.name, ' ', g.short_name) AS streetName, e.number AS houseNumber,
+        MONTH(b.start_service) AS dateMonth, YEAR(b.start_service) AS dateYear
+        FROM lists_registers a
+        LEFT JOIN cards b ON b.card_id = a.card_id
+        LEFT JOIN cities c ON c.city_id = b.city_id
+        LEFT JOIN streets d ON d.street_id = b.street_id
+        LEFT JOIN houses e ON e.house_id = b.house_id
+        LEFT JOIN street_types g on g.street_type_id = d.street_type_id
+        WHERE a.register_id = ?`, [id],
+        function (err, rows) {
+          connection.release();
+          if (err) {
+            reject();
+          } else {
+            resolve(rows);
+          }
+        });
+    });
+  });
+}
+
+function pullAllOrders() {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        `SELECT b.card_id AS id, b.m_duplicate AS isDuplicate,
+        b.m_contract_number AS prolongedContractNumber,
+        c.name AS cityName, d.name AS streetName, e.number AS houseNumber,
+        MONTH(b.start_service) AS dateMonth, YEAR(b.start_service) AS dateYear
+        FROM cards b
+        LEFT JOIN cities c ON c.city_id = b.city_id
+        LEFT JOIN streets d ON d.street_id = b.street_id
+        LEFT JOIN houses e ON e.house_id = b.house_id
+        WHERE (b.maintenance_contract >= 1)`, [],
+        function (err, rows) {
+          connection.release();
+          if (err) {
+            reject();
+          } else {
+            resolve(rows);
+          }
+        });
+    });
+  });
+}
+
+function calculateApartments(id) {
+  return new Promise(function (resolve, reject) {
+    db.get().getConnection(function (err, connection) {
+      connection.query(
+        'CALL find_debt_under_order(?)', [id],
+        function (err, rows) {
+          connection.release();
+          if (err) {
+            console.log(err.message);
+            reject();
+          } else {
+            resolve(rows[0]);
           }
         });
     });
@@ -105,8 +176,20 @@ function RegistersLogic(req, res) {
 RegistersLogic.prototype.addRegister = function () {
   let registerModel = new RegisterModel();
   registerModel.createDate = new Date();
-  registerModel.startFrom = moment().startOf('month').toDate();
-  registerModel.endTo = moment().endOf('month').toDate();
+  registerModel.startFrom = new Date(); // moment().startOf('month').toDate();
+
+  switch (registerModel.startFrom.getDay()) {
+    case 5:
+      registerModel.endTo = moment(registerModel.startFrom).add(2, 'days');
+      break;
+    case 6:
+      registerModel.endTo = moment(registerModel.startFrom).add(1, 'days');
+      break;
+    default:
+      registerModel.endTo = new Date(); //moment().endOf('month').toDate();
+  }
+
+  registerModel.newMethod = true;
   return registerModel;
 };
 
@@ -123,6 +206,7 @@ RegistersLogic.prototype.getRegister = async function () {
         registerModel.startFrom = result.startDate;
         registerModel.endTo = result.endDate;
         registerModel.latestChange = result.lastModifyDate;
+        registerModel.newMethod = result.newMethod;
       }
     })
     .catch(function (error) {
@@ -148,7 +232,7 @@ RegistersLogic.prototype.getRegister = async function () {
       console.log(error);
     })
 
-    await self.getPaymentsTable(id)
+  await self.getPaymentsTable(id)
     .then(function (result) {
       if (Array.isArray(result)) {
         result.forEach(function (item) {
@@ -175,15 +259,15 @@ RegistersLogic.prototype.getRegisterBody = function (id) {
   return new Promise(function (resolve, reject) {
     db.get().getConnection(function (err, connection) {
       connection.query(
-        `SELECT a.register_id AS id, a.create_date AS createDate, a.start_date AS startDate, a.end_date AS endDate, a.last_modify_date AS lastModifyDate
+        `SELECT a.register_id AS id, a.create_date AS createDate, a.start_date AS startDate,
+        a.end_date AS endDate, a.last_modify_date AS lastModifyDate, a.new_method AS newMethod
         FROM registers a
         WHERE a.register_id = ?`, [id],
         function (err, rows) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve(rows[0]);
           }
         });
@@ -205,8 +289,7 @@ RegistersLogic.prototype.getOrdersTable = function (parentId) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve(rows);
           }
         });
@@ -246,8 +329,7 @@ RegistersLogic.prototype.getPaymentsTable = function (parentId) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve(rows);
           }
         });
@@ -268,8 +350,7 @@ RegistersLogic.prototype.buildRegister = function (startFrom, endTo) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve(rows);
           }
         });
@@ -308,8 +389,7 @@ RegistersLogic.prototype.buildRegister2 = function (startFrom, endTo) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve(rows);
           }
         });
@@ -326,8 +406,7 @@ RegistersLogic.prototype.clearRegisterData = function (id) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve();
           }
         });
@@ -344,8 +423,7 @@ RegistersLogic.prototype.clearPaymentsForRegister = function (id) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve();
           }
         });
@@ -353,18 +431,17 @@ RegistersLogic.prototype.clearPaymentsForRegister = function (id) {
   });
 }
 
-RegistersLogic.prototype.updateRegister = function (id, startDate, endDate) {
+RegistersLogic.prototype.updateRegister = function (model) {
   return new Promise(function (resolve, reject) {
     db.get().getConnection(function (err, connection) {
       connection.query(
-        `UPDATE registers SET last_modify_date = NOW(), start_date = ?, end_date = ?
-        WHERE register_id = ?`, [startDate, endDate, id],
+        `UPDATE registers SET last_modify_date = NOW(), start_date = ?, end_date = ?, new_method = ?
+        WHERE register_id = ?`, [model.startFrom, model.endTo, model.newMethod, model.id],
         function (err, rows) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve();
           }
         });
@@ -372,20 +449,19 @@ RegistersLogic.prototype.updateRegister = function (id, startDate, endDate) {
   });
 }
 
-RegistersLogic.prototype.createNewRegister = function (startDate, endDate) {
+RegistersLogic.prototype.createNewRegister = function (model) {
   return new Promise(function (resolve, reject) {
     db.get().getConnection(function (err, connection) {
       connection.query(
         `INSERT INTO registers
-        (create_date, start_date, end_date, last_modify_date, enable_registers, enable_fines)
-        VALUES (NOW(), ?, ?, NOW(), ?, ?)
-        `, [startDate, endDate, 1, 1],
+        (create_date, start_date, end_date, last_modify_date, enable_registers, enable_fines, new_method)
+        VALUES (NOW(), ?, ?, NOW(), ?, ?, ?)
+        `, [model.startFrom, model.endTo, 1, 1, model.newMethod],
         function (err, rows) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve(rows.insertId);
           }
         });
@@ -410,8 +486,7 @@ RegistersLogic.prototype.insertRegisterData = function (data) {
           connection.release();
           if (err) {
             reject();
-          }
-          else {
+          } else {
             resolve();
           }
         });
@@ -438,14 +513,12 @@ RegistersLogic.prototype.insertPaymentsForRegister = function (data) {
             connection.release();
             if (err) {
               reject();
-            }
-            else {
+            } else {
               resolve();
             }
           });
       });
-    }
-    else  {
+    } else {
       resolve();
     }
   });
@@ -458,6 +531,7 @@ RegistersLogic.prototype.validate = function () {
   registerModel.startFrom = ((this.req.body.startFrom != null) && (this.req.body.startFrom.trim().length > 0)) ? moment(this.req.body.startFrom, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
   registerModel.endTo = ((this.req.body.endTo != null) && (this.req.body.endTo.trim().length > 0)) ? moment(this.req.body.endTo, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
   registerModel.latestChange = ((this.req.body.latestChange != null) && (this.req.body.latestChange.trim().length > 0)) ? moment(this.req.body.latestChange, 'DD.MM.YYYY HH:mm').format('YYYY-MM-DD HH:mm') : null;
+  registerModel.newMethod = this.req.body.newMethod === 'on' ? 1 : 0;
 
   // try {
   //   var rawData = JSON.parse(this.req.body.orders);
@@ -480,8 +554,7 @@ RegistersLogic.prototype.validate = function () {
   try {
     registerModel.contracts = JSON.parse(this.req.body.orders);
     registerModel.payments = JSON.parse(this.req.body.payments);
-  }
-  catch (error) {
+  } catch (error) {
     //
   }
 
@@ -524,10 +597,9 @@ RegistersLogic.prototype.save = async function (registerModel) {
   if (registerModel.id > 0) {
     await self.clearRegisterData(registerModel.id);
     await self.clearPaymentsForRegister(registerModel.id);
-    await self.updateRegister(registerModel.id, registerModel.startFrom, registerModel.endTo);
-  }
-  else {
-    registerModel.id = await self.createNewRegister(registerModel.startFrom, registerModel.endTo);
+    await self.updateRegister(registerModel);
+  } else {
+    registerModel.id = await self.createNewRegister(registerModel);
   }
   await self.insertRegisterData(registerModel);
   await self.insertPaymentsForRegister(registerModel);
@@ -539,7 +611,6 @@ RegistersLogic.prototype.upload = function (id) {
 
   var printModelForRegister = new PrintModelForRegister();
   var data = [];
-  var dataFromPayments = [];
 
   getPeriodFromRegister(id)
     .then(function (period) {
@@ -579,7 +650,7 @@ RegistersLogic.prototype.upload = function (id) {
       var content = iconvlite.encode(buffer, 'cp1251');
 
       fs.writeFile(absPath, content, (err) => {
-      // fs.writeFile(absPath, printModelForRegister.data.join(''), (err) => {
+        // fs.writeFile(absPath, printModelForRegister.data.join(''), (err) => {
         if (err) {
           console.log(err);
         }
@@ -601,7 +672,138 @@ RegistersLogic.prototype.upload = function (id) {
       console.log(error.message);
     });
 
+}
 
+RegistersLogic.prototype.upload2 = async function (id) {
+  var self = this;
+
+  var printModelForRegister = new PrintModelForRegister();
+
+  try {
+    const period = await getPeriodFromRegister(id);
+    printModelForRegister.startFrom = moment(period.startFrom).format('YYYY-MM-DD');
+    printModelForRegister.endTo = moment(period.endTo).format('YYYY-MM-DD');
+    printModelForRegister.newMethod = period.newMethod;
+
+    if (printModelForRegister.newMethod === 1) {
+
+      const ordersList = await pullOutOrders(id);
+      for (let order of ordersList) {
+        await calculateApartments(order.id).then((data) => {
+          if (Array.isArray(data)) {
+            data.forEach((item) => {
+              if (item.exempt === 0) {
+                var dataModel = new DataModel();
+                dataModel.personalAccount1 = buildPersonalAccount(order.isDuplicate, order.prolongedContractNumber, item.letter, item.number);
+                dataModel.personalAccount2 = buildPersonalAccount(order.isDuplicate, order.prolongedContractNumber, item.letter, item.number);
+                dataModel.fullAddress = `${order.cityName},${order.streetName},${order.houseNumber},${item.number}${decodeApartmentLetter(item.letter)}`.toUpperCase();
+                dataModel.monthAndYear = (order.dateMonth < 10 ? '0' : '') + order.dateMonth.toString() + (order.dateYear - 2000).toString();
+                let amount = item.payment + (item.debt > 0 ? item.debt : 0);
+                dataModel.amount = amount.toFixed(2).replace('.', ',');
+                printModelForRegister.data.push(`${dataModel.personalAccount1};${dataModel.personalAccount2};${dataModel.fullAddress};${dataModel.monthAndYear};${dataModel.amount}\n`);
+              }
+            });
+          }
+        })
+
+      }
+
+      let fileName = `${firm.newCategory}_${moment(new Date()).format('DDMMYY')}.txt`;
+
+      self.res.setHeader('Content-disposition', 'attachment; filename="' + fileName + '"');
+      self.res.setHeader('Content-type', 'application/txt');
+
+      var absPath = path.join(__dirname, '../../public/downloads/' + fileName);
+      let relPath = path.join('./public/downloads', fileName);
+
+      var content = printModelForRegister.data.join('');
+      var buffer = Buffer.from(content, 'utf8');
+      var content = iconvlite.encode(buffer, 'cp1251');
+
+      fs.writeFile(absPath, content, (err) => {
+        if (err) {
+          console.log(err);
+        }
+        self.res.download(absPath, (err) => {
+          if (err) {
+            console.log(err);
+          }
+          fs.unlink(relPath, (err) => {
+            if (err) {
+              console.log(err);
+            }
+            console.log('FILE [' + fileName + '] REMOVED!');
+          });
+        });
+      });
+
+    } else {
+      this.upload(id);
+    }
+  } catch (error) {
+    console.log(error.message);
+  };
+
+}
+
+RegistersLogic.prototype.build = async function () {
+  var self = this;
+
+  var printModelForRegister = new PrintModelForRegister();
+
+  // try {
+    const ordersList = await pullAllOrders();
+    for (let order of ordersList) {
+      await calculateApartments(order.id).then((data) => {
+        if (Array.isArray(data)) {
+          data.forEach((item) => {
+            if (item.exempt === 0) {
+              var dataModel = new DataModel();
+              dataModel.personalAccount1 = buildPersonalAccount(order.isDuplicate, order.prolongedContractNumber, item.letter, item.number);
+              dataModel.personalAccount2 = buildPersonalAccount(order.isDuplicate, order.prolongedContractNumber, item.letter, item.number);
+              dataModel.fullAddress = `${order.cityName},${order.streetName},${order.houseNumber},${item.number}${decodeApartmentLetter(item.letter)}`.toUpperCase();
+              dataModel.monthAndYear = (order.dateMonth < 10 ? '0' : '') + order.dateMonth.toString() + (order.dateYear - 2000).toString();
+              let amount = item.payment + (item.debt > 0 ? item.debt : 0);
+              dataModel.amount = amount.toFixed(2).replace('.', ',');
+              printModelForRegister.data.push(`${dataModel.personalAccount1};${dataModel.personalAccount2};${dataModel.fullAddress};${dataModel.monthAndYear};${dataModel.amount}\n`);
+            }
+          });
+        }
+      })
+
+    }
+
+    let fileName = `${firm.newCategory}_${moment(new Date()).format('DDMMYY')}.txt`;
+
+    self.res.setHeader('Content-disposition', 'attachment; filename="' + fileName + '"');
+    self.res.setHeader('Content-type', 'application/txt');
+
+    var absPath = path.join(__dirname, '../../public/downloads/' + fileName);
+    let relPath = path.join('./public/downloads', fileName);
+
+    var content = printModelForRegister.data.join('');
+    var buffer = Buffer.from(content, 'utf8');
+    var content = iconvlite.encode(buffer, 'cp1251');
+
+    fs.writeFile(absPath, content, (err) => {
+      if (err) {
+        console.log(err);
+      }
+      self.res.download(absPath, (err) => {
+        if (err) {
+          console.log(err);
+        }
+        fs.unlink(relPath, (err) => {
+          if (err) {
+            console.log(err);
+          }
+          console.log('FILE [' + fileName + '] REMOVED!');
+        });
+      });
+    });
+  // } catch (error) {
+  //   console.log(error.message);
+  // };
 
 }
 
