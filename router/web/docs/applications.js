@@ -571,8 +571,8 @@ var downloadDoneReport = function (req, res) {
     ' a.phone, ' +
     ' f.name AS performerName,' +
     ' a.close_date AS closeDate, ' +
-    ' a.work_with_mobile_app AS workWithMobileApp,' +
-    ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc' +
+    ' a.work_with_mobile_app AS workWithMobileApp' +
+    // ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc' +
     ' FROM applications a' +
     ' LEFT JOIN cities b ON b.city_id = a.city_id' +
     ' LEFT JOIN streets c ON c.street_id = a.street_id' +
@@ -642,12 +642,11 @@ var downloadDoneReport = function (req, res) {
                   doc.moveDown();
                   dataset.forEach(function (item) {
                     var list = [];
-
                     rows.forEach(function (fault) {
                       if (+item.documentId === +fault.documentId) {
                         //* Crash, if fault.decision include \n
                         //* fault.decisiion = "Example\n"
-                        list.push(fault.problemDescription.trim() + ' (' + fault.decision.trim() + ')');
+                        list.push(fault.problemDescription.replace(/\n/g, '').trim() + ' (' + fault.decision.replace(/\n/g, '').trim() + ')');
                       }
                     });
 
