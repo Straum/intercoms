@@ -630,7 +630,8 @@ var downloadDoneReport = function (req, res) {
                 connection.release();
 
                 if (err) {
-                  res.status(500).send(db.showDatabaseError(500, err));
+                  // res.status(500).send(db.showDatabaseError(500, err));
+                  throw err;
                 }
                 else {
 
@@ -643,9 +644,10 @@ var downloadDoneReport = function (req, res) {
                     var list = [];
 
                     rows.forEach(function (fault) {
-                      // FIXME: filter!!!!!
                       if (+item.documentId === +fault.documentId) {
-                        list.push(fault.problemDescription + ' (' + fault.decision + ')');
+                        //* Crash, if fault.decision include \n
+                        //* fault.decisiion = "Example\n"
+                        list.push(fault.problemDescription.trim() + ' (' + fault.decision.trim() + ')');
                       }
                     });
 
@@ -1116,7 +1118,7 @@ var findCompletedRecords = function (req, res) {
     ' a.work_with_mobile_app AS workWithMobileApp,' +
     ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc,' +
     ' f.contract_number AS contractNumber, f.m_contract_number AS prolongedContractNumber,' +
-    ' f.maintenance_contract AS maintenanceContract' +
+    ' f.maintenance_contract AS maintenanceContract, f.card_id AS cardId' +
     ' FROM applications a' +
     ' LEFT JOIN cities b ON b.city_id = a.city_id' +
     ' LEFT JOIN streets c ON c.street_id = a.street_id' +
@@ -1993,7 +1995,7 @@ module.exports = function () {
       ' a.close_date AS closeDate, ' +
       ' a.work_with_mobile_app AS workWithMobileApp,' +
       ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc,' +
-      ' f.contract_number AS contractNumber, f.m_contract_number AS prolongedContractNumber,' +
+      ' f.contract_number AS contractNumber, f.m_contract_number AS prolongedContractNumber, f.card_id AS cardId,' +
       ' f.maintenance_contract AS maintenanceContract' +
       ' FROM applications a' +
       ' LEFT JOIN cities b ON a.city_id = b.city_id' +

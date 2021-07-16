@@ -216,5 +216,5 @@ wss.on('connection', (ws) => {
 });
 
 server.listen(process.env.PORT || 5005, () => {
-  console.log(`Server started on port ${server.address().port} :)`);
+console.log(`Server started on port ${server.address().port} :)`);
 });
