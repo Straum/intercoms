@@ -240,34 +240,32 @@ module.exports.filterPorches = function (params, callback) {
   });
 };
 
-module.exports.filterEquipments = function (params, callback) {
-
-  let queryText =
-    `SELECT a.equipment_id AS id, a.name AS value, guarantee_period AS guaranteePeriod
+module.exports.filterEquipments = (params, callback) => {
+  let queryText = `SELECT
+    a.equipment_id AS id, a.name AS value, guarantee_period AS guaranteePeriod
     FROM equipments a
-    WHERE (a.equipment_id > 0)`;
+    WHERE
+    (a.equipment_id > 0)`;
 
   if (params.suggestion.length > 0) {
     queryText += ` AND a.name LIKE '${params.suggestion.trim()}%'`;
   }
 
+  queryText += ` AND a.type_of_equipment_id = ${params.category}`;
   queryText += ` ORDER BY a.name ASC LIMIT ${params.rowsCount}`;
 
-
-  db.get().getConnection(function (err, connection) {
+  db.get().getConnection((err, connection) => {
     connection.query(
-      queryText, [],
-      function (err, rows) {
+      queryText, [], (errors, rows) => {
         connection.release();
 
-        if (err) {
-          throw err;
+        if (errors) {
+          throw errors;
         }
-
         if (typeof callback === 'function') {
           callback(null, rows);
         }
-      }
+      },
     );
   });
 };

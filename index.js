@@ -1,28 +1,27 @@
-var express = require('express');
-var path = require('path');
-var morgan = require('morgan');
-// var rfs = require('rotating-file-stream');
-var http = require('http');
+const express = require('express');
+const path = require('path');
+const morgan = require('morgan');
+const http = require('http');
+const flash = require('express-flash');
+const cookieParser = require('cookie-parser');
+const session = require('express-session');
+const expressValidator = require('express-validator');
+const bodyParser = require('body-parser');
+const methodOverride = require('method-override');
 
-var winston = require('./lib/winston');
+const winston = require('./lib/winston');
+const logger = require('./lib/winston');
+const db = require('./lib/db');
+
 const checkOrders = require('./lib/check_orders');
 const ordersController = require('./router/web/docs/orders');
 
-// const WebSocket = require('ws');
-
-// var accessLogStream = rfs.createStream('intercoms-server.log', {
-//   interval: '1d', // rotate daily
-//   path: path.join(__dirname, 'logs')
-// })
-
-var db = require('./lib/db');
-
 db.connect();
 
-var app = express();
+const app = express();
 
 app.use(morgan('combined', {
-  stream: winston.stream
+  stream: winston.stream,
 }));
 app.use(express.static('public'));
 app.use(express.static('static'));
@@ -30,39 +29,31 @@ app.use(express.static('static'));
 app.set('views', path.resolve(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-app.use(function (err, req, res, next) {
-  logger.error(`${req.method} - ${err.message}  - ${req.originalUrl} - ${req.ip}`);
-  next(err)
-})
+app.use((err, req, res, next) => {
+  logger.error(`${req.method} - ${err.message} - ${req.originalUrl} - ${req.ip}`);
+  next(err);
+});
 
 // https://stackoverflow.com/questions/19917401/error-request-entity-too-large
-var bodyParser = require('body-parser');
 app.use(bodyParser.json({
-  limit: '50mb'
+  limit: '50mb',
 }));
 
 app.use(bodyParser.urlencoded({
   extended: true,
   limit: '50mb',
-  parameterLimit: 50000
+  parameterLimit: 50000,
 }));
 
-var expressValidator = require('express-validator');
 app.use(expressValidator());
 
-var methodOverride = require('method-override');
 app.use(methodOverride(function (req, res) {
-  'use strict';
   if (req.body && typeof req.body === 'object' && '_method' in req.body) {
-    var method = req.body._method;
+    let method = req.body._method;
     delete req.body._method;
     return method;
   }
 }));
-
-var flash = require('express-flash');
-var cookieParser = require('cookie-parser');
-var session = require('express-session');
 
 app.use(cookieParser('keyboard cat'));
 app.use(session({
@@ -70,8 +61,8 @@ app.use(session({
   resave: false,
   saveUninitialized: true,
   cookie: {
-    maxAge: 60000 * 60 * 24 * 30
-  } // 30 days
+    maxAge: 60000 * 60 * 24 * 30,
+  }, // 30 days
 }));
 app.use(flash());
 
@@ -79,20 +70,15 @@ app.use('/', require('./router/web/index')());
 app.use('/admin', require('./router/admin/index')());
 app.use('/home', require('./router/web/index')());
 
-let server = http.createServer(app)
-let webSocketServer = require('./lib/wss');
-const logger = require('./lib/winston');
+const server = http.createServer(app);
+const webSocketServer = require('./lib/wss');
 
 webSocketServer.connect({
-  server
+  server,
 });
 const wss = webSocketServer.get();
 
 wss.on('connection', (ws) => {
-
-  // console.log('Remote address: ' + ws._socket.remoteAddress);
-  // console.log('Remote port: ' + ws._socket.remotePort);
-
   ws.on('message', (message) => {
     logger.info(`Получено сообщение: ${message}`);
 
@@ -111,25 +97,21 @@ wss.on('connection', (ws) => {
     }
 
     if ('action' in obj) {
-
-      const remoteAddress = ws._socket.remoteAddress;
-      const remotePort = ws._socket.remotePort;
+      const { remoteAddress } = ws._socket;
+      const { remotePort } = ws._socket;
 
       // 1
       if (obj.action.localeCompare('generateOrderSetup') === 0) {
-        const {
-          id
-        } = obj.data;
+        const { id } = obj.data;
 
         ordersController.buildReportForSetup(id, true, (filename) => {
-
           if (filename) {
             wss.clients.forEach((ws) => {
               if ((ws._socket.remoteAddress == remoteAddress) && (ws._socket.remotePort != remotePort)) {
                 ws.send(JSON.stringify({
                   action: 'openFile',
-                  filename: filename
-                }))
+                  filename: filename,
+                }));
               }
             })
           }
@@ -143,7 +125,6 @@ wss.on('connection', (ws) => {
         } = obj.data;
 
         ordersController.buildReportForService(id, true, (filename) => {
-
           if (filename) {
             wss.clients.forEach((ws) => {
               if ((ws._socket.remoteAddress == remoteAddress) && (ws._socket.remotePort != remotePort)) {
@@ -160,7 +141,7 @@ wss.on('connection', (ws) => {
       // 3
       if (obj.action.localeCompare('openOrderSetup') === 0) {
         const {
-          contractNumber
+          contractNumber,
         } = obj.data;
 
         const filename = checkOrders.existsOrder(contractNumber, 1, true);
@@ -173,23 +154,23 @@ wss.on('connection', (ws) => {
               console.log('22');
               ws.send(JSON.stringify({
                 action: 'openFile',
-                filename: filename
-              }))
+                filename: filename,
+              }));
             }
-          })
+          });
         } else {
           console.log('33');
           ws.send(JSON.stringify({
             action: 'errorOpenFile',
-            index: 1
-          }))
+            index: 1,
+          }));
         }
       }
 
       // 4
       if (obj.action.localeCompare('openOrderService') === 0) {
         const {
-          contractNumber
+          contractNumber,
         } = obj.data;
 
         const filename = checkOrders.existsOrder(contractNumber, 2, true);
@@ -199,18 +180,17 @@ wss.on('connection', (ws) => {
             if ((ws._socket.remoteAddress == remoteAddress) && (ws._socket.remotePort != remotePort)) {
               ws.send(JSON.stringify({
                 action: 'openFile',
-                filename: filename
-              }))
+                filename,
+              }));
             }
-          })
+          });
         } else {
           ws.send(JSON.stringify({
             action: 'errorOpenFile',
-            index: 2
-          }))
+            index: 2,
+          }));
         }
       }
-
     }
   });
 });

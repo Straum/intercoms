@@ -20,6 +20,10 @@
   <% include ../common/full_menu.ejs %>
 
   <div class="container-fluid">
+    <div class="progress" id="progress" hidden>
+      <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
+      </div>
+    </div>
     <div class="row">
       <div class="col-xs-9">
         <ol class="breadcrumb">
@@ -220,7 +224,7 @@
       <% } %>
       <div class="row">
         <div class="col-xs-12">
-          <div class="alert alert-info">Записей: <strong><%= countRecords %></strong>, из них c моб. приложением: <strong><%= countRecordsWithMobile %></strong></div>
+          <div class="alert alert-info">Записей: <strong><%= countRecords %></strong>, из них c моб. приложением: <strong><%= countRecordsWithMobile %>&nbsp;(<%= ((countRecordsWithMobile/countRecords) * 100).toFixed(2) %>%)</strong></div>
         </div>
       </div>
   </div>

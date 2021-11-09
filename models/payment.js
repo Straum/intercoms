@@ -1,13 +1,12 @@
-module.exports.PaymentModel = function () {
-  'use strict';
+module.exports.PaymentModel = function() {
   this.id = 0;
   this.createDate = null;
   this.apartment = {
     id: 0,
     number: '',
     letter: '',
-    debt: 0.00
-  }
+    debt: 0.00,
+  };
   this.amount = 0.00;
   this.transaction = '';
   this.payMonth = 0;
@@ -33,9 +32,9 @@ module.exports.PaymentModel = function () {
       name: '',
       phone: '',
       vkAddress: '',
-      office: ''
-    }
-  }
+      office: '',
+    },
+  };
   this.fullAddress = '';
   this.barcode = '';
 };

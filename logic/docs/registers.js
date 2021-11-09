@@ -1,45 +1,42 @@
-var moment = require('moment');
+const moment = require('moment');
 const path = require('path');
-var fs = require('fs');
-var db = require('../../lib/db');
-var iconvlite = require('iconv-lite');
+const fs = require('fs');
+const iconvlite = require('iconv-lite');
+const db = require('../../lib/db');
 
-const {
-  relativeTimeThreshold
-} = require('moment');
-const {
-  query
-} = require('express-validator/check');
-const payments = require('../../router/web/docs/payments');
-var RegisterModel = require('../../models/register').RegisterModel;
-var PaymentModelForRegister = require('../../models/register').PaymentModelForRegister;
-var ContractModelForRegister = require('../../models/register').ContractModelForRegister;
-var PrintModelForRegister = require('../../models/register').PrintModelForRegister;
-var DataModel = require('../../models/register').DataModel;
-var buildPersonalAccount = require('../../lib/utils').buildPersonalAccount;
-var decodeApartmentLetter = require('../../lib/utils').decodeApartmentLetter;
-var firm = require('../../lib/firm_bank_details').firm;
+// const { relativeTimeThreshold } = require('moment');
+// const { query } = require('express-validator/check');
+// const payments = require('../../router/web/docs/payments');
+const { RegisterModel } = require('../../models/register');
+const { PaymentModelForRegister } = require('../../models/register');
+const { ContractModelForRegister } = require('../../models/register');
+const { PrintModelForRegister } = require('../../models/register');
+const { DataModel } = require('../../models/register');
+const { buildPersonalAccount } = require('../../lib/utils');
+const { decodeApartmentLetter } = require('../../lib/utils');
+const { firm } = require('../../lib/firm_bank_details');
 
 function getPeriodFromRegister(id) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
+  return new Promise((resolve, reject) => {
+    db.get().getConnection((err, connection) => {
       connection.query(
         'SELECT a.start_date AS startFrom, a.end_date AS endTo, a.new_method AS newMethod FROM registers a WHERE a.register_id = ?', [id],
-        function (err, rows) {
+        (error, rows) => {
           connection.release();
-          if (err) {
+          if (error) {
             reject();
           } else {
             resolve(rows[0]);
           }
-        });
+        },
+      );
     });
   });
 }
 
 function getDataFromCards(id) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
+  return new Promise((resolve, reject) => {
+    db.get().getConnection((err, connection) => {
       connection.query(
         `SELECT f.number AS apartmentNumber, f.letter AS apartmentLetter,
         b.m_contract_number AS prolongedContractNumber, b.m_duplicate AS isDuplicate,
@@ -58,21 +55,22 @@ function getDataFromCards(id) {
         LEFT JOIN street_types g on g.street_type_id = d.street_type_id
         WHERE (a.register_id = ?)
         ORDER BY b.card_id, f.number, f.letter`, [id, 0],
-        function (err, rows) {
+        (error, rows) => {
           connection.release();
-          if (err) {
+          if (error) {
             reject();
           } else {
             resolve(rows);
           }
-        });
+        },
+      );
     });
   });
 }
 
 function getDataFromPayments(id) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
+  return new Promise((resolve, reject) => {
+    db.get().getConnection((err, connection) => {
       connection.query(
         `SELECT c.number AS apartmentNumber, c.letter AS apartmentLetter,
         d.m_contract_number AS prolongedContractNumber, d.m_duplicate AS isDuplicate, b.amount,
@@ -86,21 +84,22 @@ function getDataFromPayments(id) {
         LEFT JOIN streets f ON f.street_id = d.street_id
         LEFT JOIN houses g ON g.house_id = d.house_id
         WHERE (a.register_id = ?)`, [id],
-        function (err, rows) {
+        (error, rows) => {
           connection.release();
-          if (err) {
+          if (error) {
             reject();
           } else {
             resolve(rows);
           }
-        });
+        },
+      );
     });
   });
 }
 
 function pullOutOrders(id) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
+  return new Promise((resolve, reject) => {
+    db.get().getConnection((err, connection) => {
       connection.query(
         `SELECT a.card_id AS id, b.m_duplicate AS isDuplicate,
         b.m_contract_number AS prolongedContractNumber,
@@ -113,57 +112,64 @@ function pullOutOrders(id) {
         LEFT JOIN houses e ON e.house_id = b.house_id
         LEFT JOIN street_types g on g.street_type_id = d.street_type_id
         WHERE a.register_id = ?`, [id],
-        function (err, rows) {
+        (error, rows) => {
           connection.release();
-          if (err) {
+          if (error) {
             reject();
           } else {
             resolve(rows);
           }
-        });
+        },
+      );
     });
   });
 }
 
 function pullAllOrders() {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
+  return new Promise((resolve, reject) => {
+    db.get().getConnection((err, connection) => {
       connection.query(
         `SELECT b.card_id AS id, b.m_duplicate AS isDuplicate,
+        b.contract_number AS contractNumber,
         b.m_contract_number AS prolongedContractNumber,
         c.name AS cityName, d.name AS streetName, e.number AS houseNumber,
-        MONTH(b.start_service) AS dateMonth, YEAR(b.start_service) AS dateYear
+        MONTH(b.start_service) AS dateMonth, YEAR(b.start_service) AS dateYear,
+        b.rank
         FROM cards b
         LEFT JOIN cities c ON c.city_id = b.city_id
         LEFT JOIN streets d ON d.street_id = b.street_id
         LEFT JOIN houses e ON e.house_id = b.house_id
-        WHERE (b.maintenance_contract >= 1)`, [],
-        function (err, rows) {
+        WHERE (b.maintenance_contract >= 1)
+        ORDER BY b.rank`, [],
+        (error, rows) => {
           connection.release();
-          if (err) {
+          if (error) {
             reject();
           } else {
             resolve(rows);
           }
-        });
+        },
+      );
     });
   });
 }
 
 function calculateApartments(id) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
+  return new Promise((resolve, reject) => {
+    db.get().getConnection((err, connection) => {
       connection.query(
         'CALL find_debt_under_order(?)', [id],
-        function (err, rows) {
+        (error, rows) => {
           connection.release();
-          if (err) {
+          if (error) {
+            // eslint-disable-next-line no-console
             console.log(err.message);
             reject();
           } else {
             resolve(rows[0]);
           }
-        });
+        },
+      );
     });
   });
 }
@@ -174,7 +180,7 @@ function RegistersLogic(req, res) {
 }
 
 RegistersLogic.prototype.addRegister = function () {
-  let registerModel = new RegisterModel();
+  const registerModel = new RegisterModel();
   registerModel.createDate = new Date();
   registerModel.startFrom = new Date(); // moment().startOf('month').toDate();
 
@@ -186,7 +192,7 @@ RegistersLogic.prototype.addRegister = function () {
       registerModel.endTo = moment(registerModel.startFrom).add(1, 'days');
       break;
     default:
-      registerModel.endTo = new Date(); //moment().endOf('month').toDate();
+      registerModel.endTo = new Date();
   }
 
   registerModel.newMethod = true;
@@ -194,10 +200,10 @@ RegistersLogic.prototype.addRegister = function () {
 };
 
 RegistersLogic.prototype.getRegister = async function () {
-  var self = this;
-  let id = this.req.params.id;
+  const self = this;
+  const id = this.req.params.id;
 
-  let registerModel = new RegisterModel();
+  const registerModel = new RegisterModel();
   await self.getRegisterBody(id)
     .then(function (result) {
       if (typeof result === 'object') {
@@ -211,7 +217,7 @@ RegistersLogic.prototype.getRegister = async function () {
     })
     .catch(function (error) {
       console.log(error);
-    })
+    });
 
   await self.getOrdersTable(id)
     .then(function (result) {
@@ -230,7 +236,7 @@ RegistersLogic.prototype.getRegister = async function () {
     })
     .catch(function (error) {
       console.log(error);
-    })
+    });
 
   await self.getPaymentsTable(id)
     .then(function (result) {
@@ -249,10 +255,9 @@ RegistersLogic.prototype.getRegister = async function () {
     })
     .catch(function (error) {
       console.log(error);
-    })
+    });
 
   return registerModel;
-
 };
 
 RegistersLogic.prototype.getRegisterBody = function (id) {
@@ -496,9 +501,7 @@ RegistersLogic.prototype.insertRegisterData = function (data) {
 
 RegistersLogic.prototype.insertPaymentsForRegister = function (data) {
   return new Promise(function (resolve, reject) {
-
     if (data.payments.length > 0) {
-
       var query = [];
       data.payments.forEach(function (item) {
         query.push(
@@ -525,7 +528,7 @@ RegistersLogic.prototype.insertPaymentsForRegister = function (data) {
 }
 
 RegistersLogic.prototype.validate = function () {
-  var registerModel = new RegisterModel();
+  const registerModel = new RegisterModel();
   registerModel.id = parseInt(this.req.body.id);
   registerModel.createDate = moment(this.req.body.createDate, 'DD.MM.YYYY').format('YYYY-MM-DD');
   registerModel.startFrom = ((this.req.body.startFrom != null) && (this.req.body.startFrom.trim().length > 0)) ? moment(this.req.body.startFrom, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
@@ -747,64 +750,67 @@ RegistersLogic.prototype.upload2 = async function (id) {
 }
 
 RegistersLogic.prototype.build = async function () {
-  var self = this;
+  const self = this;
 
-  var printModelForRegister = new PrintModelForRegister();
+  const printModelForRegister = new PrintModelForRegister();
 
-  // try {
-    const ordersList = await pullAllOrders();
-    for (let order of ordersList) {
-      await calculateApartments(order.id).then((data) => {
-        if (Array.isArray(data)) {
-          data.forEach((item) => {
-            if (item.exempt === 0) {
-              var dataModel = new DataModel();
+  const ordersList = await pullAllOrders();
+  for (let order of ordersList) {
+    await calculateApartments(order.id).then((data) => {
+      if (Array.isArray(data)) {
+        data.forEach((item) => {
+          if (item.exempt === 0) {
+            var dataModel = new DataModel();
+            if (order.rank === 0) {
               dataModel.personalAccount1 = buildPersonalAccount(order.isDuplicate, order.prolongedContractNumber, item.letter, item.number);
               dataModel.personalAccount2 = buildPersonalAccount(order.isDuplicate, order.prolongedContractNumber, item.letter, item.number);
-              dataModel.fullAddress = `${order.cityName},${order.streetName},${order.houseNumber},${item.number}${decodeApartmentLetter(item.letter)}`.toUpperCase();
-              dataModel.monthAndYear = (order.dateMonth < 10 ? '0' : '') + order.dateMonth.toString() + (order.dateYear - 2000).toString();
-              let amount = item.payment + (item.debt > 0 ? item.debt : 0);
-              dataModel.amount = amount.toFixed(2).replace('.', ',');
-              printModelForRegister.data.push(`${dataModel.personalAccount1};${dataModel.personalAccount2};${dataModel.fullAddress};${dataModel.monthAndYear};${dataModel.amount}\n`);
+            } else {
+              dataModel.personalAccount1 = buildPersonalAccount(5, `${order.contractNumber}`, item.letter, item.number);
+              dataModel.personalAccount2 = buildPersonalAccount(5, `${order.contractNumber}`, item.letter, item.number);
             }
-          });
-        }
-      })
-
-    }
-
-    let fileName = `${firm.newCategory}_${moment(new Date()).format('DDMMYY')}.txt`;
-
-    self.res.setHeader('Content-disposition', 'attachment; filename="' + fileName + '"');
-    self.res.setHeader('Content-type', 'application/txt');
-
-    var absPath = path.join(__dirname, '../../public/downloads/' + fileName);
-    let relPath = path.join('./public/downloads', fileName);
-
-    var content = printModelForRegister.data.join('');
-    var buffer = Buffer.from(content, 'utf8');
-    var content = iconvlite.encode(buffer, 'cp1251');
-
-    fs.writeFile(absPath, content, (err) => {
-      if (err) {
-        console.log(err);
-      }
-      self.res.download(absPath, (err) => {
-        if (err) {
-          console.log(err);
-        }
-        fs.unlink(relPath, (err) => {
-          if (err) {
-            console.log(err);
+            dataModel.fullAddress = `${order.cityName},${order.streetName},${order.houseNumber},${item.number}${decodeApartmentLetter(item.letter)}`.toUpperCase();
+            dataModel.monthAndYear = (order.dateMonth < 10 ? '0' : '') + order.dateMonth.toString() + (order.dateYear - 2000).toString();
+            let amount = item.payment + (item.debt > 0 ? item.debt : 0);
+            dataModel.amount = amount.toFixed(2).replace('.', ',');
+            printModelForRegister.data.push(`${dataModel.personalAccount1};${dataModel.personalAccount2};${dataModel.fullAddress};${dataModel.monthAndYear};${dataModel.amount}\n`);
           }
-          console.log('FILE [' + fileName + '] REMOVED!');
         });
+      }
+    })
+  }
+
+  const fileName = `${firm.newCategory}_${moment(new Date()).format('DDMMYY')}.txt`;
+
+  self.res.setHeader('Content-disposition', `attachment; filename="${fileName}"`);
+  self.res.setHeader('Content-type', 'application/txt');
+
+  const absPath = path.join(__dirname, `../../public/downloads/${fileName}`);
+  const relPath = path.join('./public/downloads', fileName);
+
+  let content = printModelForRegister.data.join('');
+  const buffer = Buffer.from(content, 'utf8');
+  content = iconvlite.encode(buffer, 'cp1251');
+
+  fs.writeFile(absPath, content, (err) => {
+    if (err) {
+      // eslint-disable-next-line no-console
+      console.log(err);
+    }
+    self.res.download(absPath, (error) => {
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.log(error);
+      }
+      fs.unlink(relPath, (err1) => {
+        if (err1) {
+          // eslint-disable-next-line no-console
+          console.log(err1);
+        }
+        // eslint-disable-next-line no-console
+        console.log(`FILE [${fileName}] REMOVED!`);
       });
     });
-  // } catch (error) {
-  //   console.log(error.message);
-  // };
-
-}
+  });
+};
 
 module.exports.RegistersLogic = RegistersLogic;

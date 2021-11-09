@@ -447,6 +447,7 @@ $("#orderInformation").click(function (e) {
         $('#linkToOrder').removeClass('visible');
         $('#linkToOrder').addClass('invisible');
       }
+      $('#cardId').val('');
       if (document.getElementById("brick")) {
         if ((houseId > 0) && (porch > 0)) {
           document.getElementById("brick").style.visibility = "visible";

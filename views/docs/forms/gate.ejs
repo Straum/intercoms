@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <meta http-equiv="Cache-Control" content="no-cache">
+  <!-- <link rel="icon" href="../../../../favicon.ico"> -->
+  <title>Home page - <%= title %>
+  </title>
+
+  <% include ../../common/bootstrap_css.ejs %>
+    <link href="/theme.css" rel="stylesheet">
+    <link href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css"
+      rel="stylesheet">
+    <link href="/css/orders.css" rel="stylesheet">
+</head>
+
+<body>
+
+  <% include ../../common/full_menu.ejs %>
+
+    <div class="container">
+
+      <div class="row" id="firstRow">
+      </div>
+
+      <div class="form-header">
+        <h3>
+          <%= title %>
+        </h3>
+        <% if (Object.keys(errors).length> 0) { %>
+          <h3><span class="text-danger">Выявлены ошибки:</span></h3>
+          <ul>
+            <% for (var key in errors) { %>
+              <li><span class="text-danger">
+                  <%= errors[key].msg %>
+                </span></li>
+              <% }; %>
+          </ul>
+          <% } %>
+      </div>
+
+      <div class="card">
+
+        <div class="row">
+          <div class="col-xs-12">
+            <ul class="nav nav-pills">
+              <li class="active"><a data-toggle="tab" href="#core">Основное</a></li>
+              <li><a data-toggle="tab" href="#maintenance">Техобслуживание</a></li>
+              <li><a data-toggle="tab" href="#additionally">Дополнительно</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <form method="post" action="/gates/save" data-document-id="<%= data.id %>" data-host-ip="<%= hostIP %>" data-host-port="<%= hostPort %>">
+        <!-- <form method="post" action="/gates/save" novalidate> -->
+          <div class="well">
+            <div class="card-body">
+              <div class="tab-content">
+
+                <div role="tabpanel" class="tab-pane in active" id="core">
+                  <input type="text" hidden id="hostIP" value="<%= hostIP %>">
+                  <input type="text" hidden id="hostPort" value="<%= hostPort %>">
+                  <input type="text" hidden id="id" name="id" value="<%= data.id %>">
+                  <input type="text" hidden id="blackbox" name="blackbox" value="">
+                  <div class="row">
+                    <div class="col-md-2">
+                      <div class="form-group">
+                        <label for="contractNumber">Номер</label>
+                        <input type="text" class="form-control" id="contractNumber" name="contractNumber"
+                          autofocus="autofocus" value="<%= data.contractNumber > 0 ? data.contractNumber : '' %>">
+                      </div>
+                    </div>
+                    <div class="col-md-2 <%= errors.createDate ? 'has-error' : '' %>">
+                      <div class="form-group">
+                        <label for="createDate" class="control-label">Создано</label>
+                        <div class="input-group date only-date" id="dtCreateDate">
+                          <input type="text" class="form-control" name="created" id="created"
+                            value="<%= data.created ? moment(data.created).format( 'DD.MM.YYYY' ) : moment(new Date()).format( 'DD.MM.YYYY' )  %>"
+                            readonly>
+                          <span class="input-group-addon">
+                            <span class="glyphicon glyphicon-calendar"></span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-9 <%= errors.address ? 'has-error' : '' %>">
+                      <div class="form-group">
+                        <label class="control-label" for="fullAddress">Адрес</label>
+                        <div class="input-group">
+                          <span class="input-group-btn">
+                            <button class="btn btn-default" type="button" id="clearFullAddress">
+                              <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                            </button>
+                          </span>
+                          <input
+                            type="text"
+                            data-area-id="<%=data.address.area.id %>"
+                            data-city-id="<%= data.address.city.id %>"
+                            data-street-id="<%= data.address.street.id %>"
+                            data-house-id="<%= data.address.house.id %>"
+                            data-area-name="<%=data.address.area.name %>"
+                            data-city-name="<%= data.address.city.name %>"
+                            data-street-name="<%= data.address.street.name %>"
+                            data-house-number="<%= data.address.house.number %>"
+                            data-no-streets="<%= data.address.noStreets %>"
+                            data-no-houses="<%= data.address.noHouses %>"
+                            class="form-control select-all"
+                            id="fullAddress"
+                            name="fullAddress"
+                            placeholder="Город, улица, дом"
+                            value="<%= data.address.full %>"
+                            autocomplete="off"
+                          >
+                          <span class="input-group-btn">
+                            <button class="btn btn-default" type="button" id="editAddress">
+                              <span class="glyphicon glyphicon-share" aria-hidden="true"></span>
+                            </button>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-2 <%= errors.numeration ? 'has-error' : '' %>">
+                      <div class="form-group">
+                        <label class="control-label" for="numeration">Нумерация</label>
+                        <input type="text" class="form-control"
+                        id="numeration"
+                        name="numeration"
+                        value="<%= data.numeration ? data.numeration : '' %>"
+                        readonly>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div class="row">
+                      <div class="col-md-9 <%= errors.performer ? 'has-error' : '' %>">
+                        <label class="control-label" for="clientName">Старший</label>
+                        <div class="input-group">
+                          <span class="input-group-btn">
+                            <button class="btn btn-default" type="button" id="clearClient">
+                              <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                            </button>
+                          </span>
+                          <input
+                            type="text"
+                            data-client-id="<%= data.client.id %>"
+                            class="form-control select-all"
+                            id="clientName"
+                            name="clientName"
+                            placeholder="ФИО клиента"
+                            value="<%= data.client.name %>"
+                            autocomplete="off"
+                          >
+                          <span class="input-group-btn">
+                            <button class="btn btn-default edit-client" type="button" id="editClient">
+                              <span class="glyphicon glyphicon-share" aria-hidden="true"></span>
+                            </button>
+                          </span>
+                        </div>
+                      </div>
+                      <div class="col-md-3">
+                        <div class="form-group">
+                          <label for="clientPhones">Телефоны</label>
+                          <input type="text" class="form-control" id="clientPhones" name="clientPhones"
+                            value="<%= data.client.phones %>" readonly>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div role="tabpanel" class="tab-pane" id="maintenance">
+                  <div class="row">
+                    <div class="col-md-2">
+                      <div class="form-group">
+                        <label for="startService" class="control-label">c</label>
+                        <div class="input-group date only-date" id="dtStartService">
+                          <input type="text" class="form-control" name="startService" id="startService"
+                            value="<%= data.startService != null ? moment(data.startService).format( 'DD.MM.YYYY' ) : '' %>">
+                          <span class="input-group-addon">
+                            <span class="glyphicon glyphicon-calendar"></span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-2">
+                      <div class="form-group">
+                        <label for="endService" class="control-label">по</label>
+                        <div class="input-group date only-date" id="dtEndService">
+                          <input type="text" class="form-control" name="endService" id="endService"
+                            value="<%= data.endService != null ? moment(data.endService).format( 'DD.MM.YYYY' ) : '' %>"
+                            readonly>
+                          <span class="input-group-addon">
+                            <span class="glyphicon glyphicon-calendar"></span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-2">
+                      <div class="form-group">
+                        <label for="maintenanceContract">Состояние</label>
+                        <select class="form-control" id="maintenanceContract" name="maintenanceContract">
+                          <% utils.maintenanceContract.forEach(function(element, index) { %>
+                            <option value="<%= index %>" <%=data.maintenanceContract==index ? ' selected' : '' %>>
+                              <%= element %>
+                            </option>
+                            <% }); %>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-1 col-md-offset-4">
+                      <div class="form-group">
+                        <label for="startApartment">Кв-ра с</label>
+                        <input type="text" class="form-control" id="apartmentFrom" name="apartmentFrom"
+                          value="<%= data.apartmentFrom > 0 ? data.apartmentFrom : '' %>">
+                      </div>
+                    </div>
+                    <div class="col-md-1">
+                      <div class="form-group">
+                        <label for="endApartment">Кв-ра по</label>
+                        <input type="text" class="form-control" id="apartmentTo" name="apartmentTo"
+                          value="<%= data.apartmentTo > 0 ? data.apartmentTo : '' %>">
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-2">
+                      <div class="form-group">
+                        <label for="normalPayment">Плата</label>
+                        <input type="text" class="form-control" id="payment" name="payment"
+                          value="<%= data.payment > 0 ? data.payment.toFixed(2) : '' %>">
+                      </div>
+                    </div>
+                    <div class="col-md-2">
+                      <div class="form-group">
+                        <label for="receiptPrinting" class="control-label">Печать квитанций</label>
+                        <div class="input-group date only-date" id="dtReceiptPrinting">
+                          <input type="text" class="form-control" name="receiptPrinting" id="receiptPrinting"
+                            value="<%= data.receiptPrinting != null ? moment(data.receiptPrinting).format( 'DD.MM.YYYY' ) : '' %>">
+                          <span class="input-group-addon">
+                            <span class="glyphicon glyphicon-calendar"></span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="btn-toolbar" role="toolbar">
+                    <div class="btn-group">
+                      <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top"
+                        title="Вставить квартиру" id="addApartment">
+                        <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                      </button>
+                    </div>
+                    <div class="btn-group">
+                      <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top"
+                        title="Построить список" id="buildApartments">
+                        <span class="glyphicon glyphicon-tasks" aria-hidden="true"></span>
+                      </button>
+                    </div>
+                    <div class="btn-group">
+                      <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top"
+                        title="Пролонгировать договор" id="prolongOrder">
+                        <span class="glyphicon glyphicon-flash" aria-hidden="true"></span>
+                      </button>
+                    </div>
+                  </div>
+                  <p></p>
+
+                  <div class="row">
+                    <div class="col-md-12" style="height: 295px; overflow-y: scroll;">
+                      <div id="dsTable" style="padding: 0px 0px;">
+
+                        <table data-is-rebuilt="<% data.apartments.isRebuilt %>" class="table table-bordered table-hover table-condensed" style="background-color: white;"
+                          name="tableApartments" id="tableApartments">
+                          <thead>
+                            <tr class="active">
+                              <th class="col-xs-2 text-center" colspan="2" onclick="sortApartments()">Кв-ра <span
+                                  class="badge" id="statApartments">
+                                  <%= data.apartments.grid.length %>
+                                </span></th>
+                              <th class="col-xs-1 text-center" style="vertical-align: middle" rowspan="2"
+                                onclick="sortTable(2)">Опл-но <span class="badge" id="statPaid">
+                                  <%= data.apartments.stat.paid %>
+                                </span>
+                              </th>
+                              <th class="col-xs-1 text-center" style="vertical-align: middle" rowspan="2"
+                                onclick="sortTable(4)">Освоб. <span class="badge" id="statExempt">
+                                  <%= data.apartments.stat.exempt %>
+                                </span></th>
+                              <th class="col-xs-1 text-center" style="vertical-align: middle" rowspan="2"
+                                onclick="sortTable(5)">Забл-ван <span class="badge" id="statLocked">
+                                  <%= data.apartments.stat.locked %>
+                                </span></th>
+                              <th class="col-xs-2 text-center" style="vertical-align: middle" rowspan="2">Дата</th>
+                              <th class="col-xs-1 text-center" style="vertical-align: middle" rowspan="2">Действия</th>
+                            </tr>
+                            <tr class="active">
+                              <th colspan="2">
+                                <div class="input-group">
+                                  <span class="input-group-btn">
+                                    <button class="btn btn-default" type="button" id="clearApartment">
+                                      <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                                    </button>
+                                  </span>
+                                  <input type="text" class="form-control" name="findApartment" id="findApartment"
+                                    value="">
+                                </div>
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <% var _class %>
+                            <% for (var cnt=0, max=data.apartments.grid.length; cnt < max; cnt++) {%>
+
+                              <% _class='' %>
+                              <% if ((+data.apartments.grid[cnt].paid==1) && (+data.apartments.grid[cnt].halfPaid === 2)) { %>
+                                <% _class='info2'; %>
+                              <% } %>
+
+                              <% if ((+data.apartments.grid[cnt].paid==1) && (+data.apartments.grid[cnt].halfPaid === 1)) { %>
+                                <% _class='warning2'; %>
+                              <% } %>
+
+                              <% if ((+data.apartments.grid[cnt].paid==1) && (+data.apartments.grid[cnt].halfPaid === 0)) { %>
+                                <% _class='success2'; %>
+                              <% } %>
+
+                              <% if (+data.apartments.grid[cnt].exempt === 1) { %>
+                                <% _class='danger2'; %>
+                              <% } %>
+
+                                <tr class="<%= _class %>"
+                                  data-apartment-uid="<%= data.apartments.grid[cnt].uid %>"
+                                  data-apartment-number="<%= data.apartments.grid[cnt].number %>"
+                                  data-apartment-letter="<%= data.apartments.grid[cnt].letter %>"
+                                  data-apartment-half-paid="<%= data.apartments.grid[cnt].halfPaid %>">
+                                  <td class="text-center align-middle">
+                                    <button type="button" class="btn btn-default btn-xs"
+                                      onclick="showHistory(event)">
+                                      <span class="glyphicon glyphicon-rub"
+                                        aria-hidden="true"></span>
+                                    </button>
+                                  </td>
+                                  <td class="text-center align-middle">
+                                    <%= data.apartments.grid[cnt].number + utils.decodeApartmentLetter(data.apartments.grid[cnt].letter).toUpperCase() %>
+                                  </td>
+                                  <td class="text-center align-middle">
+                                    <input type="checkbox" class="styled"
+                                      onclick="checkApartment(event, 0)"
+                                      <%=data.apartments.grid[cnt].paid === 1 ? ' checked' : ''
+                                      %>>
+                                  </td>
+                                  <td class="text-center align-middle">
+                                    <input type="checkbox" class="styled"
+                                      onclick="checkApartment(event, 2)"
+                                      <%=data.apartments.grid[cnt].exempt === 1 ? ' checked'
+                                      : '' %>>
+                                  </td>
+                                  <td class="text-center align-middle">
+                                    <input type="checkbox" class="styled"
+                                      onclick="checkApartment(event, 3)"
+                                      <%=data.apartments.grid[cnt].locked === 1 ? ' checked'
+                                      : '' %>>
+                                  </td>
+                                  <td class="text-center align-middle">
+                                    <%= data.apartments.grid[cnt].paidDT ?
+                                      moment(data.apartments.grid[cnt].paidDT).format( 'DD.MM.YYYY HH:mm:ss'
+                                      ) : '\u00A0' %>
+                                  </td>
+                                  <td class="text-center align-middle">
+                                    <button type="button" class="btn btn-info btn-xs"
+                                      onclick="editApartment(event)"
+                                      data-uid="<%= data.apartments.grid[cnt].uid %>">
+                                      <span class="glyphicon glyphicon-pencil"
+                                        aria-hidden="true"></span>
+                                    </button>
+                                    <button type="button" class="btn btn-danger btn-xs"
+                                      onclick="removeApartment(event)"
+                                      data-uid="<%= data.apartments.grid[cnt].uid %>">
+                                      <span class="glyphicon glyphicon-minus"
+                                        aria-hidden="true"></span>
+                                    </button>
+                                  </td>
+                                </tr>
+                              <% } %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p></p>
+
+                  <div class="row" id="clipBoardRow" hidden>
+                    <input type="text" class="form-control" id="clipBoard" name="clipBoard" value="">
+                  </div>
+
+                </div>
+
+                <div role="tabpanel" class="tab-pane" id="additionally">
+                  <div class="form-group">
+                    <label for="contractInfo">Информация</label>
+                    <textarea class="form-control" name="info" id="info" rows="14"><%= data.info %></textarea>
+                  </div>
+                </div>
+
+              </div>
+
+              <div class="col-12">
+                <button submit class="btn btn-success action" id="saveAndClose" name="saveAndClose">Записать и выйти</button>
+                <button submit class="btn btn-success action" id="save" name="save">Записать</button>
+                <div class="btn-group dropup" id="reports">
+                  <button class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                    Действия <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu" role="menu" id="qwerty">
+                    <li class="disabled" id="generateOrderService">
+                      <a href="#">Сформировать договор на обслуживание</a>
+                    </li>
+                    <li class="divider"></li>
+                    <li class="disabled" id="openOrderService">
+                      <a href="#">Открыть договор на обслуживание</a>
+                    </li>
+                  </ul>
+                </div>
+                <button submit class="btn btn-info action" id="printingReceipts" name="printingReceipts">
+                  Печать квитанций
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal bs-example-modal-normal" id="completeDialog" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="applicationCapton">Введите значение</h4>
+          </div>
+          <div class="modal-body">
+            <div class="form-group" id="completeQuantityRow">
+              <div class="row">
+                <div class="col-xs-12">
+                  <label for="completeQuantity">Количество</label>
+                  <input type="number" min="1" class="form-control select-all" id="completeQuantity">
+                </div>
+              </div>
+            </div>
+            <div class="form-group" id="completePriceRow">
+              <div class="row">
+                <div class="col-xs-12">
+                  <label for="completePrice">Цена</label>
+                  <input type="number" class="form-control select-all" id="completePrice">
+                </div>
+              </div>
+            </div>
+            <div class="form-group" id="completeCostRow">
+              <div class="row">
+                <div class="col-xs-12">
+                  <label for="completeCost">Общая стоимость</label>
+                  <input type="number" class="form-control select-all" id="completeCost">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-success" id="saveComplete">&nbsp;Записать&nbsp;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal bs-example-modal" id="historyDialog" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="historyDialogCapton">История</h4>
+          </div>
+
+          <div class="modal-body">
+
+            <div class="card">
+
+              <div class="row" style="vertical-align: middle">
+                <div class="col-md-3">
+                  <a href="#" class="btn btn-success" id="addPayment" data-toggle="tooltip" data-placement="top"
+                    title="Внести платеж">
+                    <span class="glyphicon glyphicon-rub" aria-hidden="true">
+                    </span>
+                  </a>
+                  <a href="#" class="btn btn-info" id="printReceiptForApartment" data-toggle="tooltip"
+                    data-placement="top" title="Сформировать квитанцию ">
+                    <span class="glyphicon glyphicon-print" aria-hidden="true">
+                    </span>
+                  </a>
+                  <a href="#" class="btn btn-info" id="addPaymentInRegister" data-toggle="tooltip" data-placement="top"
+                    title="Внести платеж в реестр">
+                    <span class="glyphicon glyphicon-send" aria-hidden="true">
+                    </span>
+                  </a>
+                </div>
+                <div class="col-md-9">
+                  <span class="pull-right"><h4 id="personalAccount"></h4></span>
+                </div>
+              </div>
+
+              <ul class="nav nav-pills">
+                <li class="active"><a data-toggle="tab" href="#payments">Оплаты</a></li>
+                <li><a data-toggle="tab" href="#register">Реестр</a></li>
+                <li><a data-toggle="tab" href="#prices">Платы</a></li>
+              </ul>
+
+              <div class="well">
+                <div class="card-body">
+                  <div class="tab-content">
+                    <div id="payments" class="tab-pane in active">
+                      <div class="row">
+                        <div class="col-md-12">
+                          <table class="table table-bordered table-hover table-condensed"
+                            style="background-color: white;" name="tablePayments" id="tablePayments">
+                            <thead>
+                              <tr class="active">
+                                <th class="col-xs-2 text-center" style="vertical-align: middle">Создано</th>
+                                <th class="col-xs-2 text-center" style="vertical-align: middle">Оплачено</th>
+                                <th class="col-xs-1 text-center" style="vertical-align: middle">ID</th>
+                                <th class="col-xs-1 text-center" style="vertical-align: middle">Месяц</th>
+                                <th class="col-xs-1 text-center" style="vertical-align: middle">Год</th>
+                                <th class="col-xs-2 text-center" style="vertical-align: middle">Сумма</th>
+                                <th class="col-xs-2 text-center" style="vertical-align: middle">Способ</th>
+                                <th class="col-xs-1 text-center" style="vertical-align: middle">Действия</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div id="register" class="tab-pane">
+                      <div class="row">
+                        <div class="col-md-7">
+                          <table class="table table-bordered table-hover table-condensed"
+                            style="background-color: white;" name="tableRegisters" id="tableRegisters">
+                            <thead>
+                              <tr class="active">
+                                <th class="col-xs-2 text-center" style="vertical-align: middle">Создано</th>
+                                <th class="col-xs-2 text-center" style="vertical-align: middle">ID</th>
+                                <th class="col-xs-2 text-center" style="vertical-align: middle">Сумма</th>
+                                <th class="col-xs-1 text-center" style="vertical-align: middle">Действия</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div id="prices" class="tab-pane">
+                      <div class="row">
+                        <div class="col-md-10">
+                          <table class="table table-bordered table-hover table-condensed"
+                            style="background-color: white;" name="tablePrices" id="tablePrices">
+                            <thead>
+                              <tr class="active">
+                                <th class="col-xs-2 text-center" style="vertical-align: middle">ТО с</th>
+                                <th class="col-xs-2 text-center" style="vertical-align: middle">ТО по</th>
+                                <th class="col-xs-2 text-right" style="vertical-align: middle">Плата</th>
+                                <th class="col-xs-2 text-center" style="vertical-align: middle">Отпечатано</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal bs-example-modal-normal" id="changeApartmentDialog" tabindex="-1" role="dialog"
+      aria-hidden="true">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="applicationCapton">Квартира</h4>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="apartmentNuber" class="control-label">Номер</label>
+                  <input type="text" class="form-control" id="apartmentNumber" />
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="apartmentLetter">Буква</label>
+                  <select class="form-control" id="apartmentLetter">
+                    <% utils.enumApartmentLetters.forEach(function(element, index) { %>
+                      <option value="<%= index %>">
+                        <%= element %>
+                      </option>
+                      <% }); %>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-12">
+                <div class="alert alert-danger" role="alert" hidden id="alertApartment">&nbsp;</div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-success" id="saveApartment">&nbsp;Записать&nbsp;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal bs-example-modal-normal" id="addPaymentDialog" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Внести платеж</h4>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-xs-12">
+                <div class="form-group">
+                  <label for="paymentDate" class="control-label">Дата</label>
+                  <div class="input-group date date-only-mouse" id="dtNewPaymentDate">
+                    <input type="text" class="form-control" name="paymentDate" id="paymentDate" readonly>
+                    <span class="input-group-addon">
+                      <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xs-12">
+                <div class="form-group">
+                  <label for="paymentOptions">Способ оплаты</label>
+                  <select class="form-control" id="paymentOptions" name="paymentOptions">
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xs-12">
+                <div class="form-group">
+                  <label for="paymentAmount">Сумма</label>
+                  <input type="text" class="form-control" name="paymentAmount" id="paymentAmount" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-success" id="actionAddPayment">&nbsp;Записать&nbsp;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal bs-example-modal-normal" id="addPaymentInRegisterDialog" tabindex="-1" role="dialog"
+      aria-hidden="true">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Внести платеж в реестр</h4>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-xs-12">
+                <div class="form-group">
+                  <label for="registerDate" class="control-label">Дата</label>
+                  <div class="input-group date date-only-mouse" id="dtRegisterDate">
+                    <input type="text" class="form-control" name="registerDate" id="registerDate" readonly>
+                    <span class="input-group-addon">
+                      <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xs-12">
+                <div class="form-group">
+                  <label for="amountInRegister">Сумма</label>
+                  <input type="text" class="form-control" name="amountInRegister" id="amountInRegister" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-success" id="actionAddPaymentInRegister">&nbsp;Записать&nbsp;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <% include ../../common/address.ejs %>
+    <% include ../../common/modal_client2.ejs %>
+    <% include ../../common/modal_yes_no.ejs %>
+
+    <script src="/bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="/bower_components/bootstrap3-typeahead/bootstrap3-typeahead.js"></script>
+    <script src="/bower_components/moment/min/moment-with-locales.min.js"></script>
+    <script src="/bower_components/bootstrap/js/transition.js"></script>
+    <script src="/bower_components/bootstrap/js/collapse.js"></script>
+    <script src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="/bower_components/axios/dist/axios.min.js"></script>
+    <script src="/js/gate.js"></script>
+
+</body>
+
+</html>

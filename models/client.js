@@ -1,30 +1,28 @@
 module.exports.ClientModel = function () {
-  'use strict';
   this.id = 0;
   this.lastName = '';
 
   this.certificate = {
     typeId: 0,
-    // description: '',
     series: '',
     number: '',
     issued: null,
     department: '',
-    phones: ''
+    phones: '',
   };
 
   this.registeredAddress = {
     city: {
       key: 0,
-      value: ''
+      value: '',
     },
     street: {
       key: 0,
-      value: ''
+      value: '',
     },
     house: {
       key: 0,
-      value: ''
+      value: '',
     },
     apartment: '',
     fullAddress: '',
@@ -33,15 +31,15 @@ module.exports.ClientModel = function () {
   this.actualAddress = {
     city: {
       key: 0,
-      value: ''
+      value: '',
     },
     street: {
       key: 0,
-      value: ''
+      value: '',
     },
     house: {
       key: 0,
-      value: ''
+      value: '',
     },
     apartment: '',
     fullAddress: '',

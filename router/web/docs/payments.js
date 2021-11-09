@@ -1,5 +1,3 @@
-'use strict';
-
 const express = require('express');
 var moment = require('moment');
 const path = require('path');
@@ -23,7 +21,6 @@ const { firm } = require('../../../lib/firm_bank_details');
 var PaymentsLogic = require('../../../logic/docs/payments').PaymentsLogic;
 
 function printReceipt(model, res) {
-
   var fullApartmentNumber = model.apartment.number + utils.decodeApartmentLetter(Number(model.apartment.letter));
 
   var amount = parseFloat(model.amount).toString().trim();

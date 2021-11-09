@@ -1,4 +1,3 @@
-'use strict';
 exports.paymentsByBanks = `
   SELECT
     SUM(CASE WHEN a.mode = 0 THEN a.amount END) AS sberbank,

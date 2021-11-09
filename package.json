@@ -35,11 +35,17 @@
     "pdfmake": "^0.1.65",
     "pizzip": "^3.0.6",
     "pure-svg-code": "^1.0.6",
+    "qrcode-svg": "^1.1.0",
     "save": "^2.4.0",
     "shelljs": "^0.8.4",
     "svg-to-pdfkit": "^0.1.8",
     "winston": "^3.3.3",
     "winston-daily-rotate-file": "^4.5.0",
     "ws": "^7.4.2"
+  },
+  "devDependencies": {
+    "eslint": "^7.32.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.24.2"
   }
 }

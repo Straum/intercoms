@@ -111,10 +111,18 @@ function getOrderIdFromApartment(apartmentId) {
 }
 
 function generatePersonalAccount(data) {
-  var out = [];
+  const FIELD_CONTRACT_LENGTH = 6;
+  const out = [];
 
-  let rpts = 6 - (data.prolongedContractNumber.trim().length);
-  const outContractNumber = (rpts > 0 ? '0'.repeat(rpts) : '') + data.prolongedContractNumber.trim();
+  let outContractNumber = '';
+  let rpts = 0;
+  if (data.rank === 0) {
+    rpts = FIELD_CONTRACT_LENGTH - (data.prolongedContractNumber.trim().length);
+    outContractNumber = (rpts > 0 ? '0'.repeat(rpts) : '') + data.prolongedContractNumber.trim();
+  }
+  if (data.rank === 1) {
+    outContractNumber = `${data.contractNumber}`.trim().padStart(FIELD_CONTRACT_LENGTH, '0');
+  }
 
   rpts = (3 - data.apartmentNumber.toString().trim().length);
   const outApartment = (rpts > 0 ? '0'.repeat(rpts) : '') + data.apartmentNumber.toString().trim();
@@ -188,20 +196,22 @@ function getApartmentInfo(id) {
   return new Promise((resolve, reject) => {
     db.get().getConnection((err, connection) => {
       connection.query(
-        `SELECT a.number AS apartmentNumber, a.letter, b.m_contract_number  AS prolongedContractNumber,
-        b.m_duplicate AS isDuplicate FROM apartments a
+        `SELECT a.number AS apartmentNumber, a.letter,
+        b.contract_number AS contractNumber, b.m_contract_number AS prolongedContractNumber,
+        b.m_duplicate AS isDuplicate, b.rank FROM apartments a
         LEFT JOIN cards b ON b.card_id = a.card_id
         WHERE a.apartment_id = ? LIMIT 1`, [id],
-        (err, rows) => {
+        (error, rows) => {
           connection.release();
-          if (err) {
+          if (error) {
             reject();
           } else {
-            resolve((Array.isArray(rows) && rows.length == 1) ? {
-              ...rows[0]
+            resolve((Array.isArray(rows) && rows.length === 1) ? {
+              ...rows[0],
             } : null);
           }
-        });
+        },
+      );
     });
   });
 }
@@ -463,7 +473,6 @@ function updateOrder(data) {
 
 function deleteExistsApartments(data) {
   return new Promise(function (resolve, reject) {
-    queryDeleteExistsApartments
     if ((data.id > 0) && (data.apartments.isRebuilt)) {
       db.get().getConnection(function (err, connection) {
         connection.query(queryDeleteExistsApartments, [data.id], function (err) {
@@ -1199,7 +1208,7 @@ var filterRecords = function (req, res) {
     ' LEFT JOIN streets c ON a.street_id = c.street_id' +
     ' LEFT JOIN houses d ON a.house_id = d.house_id' +
     ' LEFT JOIN equipments e ON a.equipment_id = e.equipment_id' +
-    ' WHERE (a.card_id > 0) AND (a.is_deleted = 0)' +
+    ' WHERE (a.card_id > 0) AND (a.is_deleted = 0) AND (a.rank = 0)' +
     add.whereSQL +
     add.orderBy +
     ' LIMIT ' + cfg.visibleRows;
@@ -1414,7 +1423,7 @@ module.exports = function () {
 
                     // res.render('docs/forms/order.ejs', {
                     res.render('docs/forms/order2.ejs', {
-                      title: 'Договор',
+                      title: 'Договор на домофоны',
                       data: orderModel,
                       moment: moment,
                       utils: utils,
@@ -1502,7 +1511,7 @@ module.exports = function () {
       ' LEFT JOIN streets c ON a.street_id = c.street_id' +
       ' LEFT JOIN houses d ON a.house_id = d.house_id' +
       ' LEFT JOIN equipments e ON a.equipment_id = e.equipment_id' +
-      ' WHERE (a.card_id > 0) AND (a.is_deleted = 0)' +
+      ' WHERE (a.card_id > 0) AND (a.is_deleted = 0) AND (a.rank = 0)' +
       add.whereSQL +
       add.orderBy +
       ' LIMIT ' + cfg.visibleRows +
@@ -1974,15 +1983,16 @@ module.exports = function () {
     }
   });
 
-  router.post('/find_equipment', function (req, res) {
-    var data = req.body;
+  router.post('/find_equipment', (req, res) => {
+    const data = req.body;
     if ((data) && (typeof (data) === 'object') && ('suggestion' in data)) {
-      var rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
-      var params = {
+      const rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
+      const params = {
         suggestion: data.suggestion,
-        rowsCount: rowsCount
+        rowsCount,
+        category: 1,
       };
-      common.filterEquipments(params, function (err, rows) {
+      common.filterEquipments(params, (err, rows) => {
         res.status(200).send(rows);
       });
     } else {

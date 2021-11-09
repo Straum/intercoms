@@ -1655,21 +1655,21 @@ document.getElementById('openOrderService').addEventListener('click', (e) => {
   }
 });
 
-function showAlert(date, message) {
+// function showAlert(date, message) {
 
-  let outDate = (date instanceof Date) ? date.toLocaleString() : '';
-  outDate = outDate.replace(/,/g, '');
+//   let outDate = (date instanceof Date) ? date.toLocaleString() : '';
+//   outDate = outDate.replace(/,/g, '');
 
-  const generateAlert = `<row><div class="alert ${message.style} alert-dismissable fade in" role="alert">
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
-    <strong>${outDate}  -  ${message.out}</strong></div></row>`;
+//   const generateAlert = `<row><div class="alert ${message.style} alert-dismissable fade in" role="alert">
+//     <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
+//     <strong>${outDate}  -  ${message.out}</strong></div></row>`;
 
-  // document.getElementById('firstRow').innerHTML = generateAlert;
+//   // document.getElementById('firstRow').innerHTML = generateAlert;
 
-  $('#firstRow').after(generateAlert);
+//   $('#firstRow').after(generateAlert);
 
-  // document.getElementById('firstRow').insertBefore(generateAlert);
-}
+//   // document.getElementById('firstRow').insertBefore(generateAlert);
+// }
 
 function startWebsocket() {
 

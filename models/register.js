@@ -1,7 +1,4 @@
-const { relativeTimeThreshold } = require("moment");
-
-module.exports.PaymentModelForRegister = function () {
-  'use strict';
+module.exports.PaymentModelForRegister = function() {
   this.id = 0;
   this.payDate = null;
   this.prolongedContractNumber = 0;
@@ -10,8 +7,7 @@ module.exports.PaymentModelForRegister = function () {
   this.amount = 0;
 };
 
-module.exports.ContractModelForRegister = function () {
-  'use strict';
+module.exports.ContractModelForRegister = function() {
   this.id = 0;
   this.createDate = null;
   this.contractNumber = 0;
@@ -20,8 +16,7 @@ module.exports.ContractModelForRegister = function () {
   this.endService = null;
 };
 
-module.exports.RegisterModel = function () {
-  'use strict';
+module.exports.RegisterModel = function() {
   this.id = 0;
   this.createDate = null;
   this.startFrom = null;
@@ -29,15 +24,14 @@ module.exports.RegisterModel = function () {
   this.latestChange = null;
   this.find = {
     contractNumber: 0,
-    isProlonged: false
-  }
+    isProlonged: false,
+  };
   this.contracts = [];
   this.payments = [];
   this.newMethod = 0;
 };
 
-module.exports.DataModel = function () {
-  'use strict';
+module.exports.DataModel = function() {
   this.personalAccount1 = '';
   this.personalAccount2 = '';
   this.fullAddress = '';
@@ -45,11 +39,9 @@ module.exports.DataModel = function () {
   this.amount = '';
 };
 
-module.exports.PrintModelForRegister = function () {
-  'use strict';
+module.exports.PrintModelForRegister = function() {
   this.startFrom = null;
   this.endTo = null;
   this.newMethod = 0;
   this.data = [];
 };
-

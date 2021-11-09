@@ -1,35 +1,31 @@
-'use strict';
-
-var fs = require('fs');
+/* eslint-disable global-require */
+const fs = require('fs');
 
 const express = require('express');
-var user = require('../authorization/login');
+const user = require('../authorization/login');
 
-module.exports = function () {
-  var router = express.Router();
+module.exports = () => {
+  const router = express.Router();
 
-  router.post('/image', function (req, res) {
-    var name = req.body.name;
-    var img = req.body.image;
-    var realFile = Buffer.from(img, 'base64');
+  router.post('/image', (req, res) => {
+    const { body: { name, image } } = req;
+    const realFile = Buffer.from(image, 'base64');
 
-    var fileName = './public/photos/' + name;
+    const fileName = `./public/photos/${name}`;
 
-    fs.writeFile(fileName, realFile, function (err) {
+    fs.writeFile(fileName, realFile, (err) => {
       if (err)
         console.log(err);
     });
     res.send('OK');
   });
 
-  router.get('/', function (req, res) {
-    var userId = req.session.userId;
-      if (userId == null) {
-      // res.render('index.ejs');
-      var message = '';
-      res.render('signin', {message: message});
-    }
-    else {
+  router.get('/', (req, res) => {
+    const { session: { userId } } = req;
+    if (userId == null) {
+      const message = '';
+      res.render('signin', { message });
+    } else {
       res.redirect('home');
     }
   });
@@ -46,6 +42,8 @@ module.exports = function () {
 
   // Docs
   router.use('/orders', require('./docs/orders')());
+  router.use('/gates', require('./docs/gates')());
+  router.use('/fines', require('./docs/fines')());
   router.use('/registers', require('./docs/registers')());
   router.use('/payments', require('./docs/payments')());
   router.use('/applications', require('./docs/applications')());
@@ -64,7 +62,7 @@ module.exports = function () {
   router.use('/home', user.home);
   router.use('/logout', user.logout);
 
-  router.use(function (req, res) {
+  router.use((req, res) => {
     res.statusCode = 404;
     res.end('404!');
   });

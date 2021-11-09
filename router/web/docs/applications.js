@@ -15,6 +15,7 @@ var common = require('../../common/typeheads');
 const { application } = require('express');
 var ApplicationModel = require('../../../models/application').ApplicationModel;
 const logger = require('../../../lib/winston');
+//
 
 function findContract(queryText) {
   return new Promise(function (resolve, reject) {
@@ -26,7 +27,7 @@ function findContract(queryText) {
             reject(err);
           }
           else {
-            resolve((Array.isArray(rows) && rows.length == 1) ? rows[0].cardId : null);
+            resolve((Array.isArray(rows) && rows.length === 1) ? rows[0].cardId : null);
           }
         });
     });
@@ -684,22 +685,23 @@ var applicationsReport = function (req, res) {
   var add = filterBuilder(req, false);
 
   var fullQuery =
-    ' SELECT a.application_id AS documentId, DATE_FORMAT(a.create_date, "%d.%m.%Y %H:%i") AS createDate,' +
-    ' b.name AS cityName, c.name AS streetName,' +
-    ' d.number AS houseNumber, a.porch, a.kind, ' +
-    ' a.phone, a.completion_date AS completionDate, a.weight, ' +
-    ' f.name AS performerName,' +
-    ' a.work_with_mobile_app AS workWithMobileApp,' +
-    ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc' +
-    ' FROM applications a' +
-    ' LEFT JOIN cities b ON b.city_id = a.city_id' +
-    ' LEFT JOIN streets c ON c.street_id = a.street_id' +
-    ' LEFT JOIN houses d ON d.house_id = a.house_id' +
-    ' LEFT JOIN workers f ON f.worker_id = a.worker_id' +
-    ' WHERE (a.application_id > 0)' +
-    ' AND (a.is_done = 0)' +
-    ' AND (a.is_deleted = 0)' + add.whereSQL +
-    ' ORDER BY b.name, c.name, d.number ASC';
+    `SELECT a.application_id AS documentId, DATE_FORMAT(a.create_date, "%d.%m.%Y %H:%i") AS createDate,
+    b.name AS cityName, c.name AS streetName,
+    d.number AS houseNumber, a.porch, a.kind,
+    a.phone, a.completion_date AS completionDate, a.weight,
+    f.name AS performerName,
+    a.work_with_mobile_app AS workWithMobileApp,
+    a.is_time_range AS isTimeRange, a.hour_from AS hourFrom, a.hour_to AS hourTo,
+    a.features
+    FROM applications a
+    LEFT JOIN cities b ON b.city_id = a.city_id
+    LEFT JOIN streets c ON c.street_id = a.street_id
+    LEFT JOIN houses d ON d.house_id = a.house_id
+    LEFT JOIN workers f ON f.worker_id = a.worker_id
+    WHERE (a.application_id > 0)
+    AND (a.is_done = 0)
+    AND (a.is_deleted = 0) ${add.whereSQL}
+    ORDER BY b.name, c.name, d.number ASC`;
   // ' ORDER BY f.name , a.create_date ASC';
 
   var filename = 'applications.pdf';
@@ -827,10 +829,15 @@ var applicationsReport = function (req, res) {
                     var problem = '';
                     rows.forEach(function (fault) {
                       if (+item.documentId === +fault.documentId) {
-                        problem += (problem.length > 0 ? ', ' : '') + fault.problemDescription;
+                        problem += (problem.length > 0 ? ', ' : '') +
+                          (item.features === 1 ?
+                            `Отключить ${fault.problemDescription}` :
+                            fault.problemDescription);
                       }
                     });
-
+                    if (item.isTimeRange) {
+                      problem += ` (время с ${item.hourFrom} по ${item.hourTo})`;
+                    }
 
                     var isLineThrough = ((item.completionDate != null) && (item.weight >= 0));
                     tableData.push([
