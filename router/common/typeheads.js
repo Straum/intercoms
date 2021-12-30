@@ -1,15 +1,13 @@
-'use strict';
+const db = require('../../lib/db');
 
-var db = require('../../lib/db');
-
-var getCity = function (cityName, callback) {
-  db.get().getConnection(function (err, connection) {
+const getCity = (cityName, callback) => {
+  db.get().getConnection((err, connection) => {
     connection.query(
-      ' SELECT a.city_id AS cityId' +
-      ' FROM cities a' +
-      ' WHERE (a.is_deleted = 0) AND (a.name = ?)' +
-      ' LIMIT 1', [cityName],
-      function (err, rows) {
+      `SELECT a.city_id AS cityId
+      FROM cities a
+      WHERE (a.is_deleted = 0) AND (a.name = ?)
+      LIMIT 1`, [cityName],
+      (error, rows) => {
         connection.release();
 
         if (typeof callback === 'function') {
@@ -19,32 +17,32 @@ var getCity = function (cityName, callback) {
             callback(null);
           }
         }
-      }
+      },
     );
   });
 };
 
-var getStreets = function (cityId, streetName, rowsLimit, callback) {
-  var queryText = ' SELECT a.street_id AS streetId, a.name AS streetName' +
-    ' FROM streets a' +
-    ' WHERE (a.is_deleted = 0) AND (a.city_id = ' + cityId + ')';
+const getStreets = (cityId, streetName, rowsLimit, callback) => {
+  let queryText = `SELECT a.street_id AS streetId, a.name AS streetName
+    FROM streets a
+    WHERE (a.is_deleted = 0) AND (a.city_id = ${cityId})`;
 
   if ((typeof streetName === 'string') && (streetName.trim() !== '')) {
-    queryText += ' AND (a.name LIKE ' + `'` + streetName.trim() + '%' + `'` + ')';
+    queryText += ` AND (a.name LIKE '${streetName.trim()}%')`;
   }
 
-  queryText += ' LIMIT ' + rowsLimit;
+  queryText += ` LIMIT ${rowsLimit}`;
 
-  db.get().getConnection(function (err, connection) {
+  db.get().getConnection((err, connection) => {
     connection.query(
       queryText, [],
-      function (err, rows) {
+      (error, rows) => {
         connection.release();
 
         if (typeof callback === 'function') {
           callback(rows);
         }
-      }
+      },
     );
   });
 };
@@ -82,46 +80,45 @@ var getHouses = function (cityId, streetName, houseNumber, rowsLimit, callback) 
 
 module.exports.filterCities = (params, callback) => {
   let isWhere = false;
-  let queryText = `SELECT a.city_id AS id, a.name AS value FROM cities a`;
+  let queryText = 'SELECT a.city_id AS id, a.name AS value FROM cities a';
 
   if (('cityName' in params) && (params.cityName.length > 0)) {
     queryText += ` WHERE (a.name LIKE '${params.cityName}%')`;
     isWhere = !isWhere;
   }
-  if (('core' in params) && (parseInt(params.core) === 1)) {
+  if (('core' in params) && (parseInt(params.core, 10) === 1)) {
     if (isWhere) {
-      queryText += ` AND (a.core = 1)`;
+      queryText += ' AND (a.core = 1)';
     } else {
-      queryText += ` WHERE (a.core = 1)`;
+      queryText += ' WHERE (a.core = 1)';
       isWhere = !isWhere;
     }
   }
   if (isWhere) {
-    queryText += ` AND (a.is_deleted = 0)`;
+    queryText += ' AND (a.is_deleted = 0)';
   } else {
-    queryText += ` WHERE (a.is_deleted = 0)`;
-    isWhere = !isWhere
+    queryText += ' WHERE (a.is_deleted = 0)';
+    isWhere = !isWhere;
   }
 
-  queryText += ` ORDER BY a.name ASC`;
-  if (('rowsCount' in params) && (parseInt(params.rowsCount) > 0)) {
+  queryText += ' ORDER BY a.name ASC';
+  if (('rowsCount' in params) && (parseInt(params.rowsCount, 10) > 0)) {
     queryText += ` LIMIT ${params.rowsCount}`;
   }
 
   db.get().getConnection((err, connection) => {
     connection.query(
-      queryText, [], (err, rows) => {
+      queryText, [], (error, rows) => {
         connection.release();
 
-        if (err) {
-          throw err;
+        if (error) {
+          throw error;
         }
 
         if (typeof callback === 'function') {
           callback(null, rows);
         }
-
-      }
+      },
     );
   });
 };
@@ -132,7 +129,7 @@ module.exports.filterStreets = (params, callback) => {
 
   if (('cityId' in params) && (parseInt(params.cityId) > 0)) {
     queryText += ` WHERE (a.city_id = ${params.cityId})`;
-    isWhere = !isWhere
+    isWhere = !isWhere;
   }
   if (('streetName' in params) && (params.streetName.length > 0)) {
     if (isWhere) {
@@ -146,7 +143,7 @@ module.exports.filterStreets = (params, callback) => {
     queryText += ` AND (a.is_deleted = 0)`;
   } else {
     queryText += ` WHERE (a.is_deleted = 0)`;
-    isWhere = !isWhere
+    isWhere = !isWhere;
   }
 
   queryText += ` ORDER BY a.name ASC`;
@@ -206,39 +203,34 @@ module.exports.filterHouses = function (params, callback) {
   });
 };
 
-module.exports.filterPorches = function (params, callback) {
-
-  var queryText =
-    ' SELECT a.card_id AS id, CAST(a.porch AS CHAR(11)) AS value' +
-    ' FROM cards a';
-
-  queryText += ' WHERE a.house_id = ' + params.houseId;
+module.exports.filterPorches = (params) => new Promise((resolve, reject) => {
+  let queryText = `SELECT a.card_id AS id, a.contract_number AS contractNumber,
+    a.m_contract_number AS prolongedContractNumber,
+    CAST(a.porch AS CHAR(11)) AS value
+    FROM cards a
+    WHERE a.house_id = ${params.houseId}`;
 
   if (params.porch.length > 0) {
-    queryText += ' AND a.porch LIKE ' + `'` + params.porch + '%' + `'`;
+    queryText += ` AND a.porch LIKE '${params.porch}%'`;
   }
 
-  queryText += ' ORDER BY a.porch ASC';
-  queryText += ' LIMIT ' + params.rowsCount;
+  queryText += ` ORDER BY a.porch ASC
+    LIMIT ${params.rowsCount}`;
 
-  db.get().getConnection(function (err, connection) {
+  db.get().getConnection((err, connection) => {
     connection.query(
       queryText, [],
-      function (err, rows) {
+      (error, rows) => {
         connection.release();
 
-        if (err) {
-          throw err;
+        if (error) {
+          reject();
         }
-
-        if (typeof callback === 'function') {
-          callback(null, rows);
-        }
-
-      }
+        resolve(rows);
+      },
     );
   });
-};
+});
 
 module.exports.filterEquipments = (params, callback) => {
   let queryText = `SELECT
@@ -441,7 +433,7 @@ module.exports.outFullAddress = function (params, callback) {
       queryText += ` AND (a.is_deleted = 0)`;
     } else {
       queryText += ` WHERE (a.is_deleted = 0)`;
-      isWhere = !isWhere
+      isWhere = !isWhere;
     }
 
     queryText += ` ORDER BY a.name ASC LIMIT ${params.rowsCount}`;
@@ -673,8 +665,8 @@ function filterVillages(areaId, word, limit) {
             }
             resolve(items);
           }
-        })
-    })
+        });
+    });
   });
 }
 
@@ -707,40 +699,42 @@ function filterCities(word, limit) {
             }
             resolve(items);
           }
-        })
-    })
+        });
+    });
   });
 }
 
-function filterStreets(cityId, streetName, limit) {
-  return new Promise(function (resolve, reject) {
+const filterStreets = (cityId, streetName, limit) => new Promise((resolve, reject) => {
+  const queryText = `SELECT a.street_id AS streetId, UPPER(a.name) AS streetName,
+    UPPER(b.name) AS cityName,
+    b.city_id AS cityId, b.parent_id AS areaId, UPPER(c.name) AS areaName,
+    c.no_streets AS noStreets, c.no_houses AS noHouses
+    FROM streets a
+    LEFT JOIN cities b ON b.city_id = a.city_id
+    LEFT JOIN cities c ON c.city_id = b.parent_id
+    WHERE (a.city_id = ${cityId}) AND (a.is_deleted = 0) AND (a.name LIKE '${streetName}%')
+    ORDER BY a.name ASC LIMIT ${limit}`;
 
-    let queryText =
-      `SELECT a.street_id AS streetId, UPPER(a.name) AS streetName, UPPER(b.name) AS cityName, b.city_id AS cityId, b.parent_id AS areaId, UPPER(c.name) AS areaName FROM streets a
-      LEFT JOIN cities b ON b.city_id = a.city_id
-      LEFT JOIN cities c ON c.city_id = b.parent_id
-      WHERE (a.city_id = ${cityId}) AND (a.is_deleted = 0) AND (a.name LIKE '${streetName}%')
-      ORDER BY a.name ASC LIMIT ${limit}`;
+  db.get().getConnection((err, connection) => {
+    connection.query(
+      queryText, [],
+      (error, rows) => {
+        connection.release();
 
-    db.get().getConnection(function (err, connection) {
-      connection.query(
-        queryText, [],
-        function (err, rows) {
-          connection.release();
-
-          if (err) {
-            reject();
-          } else {
-            let items = [];
-            if (Array.isArray(rows)) {
-              items = [...rows];
-            }
-            resolve(items);
+        if (error) {
+          reject();
+        } else {
+          let items = [];
+          if (Array.isArray(rows)) {
+            items = [...rows];
           }
-        })
-    })
+          resolve(items);
+        }
+      },
+    );
   });
-}
+});
+
 
 function filterHouses(streetId, houseNumber, limit) {
   return new Promise(function (resolve, reject) {
@@ -769,8 +763,8 @@ function filterHouses(streetId, houseNumber, limit) {
             }
             resolve(items);
           }
-        })
-    })
+        });
+    });
   });
 }
 
@@ -802,10 +796,10 @@ const filterHousesByVillage = (cityId, limit) => {
             }
             resolve(items);
           }
-        })
-    })
+        });
+    });
   });
-}
+};
 
 function findVillageByName(areaId, name) {
   return new Promise(function (resolve, reject) {
@@ -831,101 +825,119 @@ function findVillageByName(areaId, name) {
             }
             resolve(village);
           }
-        })
-    })
+        });
+    });
   });
 }
 
 function findCityByName(name) {
-  return new Promise(function (resolve, reject) {
-
-    let queryText =
-      `SELECT a.city_id AS id, UPPER(a.name), a.is_city AS isCity FROM cities a
+  return new Promise((resolve, reject) => {
+    const queryText = `SELECT a.city_id AS id, UPPER(a.name) AS name, a.is_city AS isCity FROM cities a
       WHERE (a.name = '${name}') AND (a.is_deleted = 0) LIMIT 1`;
 
-    db.get().getConnection(function (err, connection) {
+    db.get().getConnection((err, connection) => {
       connection.query(
         queryText, [],
-        function (err, rows) {
+        (error, rows) => {
           connection.release();
 
-          if (err) {
+          if (error) {
             reject();
           } else {
-            let city = [];
+            let city = null;
             if (Array.isArray(rows) && (rows.length === 1)) {
-              city = {
-                ...rows[0]
-              };
+              city = { ...rows[0] };
             }
             resolve(city);
           }
-        })
-    })
+        },
+      );
+    });
   });
 }
 
 function findStreetByName(cityId, name) {
-  return new Promise(function (resolve, reject) {
-
-    let queryText =
-      `SELECT a.street_id AS id, UPPER(a.name) FROM streets a
+  return new Promise((resolve, reject) => {
+    const queryText = `SELECT a.street_id AS id, UPPER(a.name) AS name FROM streets a
       WHERE (a.name = '${name}') AND (a.is_deleted = 0) AND (a.city_id = ${cityId}) LIMIT 1`;
 
-    db.get().getConnection(function (err, connection) {
+    db.get().getConnection((err, connection) => {
       connection.query(
         queryText, [],
-        function (err, rows) {
+        (error, rows) => {
           connection.release();
 
-          if (err) {
+          if (error) {
             reject();
           } else {
-            let street = [];
+            let street = null;
             if (Array.isArray(rows) && (rows.length === 1)) {
-              street = {
-                ...rows[0]
-              };
+              street = { ...rows[0] };
             }
             resolve(street);
           }
-        })
-    })
+        },
+      );
+    });
   });
 }
 
-module.exports.getFullAddress2 = async function (params, callback) {
+function findHouseByNumber(streetId, number) {
+  return new Promise((resolve, reject) => {
+    const queryText = `SELECT a.house_id AS id, UPPER(a.number) AS number FROM houses a
+      WHERE (a.number = '${number}') AND (a.is_deleted = 0) AND (a.street_id = ${streetId}) LIMIT 1`;
+
+    db.get().getConnection((err, connection) => {
+      connection.query(
+        queryText, [],
+        (error, rows) => {
+          connection.release();
+
+          if (error) {
+            reject();
+          } else {
+            let house = null;
+            if (Array.isArray(rows) && (rows.length === 1)) {
+              house = { ...rows[0] };
+            }
+            resolve(house);
+          }
+        },
+      );
+    });
+  });
+}
+
+module.exports.getFullAddress2 = async (params, callback) => {
   const words = params.suggestion.split(', ');
   if (!Array.isArray(words)) {
     return;
   }
 
-  let outputData = {
+  const outputData = {
     level: 0,
-    items: []
+    items: [],
   };
 
   if (words.length === 1) {
-
     await filterCities(words[0].trim(), params.limit)
-      .then(function (items) {
+      .then((items) => {
         outputData.level = 0;
         outputData.items = items;
         callback(null, outputData);
-        return;
       })
-      .catch(function (error) {
-        console.log('Error filterCities: ' + error);
-      })
+      .catch((error) => {
+        // eslint-disable-next-line no-console
+        console.log(`Error filterCities: ${error}`);
+      });
   }
 
   if (words.length >= 2) {
-
     let village = {
       id: 0,
       name: '',
       noStreets: 0,
-      noHouses: 0
+      noHouses: 0,
     };
     let city = {
       id: 0,
@@ -934,93 +946,84 @@ module.exports.getFullAddress2 = async function (params, callback) {
     };
     let street = {
       id: 0,
-      name: ''
+      name: '',
     };
 
     await findCityByName(words[0].trim())
-      .then(function (data) {
-        city = {
-          ...data
-        };
+      .then((data) => {
+        city = { ...data };
       })
-      .catch(function (error) {
-        console.log('Error findCityByName: ' + error);
-      })
+      .catch((error) => {
+        // eslint-disable-next-line no-console
+        console.log(`Error findCityByName: ${error}`);
+      });
 
     if (city.isCity) {
       // City + streets
       if (words.length === 2) {
         await filterStreets(city.id, words[1].trim(), params.limit)
-          .then(function (items) {
+          .then((items) => {
             outputData.level = 1;
             outputData.items = items;
             callback(null, outputData);
-            return;
           })
-          .catch(function (error) {
-            console.log('Error filterStreets: ' + error);
-          })
+          .catch((error) => {
+            console.log(`Error filterStreets: ${error}`);
+          });
       }
       // City + street + houses
       if (words.length === 3) {
         await findStreetByName(city.id, words[1].trim())
-          .then(function (data) {
-            street = {
-              ...data
-            };
+          .then((data) => {
+            street = { ...data };
           })
-          .catch(function (error) {
-            console.log('Error findStreetByName: ' + error);
-          })
+          .catch((error) => {
+            console.log(`Error findStreetByName: ${error}`);
+          });
 
         await filterHouses(street.id, words[2].trim(), params.limit)
-          .then(function (items) {
+          .then((items) => {
             outputData.level = 2;
             outputData.items = items;
             callback(null, outputData);
-            return;
           })
-          .catch(function (error) {
-            console.log('Error filterHouses: ' + error);
-          })
+          .catch((error) => {
+            console.log(`Error filterHouses: ${error}`);
+          });
       }
     } else {
       // Area + villages
       if (words.length === 2) {
         await filterVillages(city.id, words[1].trim(), params.limit)
-          .then(function (items) {
+          .then((items) => {
             outputData.level = 3;
             outputData.items = items;
             callback(null, outputData);
-            return;
           })
-          .catch(function (error) {
-            console.log('Error filterVillages: ' + error);
-          })
+          .catch((error) => {
+            // eslint-disable-next-line no-console
+            console.log(`Error filterVillages: ${error}`);
+          });
       }
       if (words.length === 3) {
         await findVillageByName(city.id, words[1].trim())
-          .then(function (data) {
-            village = {
-              ...data
-            };
+          .then((data) => {
+            village = { ...data };
           })
-          .catch(function (error) {
-            console.log('Error findVillageByName: ' + error);
-          })
+          .catch((error) => {
+            console.log(`Error findVillageByName: ${error}`);
+          });
 
         if (!village.noStreets) {
           await filterStreets(village.id, words[2].trim(), params.limit)
-            .then(function (items) {
+            .then((items) => {
               outputData.items = items;
-              return;
             })
-            .catch(function (error) {
-              console.log('Error filterStreets: ' + error);
-            })
-        }
-        else {
-          let items = await filterHousesByVillage(village.id, params.limit);
+            .catch((error) => {
+              console.log(`Error filterStreets: ${error}`);
+            });
+        } else {
+          const items = await filterHousesByVillage(village.id, params.limit);
           outputData.items = items;
         }
 
@@ -1029,40 +1032,251 @@ module.exports.getFullAddress2 = async function (params, callback) {
       }
       if (words.length === 4) {
         await findVillageByName(city.id, words[1].trim())
-          .then(function (data) {
-            village = {
-              ...data
-            };
+          .then((data) => {
+            village = { ...data };
           })
-          .catch(function (error) {
-            console.log('Error findVillageByName: ' + error);
-          })
+          .catch((error) => {
+            // eslint-disable-next-line no-console
+            console.log(`Error findVillageByName: ${error}`);
+          });
 
         if ((!village.noStreets) && !(village.noHouses)) {
           await findStreetByName(village.id, words[2].trim())
-            .then(function (data) {
-              street = {
-                ...data
-              };
+            .then((data) => {
+              street = { ...data };
             })
-            .catch(function (error) {
-              console.log('Error findStreetByName: ' + error);
-            })
+            .catch((error) => {
+              // eslint-disable-next-line no-console
+              console.log(`Error findStreetByName: ${error}`);
+            });
 
           await filterHouses(street.id, words[3].trim(), params.limit)
-            .then(function (items) {
+            .then((items) => {
               outputData.items = items;
             })
-            .catch(function (error) {
-              console.log('Error filterHouses: ' + error);
-            })
+            .catch((error) => {
+              // eslint-disable-next-line no-console
+              console.log(`Error filterHouses: ${error}`);
+            });
         }
 
         outputData.level = 5;
         callback(null, outputData);
       }
     }
+  }
+};
 
+module.exports.getFullAddress3 = async (params, callback) => {
+  const words = params.suggestion.split(', ');
+  if (!Array.isArray(words)) {
+    return;
   }
 
+  const outputData = {
+    level: 0,
+    items: [],
+  };
+
+  if (words.length === 1) {
+    // outputData.level = 0;
+    outputData.items = await filterCities(words[0].trim(), params.limit);
+  }
+
+  if (words.length >= 2) {
+    const city = await findCityByName(words[0].trim());
+    if (city.isCity) {
+      // City + streets
+      if (words.length === 2) {
+        outputData.level = 1;
+        outputData.items = await filterStreets(city.id, words[1].trim(), params.limit);
+      }
+      // City + street + houses
+      if (words.length === 3) {
+        outputData.level = 2;
+        const street = await findStreetByName(city.id, words[1].trim());
+        outputData.items = await filterHouses(street.id, words[2].trim(), params.limit);
+      }
+    } else {
+      // Area + villages
+      if (words.length === 2) {
+        outputData.level = 3;
+        outputData.items = await filterVillages(city.id, words[1].trim(), params.limit);
+      }
+      if (words.length === 3) {
+        outputData.level = 4;
+        const village = await findVillageByName(city.id, words[1].trim());
+        if (!village.noStreets) {
+          outputData.items = await filterStreets(village.id, words[2].trim(), params.limit);
+        } else {
+          outputData.items = await filterHousesByVillage(village.id, params.limit);
+        }
+      }
+      if (words.length === 4) {
+        outputData.level = 5;
+        const village = await findVillageByName(city.id, words[1].trim());
+        if ((!village.noStreets) && !(village.noHouses)) {
+          const street = await findStreetByName(village.id, words[2].trim());
+          outputData.items = await filterHouses(street.id, words[3].trim(), params.limit);
+        }
+      }
+    }
+  }
+  if (typeof callback === 'function') {
+    callback(outputData);
+  }
 };
+
+module.exports.findOrderLookupProlongedOrder = (number, limit) => new Promise((resolve, reject) => {
+  const queryText = `SELECT CAST(a.contract_number AS CHAR(11)) AS contractNumber, a.m_contract_number AS prolongedContractNumber FROM cards a
+    WHERE (a.contract_number LIKE '${number}%') AND (a.is_deleted = 0) AND (a.rank = 0) LIMIT ${limit}`;
+
+  db.get().getConnection((err, connection) => {
+    connection.query(
+      queryText, [],
+      (error, rows) => {
+        connection.release();
+
+        if (error) {
+          reject();
+        } else {
+          resolve(rows);
+        }
+      },
+    );
+  });
+});
+
+module.exports.findProlongedOrderLookupOrder = (number, limit) => new Promise((resolve, reject) => {
+  const queryText = `SELECT CAST(a.contract_number AS CHAR(11)) AS contractNumber, a.m_contract_number AS prolongedContractNumber FROM cards a
+    WHERE (a.m_contract_number LIKE '${number}%') AND (a.is_deleted = 0) AND (a.rank = 0) LIMIT ${limit}`;
+
+  db.get().getConnection((err, connection) => {
+    connection.query(
+      queryText, [],
+      (error, rows) => {
+        connection.release();
+
+        if (error) {
+          reject();
+        } else {
+          resolve(rows);
+        }
+      },
+    );
+  });
+});
+
+module.exports.parseAddress = async (address) => {
+  const fullAddress = {
+    area: {
+      id: 0,
+      name: '',
+    },
+    city: {
+      id: 0,
+      name: '',
+      isCity: true,
+      noStreets: false,
+      noHouses: false,
+    },
+    street: {
+      id: 0,
+      name: '',
+    },
+    house: {
+      id: 0,
+      number: '',
+    },
+    success: false,
+  };
+
+  const words = address.split(', ');
+  if (words.length > 0) {
+    const city = await findCityByName(words[0]);
+    if (city) {
+      if (city.isCity) {
+        if (words.length === 3) {
+          fullAddress.city.id = city.id;
+          fullAddress.city.name = city.name;
+
+          const street = await findStreetByName(city.id, words[1]);
+          if (street) {
+            fullAddress.street.id = street.id;
+            fullAddress.street.name = street.name;
+
+            const house = await findHouseByNumber(street.id, words[2]);
+            if (house) {
+              fullAddress.house.id = house.id;
+              fullAddress.house.number = house.number;
+              fullAddress.success = true;
+            }
+          }
+        }
+      } else {
+        fullAddress.area.id = city.id;
+        fullAddress.area.name = city.name;
+        const village = await findVillageByName(city.id, words[1]);
+        if (village) {
+          fullAddress.city.id = village.id;
+          fullAddress.city.name = village.name;
+          fullAddress.city.isCity = false;
+          fullAddress.city.noStreets = village.noStreets;
+          fullAddress.city.noHouses = village.noHouses;
+
+          if ((words.length === 2) && (fullAddress.noHouses) && (fullAddress.noStreets)) {
+            fullAddress.success = true;
+          }
+
+          if (words.length === 3) {
+            if (fullAddress.noStreets) {
+              // TODO: Implement the functionality
+            } else if (fullAddress.noHouses) {
+              // TODO: Implement the functionality
+            }
+
+            if (words.length === 4) {
+              const street = await findStreetByName(village.id, words[2]);
+              if (street) {
+                fullAddress.street.id = street.id;
+                fullAddress.street.name = street.name;
+
+                const house = await findHouseByNumber(street.id, words[3]);
+                if (house) {
+                  fullAddress.house.id = house.id;
+                  fullAddress.house.number = house.number;
+                  fullAddress.success = true;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return fullAddress;
+};
+
+module.exports.findOrder = (params) => new Promise((resolve, reject) => {
+  const queryText = `SELECT CAST(a.contract_number AS CHAR(11)) AS contractNumber, a.m_contract_number AS prolongedContractNumber FROM cards a
+    WHERE (a.house_id = ${params.houseId}) AND (a.porh = ${params.porch}) AND (a.is_deleted = 0) AND (a.rank = 0) LIMIT 1`;
+
+  db.get().getConnection((err, connection) => {
+    connection.query(
+      queryText, [],
+      (error, rows) => {
+        connection.release();
+
+        if (error) {
+          reject();
+        } else {
+          let data = null;
+          if (Array.isArray(rows) && (rows.length === 1)) {
+            data = { ...rows[0] };
+          }
+          resolve(data);
+        }
+      },
+    );
+  });
+});

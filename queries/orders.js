@@ -77,7 +77,7 @@ exports.getOrder = `
   WHERE
     a.card_id = ?`;
 
-  exports.deleteExistsApartments = `
+exports.deleteExistsApartments = `
     DELETE FROM apartments
     WHERE card_id = ?
   `;

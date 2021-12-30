@@ -46,6 +46,7 @@
             <li><a data-toggle="tab" href="#maintenance">Техобслуживание</a></li>
             <li><a data-toggle="tab" href="#additionally">Дополнительно</a></li>
             <li><a data-toggle="tab" href="#completePackage">Комплектация</a></li>
+            <li><a data-toggle="tab" href="#checkingReceipts">Проверка квитаниций</a></li>
           </ul>
         </div>
       </div>
@@ -261,7 +262,7 @@
                       <label for="startService" class="control-label">c</label>
                       <div class="input-group date only-date" id="dtStartService">
                         <input type="text" class="form-control" name="startService" id="startService"
-                          value="<%= data.startService != null ? moment(data.startService).format( 'DD.MM.YYYY' ) : '' %>">
+                          value="<%= data.startService != null ? moment(data.startService).format( 'DD.MM.YYYY' ) : '' %>" <%= ((data.id > 0 && data.startService) && (user != 'BOSS')) ? 'readonly' : '' %>>
                         <span class="input-group-addon">
                           <span class="glyphicon glyphicon-calendar"></span>
                         </span>
@@ -481,12 +482,12 @@
 
               <div role="tabpanel" class="tab-pane" id="additionally">
                 <div class="form-group">
-                  <label for="contract_info">Информация по договору</label>
-                  <textarea class="form-control" name="contractInfo" rows="7"><%= data.contractInfo %></textarea>
+                  <label for="contractInfo">Информация по договору</label>
+                  <textarea class="form-control" name="contractInfo" id="contractInfo" rows="7"><%= data.contractInfo %></textarea>
                     </div>
                     <div class="form-group">
-                      <label for="service_info">Информация по обслуживанию</label>
-                      <textarea class="form-control" name="serviceInfo" rows="7"><%= data.serviceInfo %></textarea>
+                      <label for="serviceInfo">Информация по обслуживанию</label>
+                      <textarea class="form-control" name="serviceInfo" id="serviceInfo" rows="7"><%= data.serviceInfo %></textarea>
                     </div>
                   </div>
 
@@ -632,6 +633,20 @@
                       </tbody>
                     </table>
                   </div>
+                  <div role="tabpanel" class="tab-pane" id="checkingReceipts">
+                    <div class="row">
+                      <div class="col-md-12">
+                        <button type="button" class="btn btn-warning <%- data.id ? '' : 'disabled' %>" data-toggle="tooltip" data-placement="top" title="Начать проверку" id="checkPayments">
+                          <span class="glyphicon glyphicon-play" aria-hidden="true"></span>
+                        </button>
+                      </div>
+                    </div>
+                    <p></p>
+                    <div class="form-group">
+                      <label for="checkingInfo">Результаты проверки</label>
+                      <textarea class="form-control" name="checkingInfo" id="checkingInfo" rows="14"></textarea>
+                    </div>
+                  </div>
 
                 </div>
 
@@ -643,26 +658,22 @@
                       Действия <span class="caret"></span>
                     </button>
                     <ul class="dropdown-menu" role="menu" id="qwerty">
-                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %> id="generateOrderSetup"><a
+                      <li <%- data.id ? '' : 'class="disabled"' %> id="generateOrderSetup"><a
                           href="#">Сформировать договор на установку</a></li>
-                          <!-- href="/orders/generate_order_setup/<%= data.id %>">Сформировать договор на установку</a></li> -->
-                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %> id="generateOrderService"><a
+                      <li <%- data.id ? '' : 'class="disabled"' %> id="generateOrderService"><a
                           href="#">Сформировать договор на обслуживание</a>
-                          <!-- href="/orders/generate_order_service/<%= data.id %>">Сформировать договор на обслуживание</a> -->
                       </li>
                       <li class="divider"></li>
-                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %> id="openOrderSetup">
+                      <li <%- data.id ? '' : 'class="disabled"' %> id="openOrderSetup">
                         <a href="#">Открыть договор на установку</a>
                       </li>
-                      <li <%- (data.id != 0) ? '' : 'class="disabled"' %> id="openOrderService">
-                        <a href="#">Открыть договор на
-                          обслуживание</a>
+                      <li <%- data.id ? '' : 'class="disabled"' %> id="openOrderService">
+                        <a href="#">Открыть договор на обслуживание</a>
                         </li>
                     </ul>
                   </div>
-                  <button type="submit" class="btn btn-info" id="printingReceipts" name="printingReceipts">Печать квитанций</button>
+                  <button submit class="btn btn-info" id="printingReceipts" name="printingReceipts">Печать квитанций</button>
                 </div>
-
               </div>
             </div>
       </form>
@@ -739,14 +750,14 @@
                 </a>
               </div>
               <div class="col-md-9">
-                <span class="pull-right""><h4 id="personalAccount"></h4></span>
+                <span class="pull-right"><h4 id="personalAccount"></h4></span>
               </div>
             </div>
 
             <ul class="nav nav-pills">
-              <li class="active"><a data-toggle="tab" href="#payments">Оплаты</a></li>
-              <li><a data-toggle="tab" href="#register">Реестр</a></li>
-              <li><a data-toggle="tab" href="#prices">Платы</a></li>
+              <li class="active"><a data-toggle="tab" href="#payments">Оплаты<span class="badge payments">0</span></a></li>
+              <li><a data-toggle="tab" href="#register">Подключения<span class="badge fines">1</span></a></li>
+              <li><a data-toggle="tab" href="#prices">Платы<span class="badge prices">2</span></a></li>
             </ul>
 
             <div class="well">
@@ -912,6 +923,39 @@
         </div>
         <div class="modal-footer">
           <button class="btn btn-success" id="actionAddPayment">&nbsp;Записать&nbsp;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal bs-example-modal-normal" id="modifyPaymentDialog" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                    aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title">Изменить платеж</h4>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-xs-12">
+              <div class="form-group">
+                <label for="paymentAmount">Старая сумма</label>
+                <input type="text" class="form-control" name="oldAmount" id="oldAmount" />
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-xs-12">
+              <div class="form-group">
+                <label for="paymentAmount">Новая сумма</label>
+                <input type="text" class="form-control" name="newAmount" id="newAmount" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-success" id="actionModifyPayment">&nbsp;Записать&nbsp;</button>
         </div>
       </div>
     </div>

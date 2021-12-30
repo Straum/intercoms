@@ -10,4 +10,8 @@
 /public/templates/
 /node_modules/
 /.vscode/
+/.idea/
+/nbproject/
 /nbproject/private/
+
+

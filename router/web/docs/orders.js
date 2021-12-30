@@ -1,77 +1,77 @@
-'use strict';
-
 const path = require('path');
 const express = require('express');
-var PizZip = require('pizzip');
-var Docxtemplater = require('docxtemplater');
-var fs = require('fs');
-var PDFDocument = require('pdfkit');
+const PizZip = require('pizzip');
+const Docxtemplater = require('docxtemplater');
+const fs = require('fs');
+const moment = require('moment');
 
-var db = require('../../../lib/db');
+const db = require('../../../lib/db');
 const cfg = require('../../../lib/config').config;
-var moment = require('moment');
-var utils = require('../../../lib/utils');
-var order = require('../../../lib/order_service');
+
+const utils = require('../../../lib/utils');
+const order = require('../../../lib/order_service');
 const queryOrder = require('../../../queries/orders').getOrder;
 const queryDeleteExistsApartments = require('../../../queries/orders').deleteExistsApartments;
-var common = require('../../common/typeheads');
-var OrderModel = require('../../../models/order').OrderModel;
-var models = require('../../../models/order');
-var PrintOrderReceipts = require('../../../lib/print_order_receipts').PrintOrderReceipts;
-const {hostIP, hostPort} = require('../../../lib/config').config;
-var ClientModel = require('../../../models/client').ClientModel;
+const { OrderModel } = require('../../../models/order');
+const models = require('../../../models/order');
+const { PrintOrderReceipts } = require('../../../lib/print_order_receipts');
+const { hostIP, hostPort } = require('../../../lib/config').config;
+const { ClientModel } = require('../../../models/client');
+const common = require('../../common/typeheads');
 const operationsWithClient = require('../../common/operations_with_client');
+const apartment = require('../../common/apartments');
+const logger = require('../../../lib/winston');
 
 require('shelljs/global');
 
-const isExistsContractNumber = (contractNumber) => {
+const isExistsContractNumber = (contractNumber) => new Promise((resolve, reject) => {
+  db.get().getConnection((err, connection) => {
+    connection.query(
+      'SELECT a.card_id AS uid FROM cards a WHERE a.contract_number = ?', [contractNumber],
+      (error, rows) => {
+        connection.release();
+        if (error) {
+          reject();
+        } else {
+          resolve(rows.length > 0 ? rows[0].uid : null);
+        }
+      },
+    );
+  });
+});
+
+function modifyPayment(data) {
   return new Promise((resolve, reject) => {
     db.get().getConnection((err, connection) => {
       connection.query(
-        'SELECT a.card_id AS uid FROM cards a WHERE a.contract_number = ?', [contractNumber],
-         (err, rows) => {
+        'CALL modify_payment(?,?,?)', [
+          data.oldAmount,
+          data.newAmount,
+          data.id,
+        ],
+        (error, rows) => {
           connection.release();
-          if (err) {
+          if (error) {
+            logger.info('data:', JSON.stringify(data));
+            logger.info('error', error);
             reject();
           } else {
-            resolve(rows.length > 0 ? rows[0].uid : null);
+            resolve(rows[0][0].apartmentId);
           }
-        });
+        },
+      );
     });
   });
 }
 
-const paymentsHistory = async (apartmentId) => {
-  let out = {
-    personalAccount: '',
-    payments: [],
-    fines: [],
-    prices: []
-  };
-
-  try {
-    const rawData = await getApartmentInfo(apartmentId);
-    if ((rawData) && (rawData instanceof Object)) {
-      out.personalAccount = generatePersonalAccount(rawData);
-    }
-
-    out.payments = await getPayments(apartmentId);
-    out.fines = await getPaymentsByRegister(apartmentId);
-    out.prices = await getPrices(apartmentId);
-    return out;
-  } catch (error) {
-    console.log(error.message);
-  }
-}
-
 function addPayment(data) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
+  logger.info('call from addPayment()');
+  return new Promise((resolve, reject) => {
+    db.get().getConnection((err, connection) => {
       connection.query(
-        ' INSERT INTO payments (' +
-        ' create_date, apartment_id, pay_month, pay_year, amount, pay_date, `mode`, is_registered)' +
-        ' VALUES (' +
-        ' ?,?,?,?,?,?,?,?)', [
+        `INSERT INTO payments (
+        create_date, apartment_id, pay_month, pay_year, amount, pay_date, mode, is_registered)
+        VALUES (?,?,?,?,?,?,?,?)`, [
           data.createDate,
           data.apartmentId,
           data.payMonth,
@@ -79,33 +79,37 @@ function addPayment(data) {
           data.amount,
           data.payDate,
           data.mode,
-          data.isRegistered
+          data.isRegistered,
         ],
-        function (err, rows) {
+        (error, rows) => {
           connection.release();
-          if (err) {
+          if (error) {
+            logger.info('data:', JSON.stringify(data));
+            logger.info('error', error);
             reject();
           } else {
             resolve(rows.insertId);
           }
-        });
+        },
+      );
     });
   });
 }
 
 function getOrderIdFromApartment(apartmentId) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
+  return new Promise((resolve, reject) => {
+    db.get().getConnection((err, connection) => {
       connection.query(
-        `SELECT card_id FROM apartments WHERE apartment_id = ?`, [apartmentId],
-        function (err, rows) {
+        'SELECT card_id AS cardId FROM apartments WHERE apartment_id = ?', [apartmentId],
+        (error, rows) => {
           connection.release();
-          if (err) {
+          if (error) {
             reject();
           } else {
-            resolve((Array.isArray(rows) && rows.length == 1) ? rows[0].card_id : null);
+            resolve((Array.isArray(rows) && rows.length === 1) ? rows[0].cardId : null);
           }
-        });
+        },
+      );
     });
   });
 }
@@ -115,17 +119,17 @@ function generatePersonalAccount(data) {
   const out = [];
 
   let outContractNumber = '';
-  let rpts = 0;
+  let rps = 0;
   if (data.rank === 0) {
-    rpts = FIELD_CONTRACT_LENGTH - (data.prolongedContractNumber.trim().length);
-    outContractNumber = (rpts > 0 ? '0'.repeat(rpts) : '') + data.prolongedContractNumber.trim();
+    rps = FIELD_CONTRACT_LENGTH - (data.prolongedContractNumber.trim().length);
+    outContractNumber = (rps > 0 ? '0'.repeat(rps) : '') + data.prolongedContractNumber.trim();
   }
   if (data.rank === 1) {
     outContractNumber = `${data.contractNumber}`.trim().padStart(FIELD_CONTRACT_LENGTH, '0');
   }
 
-  rpts = (3 - data.apartmentNumber.toString().trim().length);
-  const outApartment = (rpts > 0 ? '0'.repeat(rpts) : '') + data.apartmentNumber.toString().trim();
+  rps = (3 - data.apartmentNumber.toString().trim().length);
+  const outApartment = (rps > 0 ? '0'.repeat(rps) : '') + data.apartmentNumber.toString().trim();
 
   out.push(data.isDuplicate ? '1' : '0');
   out.push(outContractNumber);
@@ -137,59 +141,61 @@ function generatePersonalAccount(data) {
 }
 
 function checkCurrentPeriod(orderId) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
+  return new Promise((resolve, reject) => {
+    db.get().getConnection((err, connection) => {
       connection.query(
         'CALL check_current_period(?)', [orderId],
-        function (err, rows) {
+        (error) => {
           connection.release();
-          if (err) {
+          if (error) {
             reject();
           } else {
             resolve();
           }
-        });
+        },
+      );
     });
   });
 }
 
 function checkPreviousPeriod(orderId) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
+  return new Promise((resolve, reject) => {
+    db.get().getConnection((err, connection) => {
       connection.query(
         'CALL check_previous_period(?)', [orderId],
-        function (err, rows) {
+        (error) => {
           connection.release();
-          if (err) {
+          if (error) {
             reject();
           } else {
             resolve();
           }
-        });
+        },
+      );
     });
   });
 }
 
-function checkOrder(orderId) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
-      connection.query(
-        'CALL check_order(?)', [orderId],
-        function (err, rows) {
-          connection.release();
-          if (err) {
-            reject();
-          } else {
-            resolve();
-          }
-        });
-    });
-  });
-}
+// function checkOrder(orderId) {
+//   return new Promise(function (resolve, reject) {
+//     db.get().getConnection(function (err, connection) {
+//       connection.query(
+//         'CALL check_order(?)', [orderId],
+//         function (err, rows) {
+//           connection.release();
+//           if (err) {
+//             reject();
+//           } else {
+//             resolve();
+//           }
+//         });
+//     });
+//   });
+// }
 
 function printingReceipts(orderId, res) {
-  var printOrderReceipts = new PrintOrderReceipts(orderId, res);
-  printOrderReceipts.go();
+  const printOrderReceipts = new PrintOrderReceipts(orderId, res);
+  printOrderReceipts.go().then();
 }
 
 function getApartmentInfo(id) {
@@ -217,43 +223,10 @@ function getApartmentInfo(id) {
 }
 
 function getPayments(id) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
+  return new Promise((resolve, reject) => {
+    db.get().getConnection((err, connection) => {
       connection.query(
-        ' SELECT' +
-        ' a.payment_id AS uid,' +
-        ' a.create_date AS createDate,' +
-        ' a.pay_month AS payMonth,' +
-        ' a.pay_year AS payYear,' +
-        ' a.pay_date AS payDate,' +
-        ' a.amount,' +
-        ' a.`mode`,' +
-        ' a.privilege,' +
-        ' b.name as organizationName' +
-        ' FROM payments a' +
-        ' LEFT JOIN organizations b ON b.organization_id = a.mode' +
-        ' WHERE' +
-        ' (a.apartment_id = ?)' +
-        ' AND (a.is_registered = 0)' +
-        ' ORDER BY' +
-        ' a.pay_date DESC, payment_id', [id],
-        function (err, rows) {
-          connection.release();
-          if (err) {
-            reject(err);
-          } else {
-            resolve(rows);
-          }
-        });
-    });
-  });
-}
-
-function getPaymentsByRegister(id) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
-      connection.query(
-        ` SELECT
+        `SELECT
         a.payment_id AS uid,
         a.create_date AS createDate,
         a.pay_month AS payMonth,
@@ -266,45 +239,81 @@ function getPaymentsByRegister(id) {
         FROM payments a
         LEFT JOIN organizations b ON b.organization_id = a.mode
         WHERE
-        (a.apartment_id = ?)
-        AND (a.is_registered = 1)
+        (a.is_deleted = 0)
+        AND (a.is_registered = 0)
+        AND (a.apartment_id = ?)
         ORDER BY
-        a.pay_date DESC, a.payment_id`, [id],
-        function (err, rows) {
+        a.pay_date DESC, payment_id`, [id],
+        (error, rows) => {
           connection.release();
-          if (err) {
+          if (error) {
             reject(err);
           } else {
             resolve(rows);
           }
-        });
+        },
+      );
     });
   });
 }
 
+// function getPaymentsByRegister(id) {
+//   return new Promise(function (resolve, reject) {
+//     db.get().getConnection(function (err, connection) {
+//       connection.query(
+//         ` SELECT
+//         a.payment_id AS uid,
+//         a.create_date AS createDate,
+//         a.pay_month AS payMonth,
+//         a.pay_year AS payYear,
+//         a.pay_date AS payDate,
+//         a.amount,
+//         a.mode,
+//         a.privilege,
+//         b.name as organizationName
+//         FROM payments a
+//         LEFT JOIN organizations b ON b.organization_id = a.mode
+//         WHERE
+//         (a.apartment_id = ?)
+//         AND (a.is_registered = 1)
+//         ORDER BY
+//         a.pay_date DESC, a.payment_id`, [id],
+//         function (err, rows) {
+//           connection.release();
+//           if (err) {
+//             reject(err);
+//           } else {
+//             resolve(rows);
+//           }
+//         });
+//     });
+//   });
+// }
+
 function getFines(id) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
+  return new Promise((resolve, reject) => {
+    db.get().getConnection((err, connection) => {
       connection.query(
-        ' SELECT' +
-        ' a.fine_id AS uid,' +
-        ' a.create_dt AS createDate,' +
-        ' a.amount_of_fine AS amount,' +
-        ' a.remark,' +
-        ' a.paid' +
-        ' FROM fines a' +
-        ' WHERE' +
-        ' a.apartment_id = ?' +
-        ' ORDER BY' +
-        ' a.create_dt DESC', [id],
-        function (err, rows) {
+        `SELECT
+          a.fine_id AS uid,
+          a.create_dt AS createDate,
+          a.amount_of_fine AS amount,
+          a.remark,
+          a.paid
+          FROM fines a
+          WHERE
+          a.is_deleted = 0 AND a.paid = 1 AND a.apartment_id = ?
+          ORDER BY
+          a.create_dt DESC`, [id],
+        (error, rows) => {
           connection.release();
-          if (err) {
-            reject(err);
+          if (error) {
+            reject(error);
           } else {
             resolve(rows);
           }
-        });
+        },
+      );
     });
   });
 }
@@ -313,13 +322,13 @@ function getPrices(id) {
   return new Promise(function (resolve, reject) {
     db.get().getConnection(function (err, connection) {
       connection.query(
-        ' SELECT' +
-        ' DISTINCT a.start_service AS startService,' +
-        ' a.end_service AS endService,' +
-        ' a.normal_payment AS normalPayment,' +
-        ' a.privilege_payment As privilegePayment,' +
-        ' a.receipt_printing AS receiptPrinting' +
-        ' FROM' +
+        ' SELECT'
+        + ' DISTINCT a.start_service AS startService,' +
+      ' a.end_service AS endService,' +
+      ' a.normal_payment AS normalPayment,' +
+      ' a.privilege_payment As privilegePayment,' +
+      ' a.receipt_printing AS receiptPrinting' +
+      ' FROM' +
         ' cards_history a' +
         ' INNER JOIN apartments b ON b.card_id = a.card_id' +
         ' WHERE' +
@@ -487,7 +496,7 @@ function deleteExistsApartments(data) {
     } else {
       resolve();
     }
-  })
+  });
 }
 
 function insertApartments(data) {
@@ -519,7 +528,7 @@ function insertApartments(data) {
     } else {
       resolve();
     }
-  })
+  });
 }
 
 function updateApartments(data) {
@@ -742,53 +751,38 @@ function getClientInfo(clientId) {
   });
 };
 
-function getAprtmentId(paymentId) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
+function getApartmentId(paymentId) {
+  return new Promise((resolve, reject) => {
+    db.get().getConnection((err, connection) => {
       connection.query(
-        'SELECT apartment_id FROM payments where payment_id = ?', [paymentId],
-        function (err, rows) {
+        'SELECT apartment_id AS apartmentId FROM payments where payment_id = ?', [paymentId],
+        (error, rows) => {
           connection.release();
-          if (err) {
+          if (error) {
             reject();
           } else {
-            resolve(rows[0]);
+            resolve( {...rows[0]});
           }
-        });
+        },
+      );
     });
   });
 };
 
 function deletePayment(paymentId) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
+  return new Promise((resolve, reject) => {
+    db.get().getConnection((err, connection) => {
       connection.query(
-        'DELETE FROM payments where payment_id = ?', [paymentId],
-        function (err) {
+        'UPDATE payments SET is_deleted = 1, delete_dt = NOW() WHERE payment_id = ?', [paymentId],
+        (error) => {
           connection.release();
-          if (err) {
+          if (error) {
             reject();
           } else {
             resolve();
           }
-        });
-    });
-  });
-};
-
-function convertAnApartment(apartmentId) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
-      connection.query(
-        'CALL convert_an_apartment(?)', [apartmentId],
-        function (err, rows) {
-          connection.release();
-          if (err) {
-            reject();
-          } else {
-            resolve(rows[0][0]);
-          }
-        });
+        },
+      );
     });
   });
 };
@@ -840,13 +834,35 @@ function passportData(data) {
   return out.join('');
 }
 
-function generateReportForSetup(sceleton, isCopyFile) {
-  var templateFile = (sceleton.city.printType == 1) ? 'setup_pskov.docx' : 'setup_vluki.docx';
-  var content = fs
-    .readFileSync(path.join(__dirname, '../../../public/templates/' + templateFile), 'binary');
+function replaceErrors(key, value) {
+  if (value instanceof Error) {
+    return Object.getOwnPropertyNames(value).reduce((error, key) => {
+      error[key] = value[key];
+      return error;
+    }, {});
+  }
+  return value;
+}
 
-  var zip = new PizZip(content);
-  var doc;
+function errorHandler(error) {
+  console.log(JSON.stringify({ error }, replaceErrors));
+
+  if (error.properties && error.properties.errors instanceof Array) {
+    const errorMessages = error.properties.errors.map((err) => err.properties.explanation).join('\n');
+    console.log('errorMessages', errorMessages);
+    // errorMessages is a humanly readable message looking like this :
+    // 'The tag beginning with "foobar" is unopened'
+  }
+  throw error;
+}
+
+function generateReportForSetup(sceleton, isCopyFile) {
+  const templateFile = (sceleton.city.printType == 1) ? 'setup_pskov.docx' : 'setup_vluki.docx';
+  const content = fs
+    .readFileSync(path.join(__dirname, `../../../public/templates/${templateFile}`), 'binary');
+
+  const zip = new PizZip(content);
+  let doc;
   try {
     doc = new Docxtemplater(zip);
   } catch (error) {
@@ -872,7 +888,7 @@ function generateReportForSetup(sceleton, isCopyFile) {
     CLIENT2: sceleton.client.name,
     PROPISKA: addressOfClient(sceleton.client.registeredAddress),
     FAKT: addressOfClient(sceleton.client.actualAddress),
-    MES: sceleton.equipment.guaranteePeriod == 0 ? 12 : sceleton.equipment.guaranteePeriod * 12,
+    MES: sceleton.equipment.guaranteePeriod === 0 ? 12 : sceleton.equipment.guaranteePeriod * 12,
     PASSPORT: passportData(sceleton.client.certificate),
     NUMER: sceleton.numeration,
     MPHONE: sceleton.client.phones,
@@ -899,40 +915,39 @@ function generateReportForSetup(sceleton, isCopyFile) {
   });
 
   try {
-    doc.render()
+    doc.render();
   } catch (error) {
     errorHandler(error);
   }
 
-  var buf = doc.getZip()
+  const buf = doc.getZip()
     .generate({
-      type: 'nodebuffer'
+      type: 'nodebuffer',
     });
 
-  var outputFile = path.join(__dirname, '../../../public/docs/') + sceleton.contractNumber + '-1.doc';
+  const outputFile = `${path.join(__dirname, '../../../public/docs/')}${sceleton.contractNumber}-1.doc`;
   // buf is a nodejs buffer, you can either write it to a file or do anything else with it.
   fs.writeFileSync(outputFile, buf);
 
   if (isCopyFile) {
-    let copiedFile = `${cfg.pathToNAS}\\${sceleton.contractNumber}-1.doc`;
+    const copiedFile = `${cfg.pathToNAS}\\${sceleton.contractNumber}-1.doc`;
     fs.copyFileSync(outputFile, copiedFile);
     return copiedFile;
   }
 
   return outputFile;
-
 }
 
 function generateReportForService(sceleton, isCopyFile) {
   // Orginal code
   // https://www.tutorialswebsite.com/replace-word-document-placeholder-node-js/
 
-  var templateFile = (sceleton.city.printType == 1) ? 'service_pskov.docx' : 'service_vluki.docx';
-  var content = fs
-    .readFileSync(path.join(__dirname, '../../../public/templates/' + templateFile), 'binary');
+  const templateFile = (sceleton.city.printType == 1) ? 'service_pskov.docx' : 'service_vluki.docx';
+  const content = fs
+    .readFileSync(path.join(__dirname, `../../../public/templates/${templateFile}`), 'binary');
 
-  var zip = new PizZip(content);
-  var doc;
+  const zip = new PizZip(content);
+  let doc;
   try {
     doc = new Docxtemplater(zip);
   } catch (error) {
@@ -968,54 +983,27 @@ function generateReportForService(sceleton, isCopyFile) {
   });
 
   try {
-    doc.render()
+    doc.render();
   } catch (error) {
     errorHandler(error);
   }
 
-  var buf = doc.getZip()
+  const buf = doc.getZip()
     .generate({
-      type: 'nodebuffer'
+      type: 'nodebuffer',
     });
 
-  var outputFile = path.join(__dirname, '../../../public/docs/') + sceleton.contractNumber + '-2.doc';
+  const outputFile = `${path.join(__dirname, '../../../public/docs/')}${sceleton.contractNumber}-2.doc`;
   fs.writeFileSync(outputFile, buf);
 
   if (isCopyFile) {
-    let copiedFile = `${cfg.pathToNAS}\\${sceleton.contractNumber}-2.doc`;
+    const copiedFile = `${cfg.pathToNAS}\\${sceleton.contractNumber}-2.doc`;
     fs.copyFileSync(outputFile, copiedFile);
     return copiedFile;
   }
 
   return outputFile;
-
 };
-
-function replaceErrors(key, value) {
-  if (value instanceof Error) {
-    return Object.getOwnPropertyNames(value).reduce(function (error, key) {
-      error[key] = value[key];
-      return error;
-    }, {});
-  }
-  return value;
-}
-
-function errorHandler(error) {
-  console.log(JSON.stringify({
-    error: error
-  }, replaceErrors));
-
-  if (error.properties && error.properties.errors instanceof Array) {
-    const errorMessages = error.properties.errors.map(function (error) {
-      return error.properties.explanation;
-    }).join("\n");
-    console.log('errorMessages', errorMessages);
-    // errorMessages is a humanly readable message looking like this :
-    // 'The tag beginning with "foobar" is unopened'
-  }
-  throw error;
-}
 
 var Filters = function () {
   this.conditions = {
@@ -1269,6 +1257,52 @@ function changeAddress(data) {
             resolve(rows[0]);
           }
         });
+    });
+  });
+}
+
+async function paymentsHistory(apartmentId) {
+  logger.info('call from paymentsHistory()');
+  const out = {
+    personalAccount: '',
+    payments: [],
+    fines: [],
+    prices: [],
+  };
+
+  try {
+    const rawData = await getApartmentInfo(apartmentId);
+    if ((rawData) && (rawData instanceof Object)) {
+      out.personalAccount = generatePersonalAccount(rawData);
+    }
+
+    out.payments = await getPayments(apartmentId);
+    out.fines = await getFines(apartmentId); // getPaymentsByRegister(apartmentId);
+    out.prices = await getPrices(apartmentId);
+  } catch (error) {
+    console.log(error.message);
+  }
+  return out;
+}
+
+function checkPayments(data) {
+  return new Promise((resolve, reject) => {
+    db.get().getConnection((err, connection) => {
+      connection.query(
+        'CALL find_debt_under_order_depth_2_year(?)', [
+          data.id,
+        ],
+        (error, rows) => {
+          connection.release();
+          if (error) {
+            logger.info('data:', JSON.stringify(data));
+            logger.info('error', error);
+            reject();
+          } else {
+            resolve(rows);
+          }
+        },
+      );
     });
   });
 }
@@ -1683,7 +1717,7 @@ module.exports = function () {
           sceleton.client.certificate.name = passport[0].certificate;
           sceleton.client.certificate.series = passport[0].series;
           sceleton.client.certificate.number = passport[0].number;
-          sceleton.client.certificate.issued = passport[0].issued
+          sceleton.client.certificate.issued = passport[0].issued;
           sceleton.client.certificate.department = passport[0].department;
         }
         generateReportForSetup(res, sceleton);
@@ -1743,7 +1777,7 @@ module.exports = function () {
           sceleton.client.certificate.name = passport[0].certificate;
           sceleton.client.certificate.series = passport[0].series;
           sceleton.client.certificate.number = passport[0].number;
-          sceleton.client.certificate.issued = passport[0].issued
+          sceleton.client.certificate.issued = passport[0].issued;
           sceleton.client.certificate.department = passport[0].department;
         }
         generateReportForService(res, sceleton);
@@ -2004,7 +2038,7 @@ module.exports = function () {
   });
 
   router.post('/find_full_address', function (req, res) {
-    const {rowsCount, suggestion, core} = {...req.body}
+    const {rowsCount, suggestion, core} = {...req.body};
     // var data = req.body;
     if (suggestion) {
       var params = {
@@ -2071,20 +2105,13 @@ module.exports = function () {
     }
   });
 
-  router.post('/find_porch', (req, res) => {
+  router.post('/find_porch', async (req, res) => {
     const data = req.body;
     if ((data) && (typeof (data) === 'object') && ('porch' in data) && ('houseId' in data)) {
       const rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
       const params = {...data, rowsCount: rowsCount};
-      // var params = {
-      //   houseId: data.houseId,
-      //   porch: data.porch,
-      //   rowsCount: rowsCount
-      // };
-
-      common.filterPorches(params, (err, rows) => {
-        res.status(200).send(rows);
-      });
+      const rows = await common.filterPorches(params);
+      res.status(200).send(rows);
     } else {
       res.status(500).send({
         code: 500,
@@ -2164,7 +2191,7 @@ module.exports = function () {
         }
 
         out.payments = await getPayments(data.id);
-        out.fines = await getPaymentsByRegister(data.id);
+        out.fines = await getFines(data.id);
         out.prices = await getPrices(data.id);
         out.paymentOptions = await getPaymentOptions();
 
@@ -2199,104 +2226,122 @@ module.exports = function () {
     }
   });
 
+  router.post('/modify_payment', async (req, res) => {
+    const data = {
+      id: req.body.id,
+      oldAmount: req.body.oldAmount,
+      newAmount: req.body.newAmount,
+    };
+
+    const apartmentId = await modifyPayment(data);
+    const apartmentData = await apartment.convertAnApartment(apartmentId);
+    const paymentsData = await paymentsHistory(apartmentId);
+    const dateOfLastPayment = await apartment.getDateOfLastPayment(apartmentId);
+    res.status(200).send({
+      apartmentData,
+      paymentsData,
+      dateOfLastPayment,
+    });
+  });
+
   router.post('/add_payment', async (req, res) => {
 
     const obj = {
-      apartmentId: parseInt(req.body.id),
+      apartmentId: +req.body.id,
       amount: parseFloat(req.body.amount),
       payDate: moment(req.body.date, 'DD.MM.YYYY').format('YYYY-MM-DD'),
       // mode: 2,
-      mode: parseInt(req.body.option),
-      isRegistered: 0
-    }
+      mode: +req.body.option,
+      isRegistered: 0,
+    };
 
     const data = {
       ...obj,
-      ...{
-        payMonth: moment(obj.payDate).month() + 1
-      },
-      ...{
-        payYear: moment(obj.payDate).year()
-      },
-      ...{
-        createDate: obj.payDate
-      }
+      ...{ payMonth: moment(obj.payDate).month() + 1 },
+      ...{ payYear: moment(obj.payDate).year() },
+      ...{ createDate: obj.payDate },
     };
 
     try {
       const uid = await addPayment(data);
-      const apartmentInfo = await convertAnApartment(obj.apartmentId);
+      const apartmentInfo = await apartment.convertAnApartment(obj.apartmentId);
       const paymentsData = await paymentsHistory(obj.apartmentId);
+      const dateOfLastPayment = await apartment.getDateOfLastPayment(obj.apartmentId);
       res.status(200).send({
-        apartmentInfo: apartmentInfo,
-        paymentsHistory: paymentsData
+        apartmentInfo,
+        paymentsHistory: paymentsData,
+        dateOfLastPayment,
       });
     } catch (error) {
       console.log(`Error: (/add_payment) - ${error.message}`);
       res.status(500).send({
-        success: 'Bad'
+        success: 'Bad',
       });
-      return;
     }
   });
 
-  router.post('/add_payment_in_register', async (req, res) => {
+  // router.post('/add_payment_in_register', async (req, res) => {
+  //
+  //   const obj = {
+  //     apartmentId: parseInt(req.body.id),
+  //     amount: parseFloat(req.body.amount),
+  //     payDate: moment(req.body.date, 'DD.MM.YYYY').format('YYYY-MM-DD'),
+  //     mode: 2,
+  //     isRegistered: 1
+  //   };
+  //
+  //   const data = {
+  //     ...obj,
+  //     ...{
+  //       payMonth: moment(obj.payDate).month() + 1
+  //     },
+  //     ...{
+  //       payYear: moment(obj.payDate).year()
+  //     },
+  //     ...{
+  //       createDate: obj.payDate
+  //     }
+  //   };
+  //
+  //   try {
+  //     const uid = await addPayment(data);
+  //     const paymentsData = await paymentsHistory(obj.apartmentId);
+  //     res.status(200).send({
+  //       paymentsHistory: paymentsData,
+  //     });
+  //   } catch (error) {
+  //     console.log(`Error: (/add_payment_in_register) - ${error.message}`);
+  //     res.status(500).send({
+  //       success: 'Bad'
+  //     });
+  //     return;
+  //   }
+  // });
 
-    const obj = {
-      apartmentId: parseInt(req.body.id),
-      amount: parseFloat(req.body.amount),
-      payDate: moment(req.body.date, 'DD.MM.YYYY').format('YYYY-MM-DD'),
-      mode: 2,
-      isRegistered: 1
-    }
-
-    const data = {
-      ...obj,
-      ...{
-        payMonth: moment(obj.payDate).month() + 1
-      },
-      ...{
-        payYear: moment(obj.payDate).year()
-      },
-      ...{
-        createDate: obj.payDate
-      }
-    };
-
-    try {
-      const uid = await addPayment(data);
-      const paymentsData = await paymentsHistory(obj.apartmentId);
-      res.status(200).send({
-        paymentsHistory: paymentsData
-      });
-    } catch (error) {
-      console.log(`Error: (/add_payment_in_register) - ${error.message}`);
-      res.status(500).send({
-        success: 'Bad'
-      });
-      return;
-    }
-  });
-
-  router.post('/delete_payment', function (req, res) {
-    let paymentId = 0;
+  router.post('/delete_payment', async (req, res) => {
     const data = req.body;
     if ((data) && (typeof (data) === 'object') && ('id' in data)) {
-      getAprtmentId(data.id)
-        .then(function (info) {
-          paymentId = info.apartment_id;
-          return deletePayment(data.id);
-        })
-        .then(function () {
-          return convertAnApartment(paymentId);
-        })
-        .then(function (apartmentInfo) {
-          res.status(200).send(apartmentInfo);
-        })
-        .catch(function (error) {
-          console.log(error.message);
-          res.status(500).send(error.message);
-        });
+      const { apartmentId } = await getApartmentId(data.id);
+      await deletePayment(data.id);
+      const apartmentInfo = await apartment.convertAnApartment(apartmentId);
+      const dateOfLastPayment = await apartment.getDateOfLastPayment(apartmentId);
+      res.status(200).send({ apartmentInfo, dateOfLastPayment });
+      //
+      //
+      // .then(function (info) {
+      //   paymentId = info.apartment_id;
+      //   return deletePayment(data.id);
+      // })
+      // .then(function () {
+      //   return apartment.convertAnApartment(paymentId);
+      // })
+      // .then(function (apartmentInfo) {
+      //   res.status(200).send(apartmentInfo);
+      // })
+      // .catch(function (error) {
+      //   console.log(error.message);
+      //   res.status(500).send(error.message);
+      // });
     } else {
       res.status(500).send({
         code: 500,
@@ -2328,6 +2373,65 @@ module.exports = function () {
 
   router.post('/save_client', (req, res) => {
     saveClientData(req.body, res);
+  });
+
+  router.post('/check_payments', async (req, res) => {
+    const data = {
+      id: req.body.id,
+    };
+
+    const currentDate = `Дата: ${moment(new Date()).format('DD.MM.YYYY HH:mm:ss')}`;
+    const info = [];
+    info.push(currentDate);
+    info.push('');
+
+    const rawData = await checkPayments(data);
+    if ('errorCode' in rawData[0][0]) {
+      info.push(rawData[0][0].errorMessage);
+    } else {
+      const apartments = rawData[0];
+      apartments.forEach((item) => {
+        if (item.lastOneYearPayment + item.currentPayment !== 0) {
+          const apartmentInfo = `${item.number}${utils.decodeApartmentLetter(item.letter)}`;
+          if ((item.lastOneYearPayment < 0)
+            && ((item.lastOneYearPayment + item.lastTwoYearPayment) !== 0)) {
+            let addInfo = '';
+            if (item.lastTwoYearPayment > 0) {
+              addInfo = ` (есть долг за второй год - ${item.lastTwoYearPayment.toFixed(2)})`;
+            }
+            info.push(`Квартира ${apartmentInfo} - возможно, переплата ${item.lastOneYearPayment.toFixed(2)}${addInfo}.`);
+          }
+          if (item.lastOneYearPayment > 0) {
+            let addInfo = '';
+            if (item.lastTwoYearPayment > 0) {
+              addInfo = ` (есть долг за второй год - ${item.lastTwoYearPayment.toFixed(2)})`;
+            }
+            if (item.locked) {
+              addInfo += ' - заблокирован';
+            }
+            info.push(`Квартира ${apartmentInfo} - долг за прошлый год ${item.lastOneYearPayment.toFixed(2)}${addInfo}.`);
+          }
+          if (item.lastOneYearPayment === 0) {
+            if (item.lastTwoYearPayment > 0) {
+              let addInfo = '';
+              addInfo = ` (есть долг за второй год - ${item.lastTwoYearPayment.toFixed(2)})`;
+              if (item.locked) {
+                addInfo += ' - заблокирован';
+              }
+              info.push(`Квартира ${apartmentInfo} - долг за прошлый год отсутствует${addInfo}.`);
+            }
+          }
+        }
+      });
+    }
+
+    if (info.length === 2) {
+      info.push('Все нормально.');
+    }
+
+    res.status(200).send({
+      message: info.join('\r\n'),
+    });
   });
 
   return router;
@@ -2398,7 +2502,7 @@ const buildReportForSetup = (id, isCopyFile, cb) => {
         sceleton.client.certificate.name = passport[0].certificate;
         sceleton.client.certificate.series = passport[0].series;
         sceleton.client.certificate.number = passport[0].number;
-        sceleton.client.certificate.issued = passport[0].issued
+        sceleton.client.certificate.issued = passport[0].issued;
         sceleton.client.certificate.department = passport[0].department;
       }
       const outputFile = generateReportForSetup(sceleton, isCopyFile);
@@ -2412,7 +2516,7 @@ const buildReportForSetup = (id, isCopyFile, cb) => {
         cb(null);
       }
     });
-}
+};
 
 const buildReportForService = (id, isCopyFile, cb) => {
   let sceleton = new models.ReportModel();
@@ -2461,7 +2565,7 @@ const buildReportForService = (id, isCopyFile, cb) => {
         sceleton.client.certificate.name = passport[0].certificate;
         sceleton.client.certificate.series = passport[0].series;
         sceleton.client.certificate.number = passport[0].number;
-        sceleton.client.certificate.issued = passport[0].issued
+        sceleton.client.certificate.issued = passport[0].issued;
         sceleton.client.certificate.department = passport[0].department;
       }
       const outputFile = generateReportForService(sceleton, isCopyFile);
@@ -2525,7 +2629,7 @@ const saveClientData = async (data, res) => {
     res.status(500);
   }
 
-}
+};
 
 module.exports.buildReportForSetup = buildReportForSetup;
 module.exports.buildReportForService = buildReportForService;

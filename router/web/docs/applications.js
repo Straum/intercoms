@@ -1,38 +1,16 @@
-'use strict';
-
 const MAX_LENGTH = 60;
 const express = require('express');
-var PDFDocument = require('pdfkit');
-// var PDFDoc = require('pdfmake');
-var db = require('../../../lib/db');
-const visibleRows = require('../../../lib/config').config.visibleRows;
-const rowsLimit = require('../../../lib/config').config.rowsLimit;
-var moment = require('moment');
-var utils = require('../../../lib/utils');
-var isCheckPerformer = false;
-var queryGetCard = require('../../../queries/applications').getCard;
-var common = require('../../common/typeheads');
-const { application } = require('express');
-var ApplicationModel = require('../../../models/application').ApplicationModel;
-const logger = require('../../../lib/winston');
-//
+const PDFDocument = require('pdfkit');
+const moment = require('moment');
 
-function findContract(queryText) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
-      connection.query(queryText, [],
-        function (err, rows) {
-          connection.release();
-          if (err) {
-            reject(err);
-          }
-          else {
-            resolve((Array.isArray(rows) && rows.length === 1) ? rows[0].cardId : null);
-          }
-        });
-    });
-  });
-}
+const db = require('../../../lib/db');
+const { visibleRows } = require('../../../lib/config').config;
+const { rowsLimit } = require('../../../lib/config').config;
+const utils = require('../../../lib/utils');
+const { getCard } = require('../../../queries/applications');
+const common = require('../../common/typeheads');
+const { ApplicationModel } = require('../../../models/application');
+const logger = require('../../../lib/winston');
 
 var generateReport = function (req, res) {
 
@@ -213,7 +191,6 @@ var saveTable = function (id, table, callback) {
       if (typeof callback === 'function') {
         callback(isAccepted);
       }
-
     });
   });
 };
@@ -562,121 +539,111 @@ var downloadReport = function (req, res) {
   });
 };
 
-var downloadDoneReport = function (req, res) {
-  var add = filterBuilder(req, true);
+const downloadDoneReport = (req, res) => {
+  const add = filterBuilder(req, true);
 
-  var fullQuery =
-    ' SELECT a.application_id AS documentId, DATE_FORMAT(a.create_date, "%d.%m.%Y %H:%i") AS createDate,' +
-    ' b.name AS cityName, c.name AS streetName,' +
-    ' d.number AS houseNumber, a.porch, a.kind, ' +
-    ' a.phone, ' +
-    ' f.name AS performerName,' +
-    ' a.close_date AS closeDate, ' +
-    ' a.work_with_mobile_app AS workWithMobileApp' +
-    // ' (SELECT COUNT(*) FROM faults e WHERE e.application_id  = a.application_id) AS rowsInDoc' +
-    ' FROM applications a' +
-    ' LEFT JOIN cities b ON b.city_id = a.city_id' +
-    ' LEFT JOIN streets c ON c.street_id = a.street_id' +
-    ' LEFT JOIN houses d ON d.house_id = a.house_id' +
-    ' LEFT JOIN workers f ON f.worker_id = a.worker_id' +
-    ' WHERE (a.application_id > 0)' +
-    ' AND (a.is_done = 1)' +
-    ' AND (a.is_deleted = 0)' + add.whereSQL +
-    ' ORDER BY f.name , a.create_date ASC';
+  const fullQuery = `SELECT
+    a.application_id AS documentId, DATE_FORMAT(a.create_date, "%d.%m.%Y %H:%i") AS createDate,
+    b.name AS cityName, c.name AS streetName,
+    d.number AS houseNumber, a.porch, a.kind,
+    a.phone,
+    f.name AS performerName,
+    a.close_date AS closeDate,
+    a.work_with_mobile_app AS workWithMobileApp
+    FROM applications a
+    LEFT JOIN cities b ON b.city_id = a.city_id
+    LEFT JOIN streets c ON c.street_id = a.street_id
+    LEFT JOIN houses d ON d.house_id = a.house_id
+    LEFT JOIN workers f ON f.worker_id = a.worker_id
+    WHERE (a.application_id > 0)
+    AND (a.is_done = 1)
+    AND (a.is_deleted = 0) ${add.whereSQL}
+    ORDER BY a.create_date, f.name ASC`;
 
-  var doc = new PDFDocument();
+  const doc = new PDFDocument();
   doc.registerFont('Fuh', 'fonts//DejaVuSans.ttf');
-  var filename = 'done_applications.pdf';
-  res.setHeader('Content-disposition', 'attachment; filename="' + filename + '"');
+  const filename = 'done_applications.pdf';
+  res.setHeader('Content-disposition', `attachment; filename="${filename}"`);
   res.setHeader('Content-type', 'applications/pdf');
 
   doc.registerFont('DejaVuSans', 'fonts//DejaVuSans.ttf');
   doc.font('DejaVuSans');
 
-  db.get().getConnection(function (err, connection) {
+  db.get().getConnection((err, connection) => {
     connection.query(
-      fullQuery, function (err, rows) {
-        if (err) {
-          throw err;
-        }
+      fullQuery, (error, rows) => {
         connection.release();
 
-        if (err) {
-          console.error(err);
-          res.status(500).send(db.showDatabaseError(500, err));
+        if (error) {
+          throw error;
         } else {
+          const dataset = rows;
 
-          var dataset = rows;
-
-          var parameters = '';
+          let parameters = '';
           if (Array.isArray(rows) && (rows.length > 0)) {
-            for (var ind = 0; ind < rows.length; ind++) {
+            for (let ind = 0; ind < rows.length; ind += 1) {
               parameters += rows[ind].documentId + (ind < rows.length - 1 ? ', ' : '');
             }
-            parameters = '(' + parameters + ')';
+            parameters = `(${parameters})`;
           }
 
-          db.get().getConnection(function (err, connection) {
-            var stringSQL =
-              ' SELECT a.application_id AS documentId, a.name AS problemDescription, a.decision' +
-              ' FROM faults a' +
-              ' WHERE a.application_id IN ';
+          db.get().getConnection((error1, connection1) => {
+            let stringSQL = `SELECT a.application_id AS documentId,
+              a.name AS problemDescription, a.decision
+              FROM faults a
+              WHERE a.application_id IN `;
+
             if (parameters.trim().length === 0) {
               parameters = '(-1)';
             }
             stringSQL += parameters;
 
-            connection.query(
-              stringSQL, [], function (err, rows) {
-                connection.release();
+            connection1.query(
+              stringSQL, [], (error2, rows2) => {
+                connection1.release();
 
-                if (err) {
-                  // res.status(500).send(db.showDatabaseError(500, err));
-                  throw err;
-                }
-                else {
-
+                if (error2) {
+                  throw error2;
+                } else {
                   doc.x = 50;
                   doc.fontSize(14);
                   doc.text('Исполненные заявки', { align: 'center' });
                   doc.moveDown();
                   doc.moveDown();
-                  dataset.forEach(function (item) {
-                    var list = [];
-                    rows.forEach(function (fault) {
+                  dataset.forEach((item) => {
+                    const list = [];
+                    rows2.forEach((fault) => {
                       if (+item.documentId === +fault.documentId) {
-                        //* Crash, if fault.decision include \n
-                        //* fault.decisiion = "Example\n"
-                        list.push(fault.problemDescription.replace(/\n/g, '').trim() + ' (' + fault.decision.replace(/\n/g, '').trim() + ')');
+                        list.push(`${fault.problemDescription.replace(/\n/g, '').trim()} (${fault.decision.replace(/\n/g, '').trim()})`);
                       }
                     });
 
                     doc.fontSize(14);
-                    doc.text('Заявка от ' + item.createDate, { align: 'center' });
+                    doc.text(`Заявка от ${item.createDate}`, { align: 'center' });
                     doc.moveDown();
 
                     doc.fontSize(12);
                     doc
-                      .text('Адрес: ' + item.cityName + ',' + item.streetName + ', ' + item.houseNumber + (+item.kind === 0 ? ', подъезд ' : ', квартира ') + item.porch)
-                      .text('Телефон: ' + item.phone)
-
+                      .text(`Адрес: ${item.cityName}, ${item.streetName}, ${item.houseNumber}, ${+item.kind === 0 ? 'подъезд' : 'квартира'} ${item.porch}`)
+                      .text(`Телефон: ${item.phone}`)
                       .moveDown()
                       .text('Список неисправностей', { underline: true })
                       .list(list)
-                      // .text('Всего неисправностей: ' + list.length)
                       .moveDown()
-                      .text('Исполнитель: ' + item.performerName)
-                      .text('Выполнено: ' + moment(item.closeDate).format('DD.MM.YYYY HH:mm'))
+                      .text(`Исполнитель: ${item.performerName}`)
+                      .text(`Выполнено: ${moment(item.closeDate).format('DD.MM.YYYY HH:mm')}`)
                       .moveDown()
                       .moveDown();
                   });
                   doc.pipe(res);
                   doc.end();
                 }
-              });
+              },
+            );
           });
         }
-      });
+      },
+    );
   });
 };
 
@@ -1466,7 +1433,7 @@ module.exports = function () {
         }
       }
 
-      var queryText = queryGetCard(applicationModel.address.kind, applicationModel.address.house.id, applicationModel.address.number);
+      var queryText = getCard(applicationModel.address.kind, applicationModel.address.house.id, applicationModel.address.number);
       db.get().getConnection(function (err, connection) {
         connection.query(queryText, [], function (err, rows) {
 
@@ -1833,7 +1800,7 @@ module.exports = function () {
 
   router.post('/order_info', function (req, res) {
 
-    var queryText = queryGetCard(+req.body.kind, +req.body.houseId, +req.body.porch);
+    var queryText = getCard(+req.body.kind, +req.body.houseId, +req.body.porch);
 
     db.get().getConnection(function (err, connection) {
       connection.query(

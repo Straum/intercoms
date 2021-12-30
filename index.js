@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 const express = require('express');
 const path = require('path');
 const morgan = require('morgan');
@@ -107,54 +108,54 @@ wss.on('connection', (ws) => {
         ordersController.buildReportForSetup(id, true, (filename) => {
           if (filename) {
             wss.clients.forEach((ws) => {
-              if ((ws._socket.remoteAddress == remoteAddress) && (ws._socket.remotePort != remotePort)) {
+              if ((ws._socket.remoteAddress === remoteAddress)
+                && (ws._socket.remotePort !== remotePort)) {
                 ws.send(JSON.stringify({
                   action: 'openFile',
-                  filename: filename,
+                  filename: `start winword /t ${filename}`,
                 }));
               }
-            })
+            });
           }
         });
       }
 
       // 2
       if (obj.action.localeCompare('generateOrderService') === 0) {
-        const {
-          id
-        } = obj.data;
+        const { id } = obj.data;
 
         ordersController.buildReportForService(id, true, (filename) => {
           if (filename) {
             wss.clients.forEach((ws) => {
-              if ((ws._socket.remoteAddress == remoteAddress) && (ws._socket.remotePort != remotePort)) {
+              if ((ws._socket.remoteAddress === remoteAddress)
+                && (ws._socket.remotePort !== remotePort)) {
                 ws.send(JSON.stringify({
                   action: 'openFile',
-                  filename: filename
-                }))
+                  filename: `start winword /t ${filename}`,
+                }));
               }
-            })
+            });
           }
         });
       }
 
       // 3
       if (obj.action.localeCompare('openOrderSetup') === 0) {
-        const {
-          contractNumber,
-        } = obj.data;
+        const { contractNumber } = obj.data;
 
         const filename = checkOrders.existsOrder(contractNumber, 1, true);
-        console.log('filename: ' + filename);
+        // eslint-disable-next-line no-console
+        console.log(`filename: ${filename}`);
 
         if (filename) {
           console.log('11');
           wss.clients.forEach((ws) => {
-            if ((ws._socket.remoteAddress == remoteAddress) && (ws._socket.remotePort != remotePort)) {
+            if ((ws._socket.remoteAddress === remoteAddress)
+              && (ws._socket.remotePort !== remotePort)) {
               console.log('22');
               ws.send(JSON.stringify({
                 action: 'openFile',
-                filename: filename,
+                filename,
               }));
             }
           });
@@ -169,15 +170,14 @@ wss.on('connection', (ws) => {
 
       // 4
       if (obj.action.localeCompare('openOrderService') === 0) {
-        const {
-          contractNumber,
-        } = obj.data;
+        const { contractNumber } = obj.data;
 
         const filename = checkOrders.existsOrder(contractNumber, 2, true);
 
         if (filename) {
           wss.clients.forEach((ws) => {
-            if ((ws._socket.remoteAddress == remoteAddress) && (ws._socket.remotePort != remotePort)) {
+            if ((ws._socket.remoteAddress === remoteAddress)
+              && (ws._socket.remotePort !== remotePort)) {
               ws.send(JSON.stringify({
                 action: 'openFile',
                 filename,

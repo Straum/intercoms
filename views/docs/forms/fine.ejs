@@ -34,7 +34,7 @@
     <div class="card">
       <form method="post" action="/fines/save" novalidate>
 
-        <input type="text" hidden name="box" id="box">
+        <input type="text" hidden name="id" value="<%= model.id %>">
 
         <div class="well">
           <div class="card-body">
@@ -58,43 +58,81 @@
               <div class="col-md-2">
                 <div class="form-group">
                   <label for="contract">Договор</label>
-                  <input type="text" class="form-control" id="contract" name="contract" placeholder=""
-                    value="<%= model.contract.normal %>">
+                  <div class="input-group">
+                    <span class="input-group-btn">
+                      <button class="btn btn-default clear" type="button" data-attribute="clear-contract">
+                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                      </button>
+                    </span>
+                    <input type="text" class="form-control"
+                      id="contract"
+                      name="contract"
+                      placeholder=""
+                      autocomplete="off"
+                      value="<%= model.contract.normal %>"
+                    >
+                  </div>
                 </div>
               </div>
               <div class="col-md-2">
                 <div class="form-group">
-                  <label for="extendedContract">Договор ТО</label>
-                  <input type="text" class="form-control" id="extendedContract" name="extendedContract"
-                    placeholder="" value="<%= model.contract.prolonged %>">
+                  <label for="prolongedContract">Договор ТО</label>
+                  <div class="input-group">
+                    <span class="input-group-btn">
+                      <button class="btn btn-default clear" type="button" data-attribute="clear-prolonged-contract">
+                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                      </button>
+                    </span>
+                    <input type="text" class="form-control"
+                      id="prolongedContract"
+                      name="prolongedContract"
+                      placeholder=""
+                      autocomplete="off"
+                      value="<%= model.contract.prolonged %>"
+                    >
+                  </div>
                 </div>
               </div>
             </div>
             <div class="row">
-              <div class="col-md-12">
+              <div class="col-md-11">
                 <div class="form-group">
                   <label for="fullAddress">Полный адрес</label>
-                  <input type="text" class="form-control" id="fullAddress" name="fullAddress"
-                  data-city-id="<%= model.address.city.id %>" data-street-id="<%= model.address.street.id %>"
-                  data-house-id="<%= model.address.house.id %>"
-                  placeholder="" value="<%= model.fullAddress() %>">
+                  <div class="input-group">
+                    <span class="input-group-btn">
+                      <button class="btn btn-default clear" type="button" data-attribute="clear-full-address">
+                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                      </button>
+                    </span>
+                    <input type="text" class="form-control"
+                      id="fullAddress"
+                      name="fullAddress"
+                      placeholder=""
+                      autocomplete="off"
+                      value="<%= model.address.full %>"
+                    >
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="row">
               <div class="col-md-1">
                 <div class="form-group">
                   <label for="porch">Подъезд</label>
-                  <input type="text" class="form-control" id="porch" name="porch" placeholder=""
+                  <input type="text" class="form-control"
+                    id="porch"
+                    name="porch"
+                    placeholder=""
+                    autocomplete="off"
                     value="<%= model.porch %>">
                 </div>
               </div>
+            </div>
+            <div class="row">
               <div class="col-md-1">
                 <div class="form-group">
                   <label for="apartment">Квартира</label>
                   <input type="text" class="form-control" id="apartment" name="apartment"
-                  data-partment-id="<% model.apartment_id %>"
-                  placeholder="" value="<%= model.apartment.number %>">
+                  placeholder=""
+                  value="<%= model.apartment.number %>">
                 </div>
               </div>
               <div class="col-md-1">
@@ -109,31 +147,70 @@
                   </select>
                 </div>
               </div>
+              <div class="col-md-10">
+                <div class="form-group">
+                  <label for="remark">Примечание</label>
+                  <input type="text" class="form-control"
+                    id="remark"
+                    name="remark"
+                    placeholder=""
+                    autocomplete="off"
+                    value="<%= model.remark %>">
+                </div>
+              </div>
             </div>
             <div class="row">
               <div class="col-md-2">
                 <div class="form-group">
                   <label for="amount">Сумма к оплате</label>
-                  <input type="text" class="form-control" id="amount" name="amount" placeholder=""
+                  <input type="text" class="form-control"
+                    id="amount"
+                    name="amount"
+                    placeholder=""
+                    autocomplete="off"
                     value="<%= model.amount.toFixed(2) %>">
                 </div>
               </div>
               <div class="col-md-2">
                 <div class="form-group">
-                  <label for="dateOfPayment" class="control-label">Оплачено</label>
+                  <label for="actualAmount">Оплачено</label>
+                  <input type="text" class="form-control"
+                    id="actualAmount"
+                    name="actualAmount"
+                    placeholder=""
+                    autocomplete="off"
+                    value="<%= model.payment.amount.toFixed(2) %>"
+                    readonly>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label for="dateOfPayment" class="control-label">Дата оплаты</label>
                   <div class="input-group date-picker" id="dtDateOfPayment">
                     <input type="text" class="form-control" name="dateOfPayment" id="dateOfPayment" readonly
-                      value="<%= model.paymentDate ? moment(model.paymentDate).format( 'DD.MM.YYYY' ) : '' %>">
+                      value="<%= model.payment.date ? moment(model.payment.date).format( 'DD.MM.YYYY HH:mm' ) : '' %>">
                     <span class="input-group-addon">
                       <span class="glyphicon glyphicon-calendar"></span>
                     </span>
                   </div>
                 </div>
               </div>
+              <div class="col-md-5">
+                <div class="form-group">
+                  <label for="paymentDocument">Документ оплаты</label>
+                  <input type="text" class="form-control"
+                     id="paymentDocument"
+                     name="paymentDocument"
+                     placeholder=""
+                     value="<%= model.payment.document ? model.payment.document : '' %>"
+                     readonly>
+                </div>
+              </div>
             </div>
 
-            <button submit class="btn btn-success" name="save" id="save" onclick="beforeSave()">Записать</button>
-            <button class="btn btn-info" name="printReceipt" id="printReceipt">Квитанция</button>
+            <button submit class="btn btn-success action" id="saveAndClose" name="saveAndClose">Записать и выйти</button>
+            <button submit class="btn btn-success" name="save" id="save">Записать</button>
+            <button submit class="btn btn-info" name="printReceipt" id="printReceipt" <%= model.id ? '' : 'disabled="disabled"' %>>Квитанция</button>
           </div>
         </div>
       </form>

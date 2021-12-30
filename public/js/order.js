@@ -10,29 +10,35 @@ const ACTION_DIALOG_PROLONG_ORDER = 3;
 const ACTION_DIALOG_DELETE_APARTMENT = 4;
 const ACTION_DIALOG_DELETE_PAYMENT = 5;
 const ACTION_DIALOG_DELETE_PAYMENT_FROM_REGISTER = 6;
+const ACTION_DIALOG_MODIFY_PAYMENT = 7;
 
 const ACTION_CLIENT_CONTRACT = 7;
 const ACTION_CLIENT_SERVICE = 8;
 
-var Application = function () {
+const Application = function () {
   this.deletedApartment = {
     uid: 0,
-    rowIndex: 0
+    rowIndex: 0,
   };
 
   this.editApartment = {
     uid: 0,
-    rowIndex: 0
+    rowIndex: 0,
+  };
+
+  this.modifyPayment = {
+    uid: 0,
+    rowIndex: 0,
   };
 
   this.deletedPayment = {
     uid: 0,
-    rowIndex: 0
+    rowIndex: 0,
   };
 
   this.deletedPaymentFromRegister = {
     uid: 0,
-    rowIndex: 0
+    rowIndex: 0,
   };
 
   this.completeRowIndex = 1;
@@ -62,14 +68,13 @@ var Application = function () {
   };
 
   this.doubleAddress = {
-    ...this.address
+    ...this.address,
   };
 
   this.clientChannel = ACTION_CLIENT_CONTRACT;
 
   this.paymentOptions = [];
-
-}
+};
 
 var application = new Application();
 
@@ -80,36 +85,43 @@ $('[data-toggle="tooltip"]').tooltip();
 
 $('.only-date').datetimepicker({
   locale: 'ru',
-  format: 'L'
+  format: 'L',
 });
 
 $('.only-datetime').datetimepicker({
-  locale: 'ru'
+  locale: 'ru',
 });
 
 $('.date-only-mouse').datetimepicker({
   locale: 'ru',
   ignoreReadonly: true,
-  format: 'L'
+  format: 'L',
 });
 
-$('#dtStartService').on("dp.change", function (e) {
-  var start = document.getElementById('startService').value;
+$('#dtStartService').on('dp.change', () => {
+  const start = document.getElementById('startService').value;
   document.getElementById('endService').value = moment(start, 'DD.MM.YYYY').add(1, 'years').format('DD.MM.YYYY');
 });
 
+function showNumberInBadge(number, className) {
+  const elements = document.getElementsByClassName(className);
+  if (elements.length > 0) {
+    elements[0].textContent = number;
+  }
+}
+
 function showHistory(ev) {
-  var id = ev.currentTarget.parentElement.parentElement.getAttribute('data-uid');
-  var apartmentInfo = ev.currentTarget.parentElement.parentElement.cells[1].innerText;
+  const id = ev.currentTarget.parentElement.parentElement.getAttribute('data-uid');
+  const apartmentInfo = ev.currentTarget.parentElement.parentElement.cells[1].innerText;
   ev.stopPropagation();
 
   application.apartmentId = id;
   axios.post('/orders/payments_history', {
-    id: id,
-    limit: 15
-  }).then(function (response) {
-    var data = response.data;
-    var body = {
+    id,
+    limit: 15,
+  }).then((response) => {
+    const { data } = response;
+    const body = {
       personalAccount: '',
       payments: '',
       fines: '',
@@ -124,10 +136,9 @@ function showHistory(ev) {
       }
     }
 
-    if ((data.payments) && (Array.isArray(data.payments)) && (data.payments.length > 0)) {
-      data.payments.forEach(function (element) {
-        body.payments +=
-          `<tr data-uid="${element.uid}">
+    if (data.payments.length > 0) {
+      data.payments.forEach((element) => {
+        body.payments += `<tr data-uid="${element.uid}">
           <td class="text-center align-middle">${moment(element.createDate).format('DD.MM.YYYY')}</td>
           <td class="text-center align-middle">${moment(element.payDate).format('DD.MM.YYYY')}</td>
           <td class="text-center align-middle">${element.uid}</td>
@@ -136,58 +147,67 @@ function showHistory(ev) {
           <td class="text-right align-middle">${element.amount.toFixed(2)}</td>
           <td class="text-center align-middle">${element.organizationName}</td>
           <td class="text-center align-middle">
+            <button type="button" class="btn btn-success btn-xs" onclick="modifyPayment(event)">
+              <span class="glyphicon glyphicon-pencil" aria-hidden="true">
+              </span>
+            </button>
             <button type="button" class="btn btn-danger btn-xs" onclick="removePayment(event)">
               <span class="glyphicon glyphicon-minus" aria-hidden="true">
               </span>
-            </button></td>
-          </tr>`;
+            </button>
+           </td>
+         </tr>`;
       });
     }
-    var bodyPaymentsRef = document.getElementById('tablePayments').getElementsByTagName('tbody')[0];
+    const bodyPaymentsRef = document.getElementById('tablePayments').getElementsByTagName('tbody')[0];
     bodyPaymentsRef.innerHTML = body.payments;
 
-    if ((data.fines) && (Array.isArray(data.fines)) && (data.fines.length > 0)) {
-      data.fines.forEach(function (element) {
-        body.fines +=
-          `<tr data-uid="${element.uid}">
+    if (data.fines.length > 0) {
+      data.fines.forEach((element) => {
+        body.fines += `<tr data-uid="${element.uid}">
           <td class="text-center align-middle">${moment(element.createDate).format('DD.MM.YYYY')}</td>
           <td class="text-center align-middle">${element.uid}</td>
           <td class="text-right align-middle">${element.amount.toFixed(2)}</td>
           <td class="text-center align-middle">
-          <button type="button" class="btn btn-danger btn-xs" onclick="removePaymentFromRegister(event)">
+          <button type="button" class="btn btn-danger btn-xs" onclick="removePaymentFromRegister(event)" disabled>
             <span class="glyphicon glyphicon-minus" aria-hidden="true">
             </span>
           </button></td>
         </tr>`;
       });
     }
-    var bodyFinesRef = document.getElementById('tableRegisters').getElementsByTagName('tbody')[0];
+    const bodyFinesRef = document.getElementById('tableRegisters').getElementsByTagName('tbody')[0];
     bodyFinesRef.innerHTML = body.fines;
 
-    if ((data.prices) && (Array.isArray(data.prices)) && (data.prices.length > 0)) {
-      data.prices.forEach(function (element) {
-        body.prices += '<tr>';
-        body.prices += '<td class="text-center align-middle">' + moment(element.startService).format('DD.MM.YYYY') + '</td>';
-        body.prices += '<td class="text-center align-middle">' + moment(element.endService).format('DD.MM.YYYY') + '</td>';
-        body.prices += '<td class="text-right align-middle">' + element.normalPayment.toFixed(2) + '</td>';
-        body.prices += '<td class="text-right align-middle">' + element.privilegePayment.toFixed(2) + '</td>';
-        body.prices += '<td class="text-center align-middle">' + (element.receiptPrinting != null ? moment(element.receiptPrinting).format('DD.MM.YYYY') : '') + '</td>';
-        body.prices += '</tr>';
+    if (data.prices.length > 0) {
+      data.prices.forEach((element) => {
+        body.prices += `<tr>
+          <td class="text-center align-middle">${moment(element.startService).format('DD.MM.YYYY')}</td>
+          <td class="text-center align-middle">${moment(element.endService).format('DD.MM.YYYY')}</td>
+          <td class="text-right align-middle">${element.normalPayment.toFixed(2)}</td>
+          <td class="text-right align-middle">${element.privilegePayment.toFixed(2)}</td>
+          <td class="text-center align-middle">${(element.receiptPrinting != null ? moment(element.receiptPrinting).format('DD.MM.YYYY') : '')}</td>
+          </tr>`;
       });
     }
-    var bodyPricesRef = document.getElementById('tablePrices').getElementsByTagName('tbody')[0];
+    const bodyPricesRef = document.getElementById('tablePrices').getElementsByTagName('tbody')[0];
     bodyPricesRef.innerHTML = body.prices;
 
     application.paymentOptions = [];
-    if ((data.paymentOptions) && (Array.isArray(data.paymentOptions)) && (data.paymentOptions.length > 0)) {
+    if ((data.paymentOptions)
+      && (Array.isArray(data.paymentOptions)) && (data.paymentOptions.length > 0)) {
       application.paymentOptions = [...data.paymentOptions];
     }
 
-    document.getElementById('historyDialogCapton').textContent = 'История по квартире № ' + apartmentInfo;
+    showNumberInBadge(data.payments.length, 'badge payments');
+    showNumberInBadge(data.fines.length, 'badge fines');
+    showNumberInBadge(data.prices.length, 'badge prices');
+
+    document.getElementById('historyDialogCapton').textContent = `История по квартире №  ${apartmentInfo}`;
     document.getElementById('printReceiptForApartment').setAttribute('href', `/orders/print_receipt_for_apartment/${id}`);
     $('#historyDialog').modal();
-
-  }).catch(function (error) {
+  }).catch((error) => {
+    // eslint-disable-next-line no-console
     console.log(error);
   });
 }
@@ -379,6 +399,87 @@ function removeApartment(ev) {
   $('#modalYesNo').modal();
 }
 
+function modifyPayment(evt) {
+  const id = evt.currentTarget.parentElement.parentElement.getAttribute('data-uid');
+  const { rowIndex } = evt.currentTarget.parentElement.parentElement;
+  evt.stopPropagation();
+
+  application.actionWithDialog = ACTION_DIALOG_MODIFY_PAYMENT;
+  application.modifyPayment.uid = id;
+  application.modifyPayment.rowIndex = rowIndex;
+
+  document.getElementById('oldAmount').value = evt.currentTarget.parentElement.parentElement.cells[5].textContent;
+  document.getElementById('newAmount').value = '';
+  $('#modifyPaymentDialog').modal('show');
+}
+
+async function endModifyPayment() {
+  const oldAmount = document.getElementById('oldAmount').value;
+  const newAmount = document.getElementById('newAmount').value;
+  const tableP = document.getElementById('tablePayments');
+
+  const response = await fetch('/orders/modify_payment', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(
+      {
+        id: application.modifyPayment.uid,
+        oldAmount,
+        newAmount,
+      },
+    ),
+  });
+
+  const json = await response.json();
+  const data = json.apartmentData;
+
+  const tableA = document.getElementById('tableApartments');
+  const rowLength = tableA.rows.length;
+  for (let ind = 2; ind < rowLength; ind += 1) {
+    if ((Number(tableA.rows.item(ind).getAttribute('data-uid'))) === Number(data.apartmentId)) {
+      tableA.rows.item(ind).classList.remove('info2');
+      tableA.rows.item(ind).classList.remove('warning2');
+      tableA.rows.item(ind).classList.remove('success2');
+      tableA.rows.item(ind).classList.remove('danger2');
+
+      let className = '';
+      if ((+data.paid == 1) && (+data.halfPaid == 2)) {
+        className = 'info2';
+      }
+
+      if ((+data.paid == 1) && (+data.halfPaid == 1)) {
+        className = 'warning2';
+      }
+
+      if ((+data.paid == 1) && (+data.halfPaid == 0)) {
+        className = 'success2';
+      }
+
+      if (+data.exempt == 1) {
+        className = 'danger2';
+      }
+      if (className.length > 0) {
+        tableA.rows.item(ind).classList.add(className);
+      }
+      break;
+    }
+  }
+
+  tableP.rows[application.modifyPayment.rowIndex].cells[5].textContent = parseFloat(
+    newAmount,
+  ).toFixed(2);
+}
+
+$('#modifyPaymentDialog').on('shown.bs.modal', () => {
+  document.getElementById('newAmount').focus();
+});
+
+$('#modifyPaymentDialog').on('hidden.bs.modal', () => {
+  endModifyPayment();
+});
+
 function removePayment(ev) {
   const id = ev.currentTarget.parentElement.parentElement.getAttribute('data-uid');
   const rowIndex = ev.currentTarget.parentElement.parentElement.rowIndex;
@@ -389,7 +490,7 @@ function removePayment(ev) {
   application.deletedPayment.rowIndex = rowIndex;
 
   document.getElementById('replace-me').innerHTML = 'Удалить платеж?';
-  $('#modalYesNo').modal();
+  $('#modalYesNo').modal('show');
 }
 
 function removePaymentFromRegister(ev) {
@@ -401,7 +502,7 @@ function removePaymentFromRegister(ev) {
   application.deletedPaymentFromRegister.uid = id;
   application.deletedPaymentFromRegister.rowIndex = rowIndex;
 
-  document.getElementById('replace-me').innerHTML = 'Удалить из реестра?';
+  document.getElementById('replace-me').innerHTML = 'Удалить подключение?';
   $('#modalYesNo').modal();
 }
 
@@ -1277,8 +1378,7 @@ document.getElementById('saveComplete').addEventListener('click', function (e) {
 });
 
 function generateNewRowBasedTemplate(uid, fullNumber) {
-  var output =
-    `<tr class="data-uid=${uid}">
+  const output = `<tr class="data-uid=${uid}">
     <td class="col-xs-1 text-center align-middle">
       <button type="button" class="btn btn-default btn-xs" onclick="showHistory(event)">
         <span class="glyphicon glyphicon-rub" aria-hidden="true"></span>
@@ -1369,50 +1469,56 @@ function showAlert2(hidden, htmlText) {
 }
 
 function deletePayment() {
-
   axios.post('/orders/delete_payment', {
-    id: application.deletedPayment.uid
-  }).then(function (response) {
-
+    id: application.deletedPayment.uid,
+  }).then((response) => {
     document.getElementById('tablePayments').deleteRow(application.deletedPayment.rowIndex);
 
-    const data = response.data;
-    let table = document.getElementById('tableApartments');
-    if (table) {
-      var rowLength = table.rows.length;
-      for (let ind = 2; ind < rowLength; ind++) {
-        if ((Number(table.rows.item(ind).getAttribute('data-uid'))) === Number(data.apartmentId)) {
-          table.rows.item(ind).classList.remove('info2');
-          table.rows.item(ind).classList.remove('warning2');
-          table.rows.item(ind).classList.remove('success2');
-          table.rows.item(ind).classList.remove('danger2');
+    // const { data } = response;
+    const { apartmentInfo } = response.data;
+    const { dateOfLastPayment } = response.data;
 
-          let className = '';
-          if ((+data.paid == 1) && (+data.halfPaid == 2)) {
-            className = 'info2';
-          }
+    const table = document.getElementById('tableApartments');
+    const rowLength = table.rows.length;
+    for (let ind = 2; ind < rowLength; ind += 1) {
+      // if ((Number(table.rows.item(ind).getAttribute('data-uid'))) === Number(data.apartmentId)) {
+      if ((Number(table.rows.item(ind).getAttribute('data-uid'))) === Number(apartmentInfo.apartmentId)) {
+        table.rows.item(ind).classList.remove('info2');
+        table.rows.item(ind).classList.remove('warning2');
+        table.rows.item(ind).classList.remove('success2');
+        table.rows.item(ind).classList.remove('danger2');
 
-          if ((+data.paid == 1) && (+data.halfPaid == 1)) {
-            className = 'warning2';
-          }
-
-          if ((+data.paid == 1) && (+data.halfPaid == 0)) {
-            className = 'success2';
-          }
-
-          if (+data.exempt == 1) {
-            className = 'danger2';
-          }
-          if (className.length > 0) {
-            table.rows.item(ind).classList.add(className);
-          }
-
-          break;
+        let className = '';
+        if ((+apartmentInfo.paid === 1) && (+apartmentInfo.halfPaid === 2)) {
+          className = 'info2';
         }
+
+        if ((+apartmentInfo.paid === 1) && (+apartmentInfo.halfPaid === 1)) {
+          className = 'warning2';
+        }
+
+        if ((+apartmentInfo.paid === 1) && (+apartmentInfo.halfPaid === 0)) {
+          className = 'success2';
+        }
+
+        if (+apartmentInfo.exempt === 1) {
+          className = 'danger2';
+        }
+        if (className.length > 0) {
+          table.rows.item(ind).classList.add(className);
+        }
+
+        const cell = table.rows.item(ind).cells[6];
+        cell.innerText = dateOfLastPayment.payDate
+          ? moment(dateOfLastPayment.payDate)
+            .format('DD.MM.YYYY HH:mm:ss')
+          : '\u00A0';
+
+        break;
       }
     }
-
-  }).catch(function (error) {
+    showNumberInBadge(document.getElementById('tablePayments').getElementsByTagName('tbody')[0].rows.length, 'badge payments');
+  }).catch((error) => {
     console.log(error);
   });
 }
@@ -1430,11 +1536,11 @@ function deletedPaymentFromRegister() {
   });
 }
 
-document.getElementById('addPayment').addEventListener('click', function (e) {
+document.getElementById('addPayment').addEventListener('click', () => {
   $('#addPaymentDialog').modal();
 });
 
-$('#addPaymentDialog').on('shown.bs.modal', function () {
+$('#addPaymentDialog').on('shown.bs.modal', () => {
   document.getElementById('paymentDate').value = moment(new Date()).format('DD.MM.YYYY');
   const paymentsOptions = document.getElementById('paymentOptions');
   while (paymentsOptions.childNodes.length) {
@@ -1442,101 +1548,109 @@ $('#addPaymentDialog').on('shown.bs.modal', function () {
   }
   if (Array.isArray(application.paymentOptions)) {
     application.paymentOptions.forEach((item) => {
-      var opt = document.createElement('option');
+      const opt = document.createElement('option');
       opt.value = item.id;
       opt.innerHTML = item.description;
       paymentsOptions.appendChild(opt);
-    })
-
+    });
   }
   document.getElementById('paymentAmount').value = '';
   document.getElementById('paymentAmount').focus();
-})
+});
 
-document.getElementById('actionAddPayment').addEventListener('click', function (e) {
+document.getElementById('actionAddPayment').addEventListener('click', (e) => {
   const amount = parseFloat(document.getElementById('paymentAmount').value);
-  if (isNaN(amount)) return;
+  if (Number.isNaN(amount)) return;
 
-  const selectedIndex = document.getElementById('paymentOptions').options.selectedIndex;
+  const { selectedIndex } = document.getElementById('paymentOptions').options;
   axios.post('/orders/add_payment', {
     id: application.apartmentId,
     date: document.getElementById('paymentDate').value,
     option: document.getElementById('paymentOptions').options[selectedIndex].value,
-    amount: amount
-  }).then(function (response) {
-
+    amount,
+  }).then((response) => {
     $('#addPaymentDialog').modal('hide');
 
     const success = response.data;
     const data = success.apartmentInfo;
     const data1 = success.paymentsHistory;
+    const { dateOfLastPayment } = success;
 
     // part 1
     // function showHistory(ev) {
     // TODO: Убрать и почистить дублирующий код!
     let tablePayments = '';
-    if ((data1.payments) && (Array.isArray(data1.payments)) && (data1.payments.length > 0)) {
-      data1.payments.forEach(function (element) {
-        tablePayments +=
-          `<tr data-uid="${element.uid}">
-          <td class="text-center align-middle">${moment(element.createDate).format('DD.MM.YYYY')}</td>
-          <td class="text-center align-middle">${moment(element.payDate).format('DD.MM.YYYY')}</td>
-          <td class="text-center align-middle">${element.uid}</td>
-          <td class="text-center align-middle">${element.payMonth}</td>
-          <td class="text-center align-middle">${element.payYear}</td>
-          <td class="text-right align-middle">${element.amount.toFixed(2)}</td>
-          <td class="text-center align-middle">${element.organizationName}</td>
-          <td class="text-center align-middle">
-            <button type="button" class="btn btn-danger btn-xs" onclick="removePayment(event)">
-              <span class="glyphicon glyphicon-minus" aria-hidden="true">
-              </span>
-            </button></td>
-          </tr>`;
-      });
-    }
+    data1.payments.forEach(function (element) {
+      tablePayments += `<tr data-uid="${element.uid}">
+        <td class="text-center align-middle">${moment(element.createDate).format('DD.MM.YYYY')}</td>
+        <td class="text-center align-middle">${moment(element.payDate).format('DD.MM.YYYY')}</td>
+        <td class="text-center align-middle">${element.uid}</td>
+        <td class="text-center align-middle">${element.payMonth}</td>
+        <td class="text-center align-middle">${element.payYear}</td>
+        <td class="text-right align-middle">${element.amount.toFixed(2)}</td>
+        <td class="text-center align-middle">${element.organizationName}</td>
+        <td class="text-center align-middle">
+          <button type="button" class="btn btn-danger btn-xs" onclick="removePayment(event)">
+            <span class="glyphicon glyphicon-minus" aria-hidden="true">
+            </span>
+          </button></td>
+        </tr>`;
+    });
     const bodyPaymentsRef = document.getElementById('tablePayments').getElementsByTagName('tbody')[0];
     bodyPaymentsRef.innerHTML = tablePayments;
 
     // part 2
-    let table = document.getElementById('tableApartments');
-    if (table) {
-      var rowLength = table.rows.length;
-      for (let ind = 2; ind < rowLength; ind++) {
-        if ((Number(table.rows.item(ind).getAttribute('data-uid'))) === Number(data.apartmentId)) {
-          table.rows.item(ind).classList.remove('info2');
-          table.rows.item(ind).classList.remove('warning2');
-          table.rows.item(ind).classList.remove('success2');
-          table.rows.item(ind).classList.remove('danger2');
+    const table = document.getElementById('tableApartments');
+    const rowLength = table.rows.length;
+    for (let ind = 2; ind < rowLength; ind += 1) {
+      if ((Number(table.rows.item(ind)
+        .getAttribute('data-uid'))) === Number(data.apartmentId)) {
+        table.rows.item(ind)
+          .classList
+          .remove('info2');
+        table.rows.item(ind)
+          .classList
+          .remove('warning2');
+        table.rows.item(ind)
+          .classList
+          .remove('success2');
+        table.rows.item(ind)
+          .classList
+          .remove('danger2');
 
-          let className = '';
-          if ((+data.paid == 1) && (+data.halfPaid == 2)) {
-            className = 'info2';
-          }
-
-          if ((+data.paid == 1) && (+data.halfPaid == 1)) {
-            className = 'warning2';
-          }
-
-          if ((+data.paid == 1) && (+data.halfPaid == 0)) {
-            className = 'success2';
-          }
-
-          if (+data.exempt == 1) {
-            className = 'danger2';
-          }
-          if (className.length > 0) {
-            table.rows.item(ind).classList.add(className);
-          }
-
-          break;
+        let className = '';
+        if ((+data.paid === 1) && (+data.halfPaid === 2)) {
+          className = 'info2';
         }
+
+        if ((+data.paid === 1) && (+data.halfPaid === 1)) {
+          className = 'warning2';
+        }
+
+        if ((+data.paid === 1) && (+data.halfPaid === 0)) {
+          className = 'success2';
+        }
+
+        if (+data.exempt === 1) {
+          className = 'danger2';
+        }
+        if (className.length > 0) {
+          table.rows.item(ind)
+            .classList
+            .add(className);
+        }
+        const cell = table.rows.item(ind).cells[6];
+        cell.innerText = dateOfLastPayment.payDate
+          ? moment(dateOfLastPayment.payDate)
+            .format('DD.MM.YYYY HH:mm:ss')
+          : '\u00A0';
+        break;
       }
     }
-
-  }).catch(function (error) {
+    showNumberInBadge(data1.payments.length, 'badge payments');
+  }).catch((error) => {
     console.log(error);
   });
-
 });
 
 document.getElementById('addPaymentInRegister').addEventListener('click', function (e) {
@@ -2259,6 +2373,33 @@ document.getElementById('saveClient').addEventListener('click', (e) => {
     console.log(error);
   });
 
+});
+
+document.getElementById('actionModifyPayment').addEventListener('click', (evt) => {
+  // evt.preventDefault();
+  $('#modifyPaymentDialog').modal('hide');
+});
+
+async function checkPayments() {
+  const response = await fetch('/orders/check_payments', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(
+      {
+        id: document.getElementById('id').value,
+      },
+    ),
+  });
+
+  const json = await response.json();
+  console.log(json);
+  document.getElementById('checkingInfo').value = json.message;
+}
+
+document.getElementById('checkPayments').addEventListener('click', (evt) => {
+  checkPayments();
 });
 
 startWebsocket();

@@ -4,15 +4,12 @@ const fs = require('fs');
 const iconvlite = require('iconv-lite');
 const db = require('../../lib/db');
 
-// const { relativeTimeThreshold } = require('moment');
-// const { query } = require('express-validator/check');
-// const payments = require('../../router/web/docs/payments');
 const { RegisterModel } = require('../../models/register');
 const { PaymentModelForRegister } = require('../../models/register');
 const { ContractModelForRegister } = require('../../models/register');
 const { PrintModelForRegister } = require('../../models/register');
 const { DataModel } = require('../../models/register');
-const { buildPersonalAccount } = require('../../lib/utils');
+const { buildPersonalAccount, buildPersonalAccountForFine } = require('../../lib/utils');
 const { decodeApartmentLetter } = require('../../lib/utils');
 const { firm } = require('../../lib/firm_bank_details');
 
@@ -174,6 +171,35 @@ function calculateApartments(id) {
   });
 }
 
+function pullFines() {
+  return new Promise((resolve, reject) => {
+    db.get().getConnection((err, connection) => {
+      connection.query(
+        `SELECT a.fine_id AS id, a.amount_of_fine AS amount,
+        b.letter, b.number,
+        d.name AS cityName, e.name AS streetName, f.number AS houseNumber,
+        MONTH(a.create_dt) AS dateMonth, YEAR(a.create_dt) AS dateYear
+        FROM fines a
+        LEFT JOIN apartments b ON b.apartment_id = a.apartment_id
+        LEFT JOIN cards c ON c.card_id = b.card_id
+        LEFT JOIN cities d ON d.city_id = c.city_id
+        LEFT JOIN streets e ON e.street_id = c.street_id
+        LEFT JOIN houses f ON f.house_id = c.house_id
+        WHERE (a.old_fine = 0) && (a.paid = 0) && (a.is_deleted = 0)
+        ORDER BY a.create_dt`, [],
+        (error, rows) => {
+          connection.release();
+          if (error) {
+            reject();
+          } else {
+            resolve(rows);
+          }
+        },
+      );
+    });
+  });
+}
+
 function RegistersLogic(req, res) {
   this.req = req;
   this.res = res;
@@ -223,7 +249,7 @@ RegistersLogic.prototype.getRegister = async function () {
     .then(function (result) {
       if (Array.isArray(result)) {
         result.forEach(function (item) {
-          var model = new ContractModelForRegister();
+          const model = new ContractModelForRegister();
           model.id = item.cardId;
           model.createDate = item.createDate;
           model.contractNumber = item.contractNumber;
@@ -231,7 +257,7 @@ RegistersLogic.prototype.getRegister = async function () {
           model.startService = item.startService;
           model.endService = item.endService;
           registerModel.contracts.push(model);
-        })
+        });
       }
     })
     .catch(function (error) {
@@ -242,7 +268,7 @@ RegistersLogic.prototype.getRegister = async function () {
     .then(function (result) {
       if (Array.isArray(result)) {
         result.forEach(function (item) {
-          var model = new PaymentModelForRegister();
+          const model = new PaymentModelForRegister();
           model.id = item.id;
           model.payDate = item.payDate;
           model.prolongedContractNumber = item.prolongedContractNumber;
@@ -250,7 +276,7 @@ RegistersLogic.prototype.getRegister = async function () {
           model.apartment = item.apartment;
           model.amount = item.amount;
           registerModel.payments.push(model);
-        })
+        });
       }
     })
     .catch(function (error) {
@@ -529,30 +555,12 @@ RegistersLogic.prototype.insertPaymentsForRegister = function (data) {
 
 RegistersLogic.prototype.validate = function () {
   const registerModel = new RegisterModel();
-  registerModel.id = parseInt(this.req.body.id);
+  registerModel.id = parseInt(this.req.body.id, 10);
   registerModel.createDate = moment(this.req.body.createDate, 'DD.MM.YYYY').format('YYYY-MM-DD');
   registerModel.startFrom = ((this.req.body.startFrom != null) && (this.req.body.startFrom.trim().length > 0)) ? moment(this.req.body.startFrom, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
   registerModel.endTo = ((this.req.body.endTo != null) && (this.req.body.endTo.trim().length > 0)) ? moment(this.req.body.endTo, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
   registerModel.latestChange = ((this.req.body.latestChange != null) && (this.req.body.latestChange.trim().length > 0)) ? moment(this.req.body.latestChange, 'DD.MM.YYYY HH:mm').format('YYYY-MM-DD HH:mm') : null;
   registerModel.newMethod = this.req.body.newMethod === 'on' ? 1 : 0;
-
-  // try {
-  //   var rawData = JSON.parse(this.req.body.orders);
-  //   if (Array.isArray(rawData)) {
-  //     rawData.forEach(function (item) {
-  //       var order = new ContractModelForRegister();
-  //       order.id = item.id;
-  //       order.createDate = item.createDate;
-  //       order.contractNumber = item.contractNumber;
-  //       order.prolongedContractNumber = item.prolongedContractNumber;
-  //       order.startService = item.startService;
-  //       order.endService = item.endService;
-  //       registerModel.contracts.push(order);
-  //     })
-  //   }
-  // } catch (error) {
-  //   //
-  // }
 
   try {
     registerModel.contracts = JSON.parse(this.req.body.orders);
@@ -560,42 +568,24 @@ RegistersLogic.prototype.validate = function () {
   } catch (error) {
     //
   }
-
-  // try {
-  //   var rawData = JSON.parse(this.req.body.payments);
-  //   if (Array.isArray(rawData)) {
-  //     rawData.forEach(function (item) {
-  //       var payment = new PaymentModelForRegister();
-  //       payment.id = item.id;
-  //       payment.prolongedContractNumber = item.prolongedContractNumber;
-  //       payment.address = item.address;
-  //       payment.apartment = item.apartment;
-  //       payment.amount = item.amount;
-  //       registerModel.payments.push(payment);
-  //     })
-  //   }
-  // } catch (error) {
-  //   //
-  // }
-
   this.req.assert('startFrom', 'Дата <Период с> не заполнена').notEmpty();
   this.req.assert('endTo', 'Дата <Период по> не заполнена').notEmpty();
   this.req.assert('orders', 'Нет договоров').custom(function (data) {
-    var result = false
+    var result = false;
     try {
       var orders = JSON.parse(data);
       result = (Array.isArray(orders) && (orders.length > 0));
     } catch (error) {
-
+      //
     }
     return result;
   });
 
   return registerModel;
-}
+};
 
 RegistersLogic.prototype.save = async function (registerModel) {
-  var self = this;
+  const self = this;
 
   if (registerModel.id > 0) {
     await self.clearRegisterData(registerModel.id);
@@ -606,14 +596,13 @@ RegistersLogic.prototype.save = async function (registerModel) {
   }
   await self.insertRegisterData(registerModel);
   await self.insertPaymentsForRegister(registerModel);
-
-}
+};
 
 RegistersLogic.prototype.upload = function (id) {
-  var self = this;
+  const self = this;
 
-  var printModelForRegister = new PrintModelForRegister();
-  var data = [];
+  const printModelForRegister = new PrintModelForRegister();
+  const data = [];
 
   getPeriodFromRegister(id)
     .then(function (period) {
@@ -674,7 +663,6 @@ RegistersLogic.prototype.upload = function (id) {
     .catch(function (error) {
       console.log(error.message);
     });
-
 }
 
 RegistersLogic.prototype.upload2 = async function (id) {
@@ -778,6 +766,17 @@ RegistersLogic.prototype.build = async function () {
       }
     })
   }
+
+  const finesList = await pullFines();
+  finesList.forEach((item) => {
+    const dataModel = new DataModel();
+    dataModel.personalAccount1 = buildPersonalAccountForFine(7, item.id);
+    dataModel.personalAccount2 = buildPersonalAccountForFine(7, item.id);
+    dataModel.fullAddress = `${item.cityName},${item.streetName},${item.houseNumber},${item.number}${decodeApartmentLetter(item.letter)}`.toUpperCase();
+    dataModel.monthAndYear = `${item.dateMonth.toString().padStart(2, '0')}${item.dateYear - 2000}`;
+    dataModel.amount = item.amount.toFixed(2).replace('.', ',');
+    printModelForRegister.data.push(`${dataModel.personalAccount1};${dataModel.personalAccount2};${dataModel.fullAddress};${dataModel.monthAndYear};${dataModel.amount}\n`);
+  });
 
   const fileName = `${firm.newCategory}_${moment(new Date()).format('DDMMYY')}.txt`;
 
