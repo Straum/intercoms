@@ -797,7 +797,7 @@ module.exports = () => {
               a.payment_id DESC
               LIMIT ?
               OFFSET ?`, [visibleRows, offset], (error2, rows2) => {
-                connection.release();
+                connection1.release();
                 if (error2) {
                   throw err;
                 }
