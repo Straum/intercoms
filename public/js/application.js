@@ -153,6 +153,7 @@ $('#address').typeahead({
         appData.setCityId(selectedElement.cityId);
         appData.setStreetId(selectedElement.streetId);
         appData.setHouseId(selectedElement.houseId);
+        document.getElementById('porch').focus();
         return selectedElement.cityName + ', ' + selectedElement.streetName + ', ' + selectedElement.houseNumber;
       default:
         return selectedElement.cityName;

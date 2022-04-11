@@ -92,8 +92,10 @@ module.exports = () => {
   });
 
   router.get('/build', (req, res) => {
+    console.log('/build => ', new Date());
     const registersLogic = new RegistersLogic(req, res);
-    registersLogic.build();
+    registersLogic.build()
+      .then();
   });
 
   router.get('/:offset', (req, res) => {

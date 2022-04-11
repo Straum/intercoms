@@ -39,6 +39,18 @@ module.exports.DataModel = function() {
   this.amount = '';
 };
 
+module.exports.DataModel2022 = function() {
+  this.personalAccount = '';
+  this.els = '';
+  this.fias = '';
+  this.fullName = '';
+  this.fullAddress = '';
+  this.monthAndYear = '';
+  this.balance = '';
+  this.amount = '';
+};
+
+
 module.exports.PrintModelForRegister = function() {
   this.startFrom = null;
   this.endTo = null;

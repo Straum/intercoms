@@ -18,7 +18,8 @@ module.exports.getDateOfLastPayment = (apartmentId) => new Promise((resolve, rej
 module.exports.convertAnApartment = (apartmentId) => new Promise((resolve, reject) => {
   db.get().getConnection((err, connection) => {
     connection.query(
-      'CALL convert_an_apartment(?)', [apartmentId],
+      'CALL refresh_apartment(?)', [apartmentId],
+      // 'CALL convert_an_apartment(?)', [apartmentId],
       (error, rows) => {
         connection.release();
         if (error) {

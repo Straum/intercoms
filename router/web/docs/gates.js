@@ -14,8 +14,8 @@ const utils = require('../../../lib/utils');
 // const queryDeleteExistsApartments = require('../../../queries/orders').deleteExistsApartments;
 const common = require('../../common/typeheads');
 // const { OrderModel } = require('../../../models/order');
-const models = require('../../../models/order');
-const { PrintReceipts } = require('../../../lib/print_receipts_for_gates');
+// const models = require('../../../models/order');
+const { PrintOrderReceipts } = require('../../reports/order_receipts/print_order_receipts');
 const { ClientModel } = require('../../../models/client');
 const operationsWithClient = require('../../common/operations_with_client');
 
@@ -462,31 +462,31 @@ const paymentsHistory = async (apartmentId) => {
   return out;
 };
 
-const addPayment = (data) => new Promise((resolve, reject) => {
-  db.get().getConnection((err, connection) => {
-    connection.query(
-      `INSERT INTO payments (
-      create_date, apartment_id, pay_month, pay_year, amount, pay_date, mode, is_registered)
-      VALUES (?,?,?,?,?,?,?,?)`, [
-        data.createDate,
-        data.apartmentId,
-        data.payMonth,
-        data.payYear,
-        data.amount,
-        data.payDate,
-        data.mode,
-        data.isRegistered,
-      ], (errors, rows) => {
-        connection.release();
-        if (errors) {
-          reject();
-        } else {
-          resolve(rows.insertId);
-        }
-      },
-    );
-  });
-});
+// const addPayment = (data) => new Promise((resolve, reject) => {
+//   db.get().getConnection((err, connection) => {
+//     connection.query(
+//       `INSERT INTO payments (
+//       create_date, apartment_id, pay_month, pay_year, amount, pay_date, mode, is_registered)
+//       VALUES (?,?,?,?,?,?,?,?)`, [
+//         data.createDate,
+//         data.apartmentId,
+//         data.payMonth,
+//         data.payYear,
+//         data.amount,
+//         data.payDate,
+//         data.mode,
+//         data.isRegistered,
+//       ], (errors, rows) => {
+//         connection.release();
+//         if (errors) {
+//           reject();
+//         } else {
+//           resolve(rows.insertId);
+//         }
+//       },
+//     );
+//   });
+// });
 
 const getOrderIdFromApartment = (apartmentId) => new Promise((resolve, reject) => {
   db.get().getConnection((err, connection) => {
@@ -520,27 +520,27 @@ function checkCurrentPeriod(documentId) {
   });
 }
 
-function getPaymentOptions() {
-  return new Promise((resolve, reject) => {
-    db.get().getConnection((err, connection) => {
-      connection.query(
-        `SELECT a.organization_id AS id, a.name AS description
-        FROM organizations a
-        WHERE
-        a.for_receipt > 0
-        ORDER BY a.for_receipt ASC`, [],
-        (error, rows) => {
-          connection.release();
-          if (err) {
-            reject(error);
-          } else {
-            resolve(rows);
-          }
-        },
-      );
-    });
-  });
-}
+// function getPaymentOptions() {
+//   return new Promise((resolve, reject) => {
+//     db.get().getConnection((err, connection) => {
+//       connection.query(
+//         `SELECT a.organization_id AS id, a.name AS description
+//         FROM organizations a
+//         WHERE
+//         a.for_receipt > 0
+//         ORDER BY a.for_receipt ASC`, [],
+//         (error, rows) => {
+//           connection.release();
+//           if (err) {
+//             reject(error);
+//           } else {
+//             resolve(rows);
+//           }
+//         },
+//       );
+//     });
+//   });
+// }
 
 const insertApartments = (data) => new Promise((resolve, reject) => {
   const apartments = data.apartments.grid;
@@ -985,6 +985,14 @@ module.exports = () => {
     });
   });
 
+  router.get('/print_receipt_for_apartment/:id', async (req, res) => {
+    const apartmentId = parseInt(req.params.id, 10);
+    const orderId = await getOrderIdFromApartment(apartmentId);
+
+    const printOrderReceipts = new PrintOrderReceipts(orderId, res);
+    printOrderReceipts.oneApartment(apartmentId);
+  });
+
   router.post('/save', async (req, res) => {
     const gateModel = new GateModel();
 
@@ -1044,7 +1052,7 @@ module.exports = () => {
     const errors = req.validationErrors();
     if (!errors) {
       if ('printingReceipts' in req.body) {
-        const printReceipts = new PrintReceipts(gateModel.id, res);
+        const printReceipts = new PrintOrderReceipts(gateModel.id, res);
         printReceipts.go();
         return;
       }

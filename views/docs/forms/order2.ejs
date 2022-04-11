@@ -45,8 +45,8 @@
             <li class="active"><a data-toggle="tab" href="#core">Основное</a></li>
             <li><a data-toggle="tab" href="#maintenance">Техобслуживание</a></li>
             <li><a data-toggle="tab" href="#additionally">Дополнительно</a></li>
-            <li><a data-toggle="tab" href="#completePackage">Комплектация</a></li>
-            <li><a data-toggle="tab" href="#checkingReceipts">Проверка квитаниций</a></li>
+            <!-- <li><a data-toggle="tab" href="#completePackage">Комплектация</a></li>
+            <li><a data-toggle="tab" href="#checkingReceipts">Проверка квитаниций</a></li> -->
           </ul>
         </div>
       </div>
@@ -406,66 +406,65 @@
                           </tr>
                         </thead>
                         <tbody>
-                          <% var _class %>
-                          <% for (var cnt = 0, max = data.apartments.table.length; cnt < max; cnt++) {%>
+                          <% data.apartments.table.forEach((item) => {%>
 
-                          <% _class = '' %>
-                          <% if ((+data.apartments.table[cnt].paid == 1) && (+data.apartments.table[cnt].halfPaid == 2)) { %>
-                          <% _class = 'info2'; %>
+                          <% let _class = '' %>
+                          <% if ((+item.paid == 1) && (+item.halfPaid == 2)) { %>
+                            <% _class = 'info2'; %>
                           <% } %>
 
-                          <% if ((+data.apartments.table[cnt].paid == 1) && (+data.apartments.table[cnt].halfPaid == 1)) { %>
-                          <% _class = 'warning2'; %>
+                          <% if ((+item.paid == 1) && (+item.halfPaid == 1)) { %>
+                            <% _class = 'warning2'; %>
                           <% } %>
 
-                          <% if ((+data.apartments.table[cnt].paid == 1) && (+data.apartments.table[cnt].halfPaid == 0)) { %>
-                          <% _class = 'success2'; %>
+                          <% if ((+item.paid == 1) && (+item.halfPaid == 0)) { %>
+                            <% _class = 'success2'; %>
                           <% } %>
 
-                          <% if (+data.apartments.table[cnt].exempt == 1) { %>
-                          <% _class = 'danger2'; %>
+                          <% if (+item.exempt == 1) { %>
+                            <% _class = 'danger2'; %>
                           <% } %>
 
-                          <tr class="<%= _class %>" data-uid="<%= data.apartments.table[cnt].uid %>">
+                          <tr class="<%= _class %>" data-uid="<%= item.uid %>">
                             <td class="col-xs-1 text-center align-middle">
                               <button type="button" class="btn btn-default btn-xs" onclick="showHistory(event)">
                                 <span class="glyphicon glyphicon-rub" aria-hidden="true"></span>
                               </button>
                             </td>
                             <td class="col-xs-1 text-center align-middle">
-                              <%= data.apartments.table[cnt].fullNumber %>
+                              <%= item.fullNumber %>
                             </td>
                             <td class="col-xs-1 text-center align-middle">
                               <input type="checkbox" class="styled" onclick="checkApartment(event, 0)"
-                                <%= data.apartments.table[cnt].paid == 1 ? ' checked' : '' %>>
+                                <%= item.paid == 1 ? ' checked' : '' %>>
                             </td>
                             <td class="col-xs-1 text-center align-middle">
                               <input type="checkbox" class="styled" onclick="checkApartment(event, 1)"
-                                <%= data.apartments.table[cnt].privilege == 1 ? ' checked' : '' %>>
+                                <%= item.privilege == 1 ? ' checked' : '' %>>
                             </td>
                             <td class="col-xs-1 text-center align-middle">
                               <input type="checkbox" class="styled" onclick="checkApartment(event, 2)"
-                                <%= data.apartments.table[cnt].exempt == 1 ? ' checked' : '' %>>
+                                <%= item.exempt == 1 ? ' checked' : '' %>>
                             </td>
                             <td class="col-xs-1 text-center align-middle">
                               <input type="checkbox" class="styled" onclick="checkApartment(event, 3)"
-                                <%= data.apartments.table[cnt].locked == 1 ? ' checked' : '' %>>
+                                <%= item.locked == 1 ? ' checked' : '' %>>
                             </td>
                             <td class="col-xs-2 text-center align-middle">
-                              <%= data.apartments.table[cnt].paidDT ? moment(data.apartments.table[cnt].paidDT).format( 'DD.MM.YYYY HH:mm:ss') : '\u00A0' %>
+                              <%= item.paidDT ? moment(item.paidDT).format( 'DD.MM.YYYY HH:mm:ss') : '\u00A0' %>
                             </td>
                             <td class="col-xs-1 text-center align-middle">
                               <button type="button" class="btn btn-info btn-xs" onclick="editApartment(event)"
-                                data-uid="<%= data.apartments.table[cnt].uid %>">
+                                data-uid="<%= item.uid %>">
                                 <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
                               </button>
                               <button type="button" class="btn btn-danger btn-xs" onclick="removeApartment(event)"
-                                data-uid="<%= data.apartments.table[cnt].uid %>">
+                                data-uid="<%= item.uid %>">
                                 <span class="glyphicon glyphicon-minus" aria-hidden="true"></span>
                               </button>
                             </td>
                           </tr>
-                          <%}%>
+                          <%})%>
                         </tbody>
                       </table>
                     </div>
@@ -770,8 +769,9 @@
                           name="tablePayments" id="tablePayments">
                           <thead>
                             <tr class="active">
-                              <th class="col-xs-2 text-center" style="vertical-align: middle">Создано</th>
-                              <th class="col-xs-2 text-center" style="vertical-align: middle">Оплачено</th>
+<!--                              <th class="col-xs-1 text-center" style="vertical-align: middle">Создано</th>-->
+                              <th class="col-xs-1 text-center" style="vertical-align: middle">Оплачено</th>
+                              <th class="col-xs-1 text-center" style="vertical-align: middle">В период</th>
                               <th class="col-xs-1 text-center" style="vertical-align: middle">ID</th>
                               <th class="col-xs-1 text-center" style="vertical-align: middle">Месяц</th>
                               <th class="col-xs-1 text-center" style="vertical-align: middle">Год</th>

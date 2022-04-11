@@ -4,6 +4,7 @@ const PizZip = require('pizzip');
 const Docxtemplater = require('docxtemplater');
 const fs = require('fs');
 const moment = require('moment');
+const { v4: uuidv4 } = require('uuid');
 
 const db = require('../../../lib/db');
 const cfg = require('../../../lib/config').config;
@@ -14,13 +15,15 @@ const queryOrder = require('../../../queries/orders').getOrder;
 const queryDeleteExistsApartments = require('../../../queries/orders').deleteExistsApartments;
 const { OrderModel } = require('../../../models/order');
 const models = require('../../../models/order');
-const { PrintOrderReceipts } = require('../../../lib/print_order_receipts');
+const { PrintOrderReceipts } = require('../../reports/order_receipts/print_order_receipts');
 const { hostIP, hostPort } = require('../../../lib/config').config;
 const { ClientModel } = require('../../../models/client');
 const common = require('../../common/typeheads');
 const operationsWithClient = require('../../common/operations_with_client');
 const apartment = require('../../common/apartments');
 const logger = require('../../../lib/winston');
+
+const sp = require('../../common/stored_procedures');
 
 require('shelljs/global');
 
@@ -40,55 +43,50 @@ const isExistsContractNumber = (contractNumber) => new Promise((resolve, reject)
   });
 });
 
-function modifyPayment(data) {
+function apartmentInfo(apartmentId) {
+  logger.info('call from addPayment()');
   return new Promise((resolve, reject) => {
-    db.get().getConnection((err, connection) => {
-      connection.query(
-        'CALL modify_payment(?,?,?)', [
-          data.oldAmount,
-          data.newAmount,
-          data.id,
-        ],
-        (error, rows) => {
-          connection.release();
-          if (error) {
-            logger.info('data:', JSON.stringify(data));
-            logger.info('error', error);
-            reject();
-          } else {
-            resolve(rows[0][0].apartmentId);
-          }
-        },
-      );
-    });
+    db.get()
+      .getConnection((err, connection) => {
+        connection.query('CALL apartment_info(?)', [apartmentId],
+          (error, rows) => {
+            connection.release();
+            if (error) {
+              reject();
+            } else {
+              resolve({ ...rows[0][0] });
+            }
+          });
+      });
   });
 }
 
 function addPayment(data) {
   logger.info('call from addPayment()');
+  logger.info(`CALL enter_payment_depth_2_year("${data.personalAccount}","${data.number}","${data.letter}","${data.payDate}",${data.amount},${data.payMonth},${data.payYear},"${data.fileName}","${data.transaction}","${data.zipCode}",${data.mode}),0,0`);
   return new Promise((resolve, reject) => {
     db.get().getConnection((err, connection) => {
       connection.query(
-        `INSERT INTO payments (
-        create_date, apartment_id, pay_month, pay_year, amount, pay_date, mode, is_registered)
-        VALUES (?,?,?,?,?,?,?,?)`, [
-          data.createDate,
-          data.apartmentId,
+        // 'CALL enter_payment_depth_2_year(?,?,?,?,?,?,?,?,?,?,?,?,?)', [
+        'CALL enter_payment(?,?,?,?,?,?,?,?,?,?,?)', [
+          data.personalAccount,
+          data.number,
+          data.letter,
+          data.payDate,
+          data.amount,
           data.payMonth,
           data.payYear,
-          data.amount,
-          data.payDate,
+          data.fileName,
+          data.transaction,
+          data.zipCode,
           data.mode,
-          data.isRegistered,
         ],
         (error, rows) => {
           connection.release();
           if (error) {
-            logger.info('data:', JSON.stringify(data));
-            logger.info('error', error);
             reject();
           } else {
-            resolve(rows.insertId);
+            resolve(rows[0][0].newPaymentId);
           }
         },
       );
@@ -176,23 +174,6 @@ function checkPreviousPeriod(orderId) {
   });
 }
 
-// function checkOrder(orderId) {
-//   return new Promise(function (resolve, reject) {
-//     db.get().getConnection(function (err, connection) {
-//       connection.query(
-//         'CALL check_order(?)', [orderId],
-//         function (err, rows) {
-//           connection.release();
-//           if (err) {
-//             reject();
-//           } else {
-//             resolve();
-//           }
-//         });
-//     });
-//   });
-// }
-
 function printingReceipts(orderId, res) {
   const printOrderReceipts = new PrintOrderReceipts(orderId, res);
   printOrderReceipts.go().then();
@@ -235,6 +216,9 @@ function getPayments(id) {
         a.amount,
         a.mode,
         a.privilege,
+        a.is_fragmented AS isFragmented,
+        a.original_amount AS originalAmount,
+        a.original_pay_date AS originalPayDate,
         b.name as organizationName
         FROM payments a
         LEFT JOIN organizations b ON b.organization_id = a.mode
@@ -243,7 +227,7 @@ function getPayments(id) {
         AND (a.is_registered = 0)
         AND (a.apartment_id = ?)
         ORDER BY
-        a.pay_date DESC, payment_id`, [id],
+        a.pay_date DESC, payment_id DESC`, [id],
         (error, rows) => {
           connection.release();
           if (error) {
@@ -256,39 +240,6 @@ function getPayments(id) {
     });
   });
 }
-
-// function getPaymentsByRegister(id) {
-//   return new Promise(function (resolve, reject) {
-//     db.get().getConnection(function (err, connection) {
-//       connection.query(
-//         ` SELECT
-//         a.payment_id AS uid,
-//         a.create_date AS createDate,
-//         a.pay_month AS payMonth,
-//         a.pay_year AS payYear,
-//         a.pay_date AS payDate,
-//         a.amount,
-//         a.mode,
-//         a.privilege,
-//         b.name as organizationName
-//         FROM payments a
-//         LEFT JOIN organizations b ON b.organization_id = a.mode
-//         WHERE
-//         (a.apartment_id = ?)
-//         AND (a.is_registered = 1)
-//         ORDER BY
-//         a.pay_date DESC, a.payment_id`, [id],
-//         function (err, rows) {
-//           connection.release();
-//           if (err) {
-//             reject(err);
-//           } else {
-//             resolve(rows);
-//           }
-//         });
-//     });
-//   });
-// }
 
 function getFines(id) {
   return new Promise((resolve, reject) => {
@@ -319,29 +270,30 @@ function getFines(id) {
 }
 
 function getPrices(id) {
-  return new Promise(function (resolve, reject) {
-    db.get().getConnection(function (err, connection) {
+  return new Promise((resolve, reject) => {
+    db.get().getConnection((err, connection) => {
       connection.query(
-        ' SELECT'
-        + ' DISTINCT a.start_service AS startService,' +
-      ' a.end_service AS endService,' +
-      ' a.normal_payment AS normalPayment,' +
-      ' a.privilege_payment As privilegePayment,' +
-      ' a.receipt_printing AS receiptPrinting' +
-      ' FROM' +
-        ' cards_history a' +
-        ' INNER JOIN apartments b ON b.card_id = a.card_id' +
-        ' WHERE' +
-        ' b.apartment_id = ?' +
-        ' ORDER BY a.start_service DESC', [id],
-        function (err, rows) {
+        `SELECT
+        DISTINCT a.start_service AS startService,
+        a.end_service AS endService,
+        a.normal_payment AS normalPayment,
+        a.privilege_payment As privilegePayment,
+        a.receipt_printing AS receiptPrinting
+        FROM
+        cards_history a
+        INNER JOIN apartments b ON b.card_id = a.card_id
+        WHERE
+        b.apartment_id = ?
+        ORDER BY a.start_service DESC`, [id],
+        (error, rows) => {
           connection.release();
-          if (err) {
-            reject(err);
+          if (error) {
+            reject(error);
           } else {
             resolve(rows);
           }
-        });
+        },
+      );
     });
   });
 }
@@ -420,54 +372,54 @@ function updateOrder(data) {
         ' total = ?,' +
         ' first_year = ?' +
         ' WHERE card_id = ?', [
-          data.contractNumber,
-          data.createDate,
-          data.equipment.key,
-          data.endContract,
-          data.creditTo,
-          data.repaid,
-          data.address.city.key,
-          data.address.street.key,
-          data.address.house.key,
-          data.porch,
-          data.numeration,
-          data.client.contract.key,
-          data.onePerson,
-          data.client.service.key,
-          data.serviceNumber,
-          data.startService,
-          data.endService,
-          data.endService,
-          data.maintenanceContract,
-          data.startApartment,
-          data.endApartment,
-          data.normalPayment,
-          data.privilegePayment,
-          data.receiptPrinting,
-          data.contractInfo,
-          data.serviceInfo,
-          data.complete.equipment.quantity,
-          data.complete.equipment.price,
-          data.complete.equipment.cost,
-          data.complete.mounting.quantity,
-          data.complete.mounting.price,
-          data.complete.mounting.cost,
-          data.complete.subscriberUnit.quantity,
-          data.complete.subscriberUnit.price,
-          data.complete.subscriberUnit.cost,
-          data.complete.key.quantity,
-          data.complete.key.price,
-          data.complete.key.cost,
-          data.complete.door.quantity,
-          data.complete.door.price,
-          data.complete.door.cost,
-          data.complete.subtotal.cost,
-          data.complete.subtotalForApartment.cost,
-          data.complete.discountForApartment.cost,
-          data.complete.total.cost,
-          data.firstYear,
-          data.id
-        ],
+        data.contractNumber,
+        data.createDate,
+        data.equipment.key,
+        data.endContract,
+        data.creditTo,
+        data.repaid,
+        data.address.city.key,
+        data.address.street.key,
+        data.address.house.key,
+        data.porch,
+        data.numeration,
+        data.client.contract.key,
+        data.onePerson,
+        data.client.service.key,
+        data.serviceNumber,
+        data.startService,
+        data.endService,
+        data.endService,
+        data.maintenanceContract,
+        data.startApartment,
+        data.endApartment,
+        data.normalPayment,
+        data.privilegePayment,
+        data.receiptPrinting,
+        data.contractInfo,
+        data.serviceInfo,
+        data.complete.equipment.quantity,
+        data.complete.equipment.price,
+        data.complete.equipment.cost,
+        data.complete.mounting.quantity,
+        data.complete.mounting.price,
+        data.complete.mounting.cost,
+        data.complete.subscriberUnit.quantity,
+        data.complete.subscriberUnit.price,
+        data.complete.subscriberUnit.cost,
+        data.complete.key.quantity,
+        data.complete.key.price,
+        data.complete.key.cost,
+        data.complete.door.quantity,
+        data.complete.door.price,
+        data.complete.door.cost,
+        data.complete.subtotal.cost,
+        data.complete.subtotalForApartment.cost,
+        data.complete.discountForApartment.cost,
+        data.complete.total.cost,
+        data.firstYear,
+        data.id
+      ],
         function (err) {
           connection.release();
           if (err) {
@@ -602,53 +554,53 @@ function saveOrder(data) {
         ' subtotal, subtotal_for_apartment, discount_for_apartment, total, first_year)' +
         ' VALUES (' +
         ' ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [
-          data.contractNumber,
-          data.createDate,
-          data.equipment.key,
-          data.endContract,
-          data.creditTo,
-          data.repaid,
-          data.address.city.key,
-          data.address.street.key,
-          data.address.house.key,
-          data.porch,
-          data.numeration,
-          data.client.contract.key,
-          data.onePerson,
-          data.client.service.key,
-          data.serviceNumber,
-          data.startService,
-          data.endService,
-          data.endService,
-          data.maintenanceContract,
-          data.startApartment,
-          data.endApartment,
-          data.normalPayment,
-          data.privilegePayment,
-          data.receiptPrinting,
-          data.contractInfo,
-          data.serviceInfo,
-          data.complete.equipment.quantity,
-          data.complete.equipment.price,
-          data.complete.equipment.cost,
-          data.complete.mounting.quantity,
-          data.complete.mounting.price,
-          data.complete.mounting.cost,
-          data.complete.subscriberUnit.quantity,
-          data.complete.subscriberUnit.price,
-          data.complete.subscriberUnit.cost,
-          data.complete.key.quantity,
-          data.complete.key.price,
-          data.complete.key.cost,
-          data.complete.door.quantity,
-          data.complete.door.price,
-          data.complete.door.cost,
-          data.complete.subtotal.cost,
-          data.complete.subtotalForApartment.cost,
-          data.complete.discountForApartment.cost,
-          data.complete.total.cost,
-          data.firstYear
-        ],
+        data.contractNumber,
+        data.createDate,
+        data.equipment.key,
+        data.endContract,
+        data.creditTo,
+        data.repaid,
+        data.address.city.key,
+        data.address.street.key,
+        data.address.house.key,
+        data.porch,
+        data.numeration,
+        data.client.contract.key,
+        data.onePerson,
+        data.client.service.key,
+        data.serviceNumber,
+        data.startService,
+        data.endService,
+        data.endService,
+        data.maintenanceContract,
+        data.startApartment,
+        data.endApartment,
+        data.normalPayment,
+        data.privilegePayment,
+        data.receiptPrinting,
+        data.contractInfo,
+        data.serviceInfo,
+        data.complete.equipment.quantity,
+        data.complete.equipment.price,
+        data.complete.equipment.cost,
+        data.complete.mounting.quantity,
+        data.complete.mounting.price,
+        data.complete.mounting.cost,
+        data.complete.subscriberUnit.quantity,
+        data.complete.subscriberUnit.price,
+        data.complete.subscriberUnit.cost,
+        data.complete.key.quantity,
+        data.complete.key.price,
+        data.complete.key.cost,
+        data.complete.door.quantity,
+        data.complete.door.price,
+        data.complete.door.cost,
+        data.complete.subtotal.cost,
+        data.complete.subtotalForApartment.cost,
+        data.complete.discountForApartment.cost,
+        data.complete.total.cost,
+        data.firstYear
+      ],
         function (err, rows) {
           connection.release();
           if (err) {
@@ -755,25 +707,25 @@ function getApartmentId(paymentId) {
   return new Promise((resolve, reject) => {
     db.get().getConnection((err, connection) => {
       connection.query(
-        'SELECT apartment_id AS apartmentId FROM payments where payment_id = ?', [paymentId],
+        'SELECT apartment_id AS apartmentId, amount FROM payments where payment_id = ?', [paymentId],
         (error, rows) => {
           connection.release();
           if (error) {
             reject();
           } else {
-            resolve( {...rows[0]});
+            resolve({ ...rows[0] });
           }
         },
       );
     });
   });
-};
+}
 
 function deletePayment(paymentId) {
   return new Promise((resolve, reject) => {
     db.get().getConnection((err, connection) => {
       connection.query(
-        'UPDATE payments SET is_deleted = 1, delete_dt = NOW() WHERE payment_id = ?', [paymentId],
+        'CALL delete_payment(?)', [paymentId],
         (error) => {
           connection.release();
           if (error) {
@@ -785,52 +737,52 @@ function deletePayment(paymentId) {
       );
     });
   });
-};
+}
 
 function addressOfClient(data) {
-  var out = [];
+  const out = [];
   try {
-    if ((data.city) && (data.city.trim() != '')) {
-      out.push('Город: ' + data.city); {
-        if (data.street.trim() != '') {
-          out.push(', улица: ' + data.street);
-        }
-        if (data.house.trim() != '') {
-          out.push(', дом: ' + data.house);
-        }
-        if (data.apartment.trim() != '') {
-          out.push(', кв: ' + data.apartment);
-        }
+    if ((data.city) && (data.city.trim() !== '')) {
+      out.push(`Город: ${data.city}`);
+      if (data.street.trim() !== '') {
+        out.push(`, улица: ${data.street}`);
+      }
+      if (data.house.trim() !== '') {
+        out.push(`, дом: ${data.house}`);
+      }
+      if (data.apartment.trim() !== '') {
+        out.push(`, кв: ${data.apartment}`);
       }
     }
   } catch (err) {
+    // eslint-disable-next-line no-console
     console.log('addressOfClient error: ', err.message);
-  };
+  }
   return out.join('');
 }
 
 function passportData(data) {
-  var out = [];
+  const out = [];
   try {
-    if ((data.name) && (data.name.trim() != '')) {
-      out.push(data.name); {
-        if ((data.series) && (data.series.trim() != '')) {
-          out.push(' серия ' + data.series);
-        }
-        if ((data.number) && (data.number.trim() != '')) {
-          out.push(' № ' + data.number);
-        }
-        if (data.issued) {
-          out.push(' выдан ' + moment(data.issued).format('DD.MM.YYYY'));
-        }
-        if ((data.department) && (data.department.trim() != '')) {
-          out.push(' ' + data.department);
-        }
+    if ((data.name) && (data.name.trim() !== '')) {
+      out.push(data.name);
+      if ((data.series) && (data.series.trim() !== '')) {
+        out.push(` серия ${data.series}`);
+      }
+      if ((data.number) && (data.number.trim() !== '')) {
+        out.push(` № ${data.number}`);
+      }
+      if (data.issued) {
+        out.push(` выдан ${moment(data.issued).format('DD.MM.YYYY')}`);
+      }
+      if ((data.department) && (data.department.trim() !== '')) {
+        out.push(` ${data.department}`);
       }
     }
   } catch (err) {
+    // eslint-disable-next-line no-console
     console.log('passportData error: ', err.message);
-  };
+  }
   return out.join('');
 }
 
@@ -857,7 +809,7 @@ function errorHandler(error) {
 }
 
 function generateReportForSetup(sceleton, isCopyFile) {
-  const templateFile = (sceleton.city.printType == 1) ? 'setup_pskov.docx' : 'setup_vluki.docx';
+  const templateFile = (sceleton.city.printType === 1) ? 'setup_pskov.docx' : 'setup_vluki.docx';
   const content = fs
     .readFileSync(path.join(__dirname, `../../../public/templates/${templateFile}`), 'binary');
 
@@ -911,7 +863,7 @@ function generateReportForSetup(sceleton, isCopyFile) {
     subtotal: sceleton.complete.subtotal.cost.toFixed(2),
     subtotalForApartment: sceleton.complete.subtotalForApartment.cost.toFixed(2),
     discountForApartment: sceleton.complete.discountForApartment.cost.toFixed(2),
-    total: sceleton.complete.total.cost.toFixed(2)
+    total: sceleton.complete.total.cost.toFixed(2),
   });
 
   try {
@@ -925,8 +877,8 @@ function generateReportForSetup(sceleton, isCopyFile) {
       type: 'nodebuffer',
     });
 
-  const outputFile = `${path.join(__dirname, '../../../public/docs/')}${sceleton.contractNumber}-1.doc`;
-  // buf is a nodejs buffer, you can either write it to a file or do anything else with it.
+  const outputFile =
+    `${path.join(__dirname, '../../../public/docs/')}${sceleton.contractNumber}-1.doc`;
   fs.writeFileSync(outputFile, buf);
 
   if (isCopyFile) {
@@ -942,7 +894,8 @@ function generateReportForService(sceleton, isCopyFile) {
   // Orginal code
   // https://www.tutorialswebsite.com/replace-word-document-placeholder-node-js/
 
-  const templateFile = (sceleton.city.printType == 1) ? 'service_pskov.docx' : 'service_vluki.docx';
+  const templateFile =
+    (sceleton.city.printType === 1) ? 'service_pskov.docx' : 'service_vluki.docx';
   const content = fs
     .readFileSync(path.join(__dirname, `../../../public/templates/${templateFile}`), 'binary');
 
@@ -979,7 +932,6 @@ function generateReportForService(sceleton, isCopyFile) {
     PHONES: sceleton.client.phones,
     UD: passportData(sceleton.client.certificate),
     KW: sceleton.client.registeredAddress.apartment,
-
   });
 
   try {
@@ -1245,7 +1197,7 @@ var filterRecords = function (req, res) {
 };
 
 function changeAddress(data) {
-  var {operation, value, parentId} = data;
+  var { operation, value, parentId } = data;
   return new Promise(function (resolve, reject) {
     db.get().getConnection(function (err, connection) {
       connection.query('CALL change_address(?,?,?)', [operation, value, parentId],
@@ -1280,6 +1232,7 @@ async function paymentsHistory(apartmentId) {
     out.fines = await getFines(apartmentId); // getPaymentsByRegister(apartmentId);
     out.prices = await getPrices(apartmentId);
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.log(error.message);
   }
   return out;
@@ -1290,8 +1243,8 @@ function checkPayments(data) {
     db.get().getConnection((err, connection) => {
       connection.query(
         'CALL find_debt_under_order_depth_2_year(?)', [
-          data.id,
-        ],
+        data.id,
+      ],
         (error, rows) => {
           connection.release();
           if (error) {
@@ -1305,6 +1258,28 @@ function checkPayments(data) {
       );
     });
   });
+}
+
+function saveToLog(model, index) {
+  let descriptionOfOperation = '';
+  switch (index) {
+    case 0:
+      descriptionOfOperation = 'Удаление платежа';
+      break;
+    case 1:
+      descriptionOfOperation = 'Новый платеж';
+      break;
+    default:
+      break;
+  }
+
+  logger.info('');
+  logger.info(`Договор на домофоны. ${descriptionOfOperation}`);
+  logger.info(`Договор ТО № ${model.prolongedContractNumber}`);
+  logger.info(`Квартира   : ${model.number}${utils.decodeApartmentLetter(model.letter)}`);
+  logger.info(`Сумма      : ${model.amount.toFixed(2)}`);
+  logger.info(`ID платежа : ${model.id}`);
+  logger.info('');
 }
 
 module.exports = function () {
@@ -2038,7 +2013,7 @@ module.exports = function () {
   });
 
   router.post('/find_full_address', function (req, res) {
-    const {rowsCount, suggestion, core} = {...req.body};
+    const { rowsCount, suggestion, core } = { ...req.body };
     // var data = req.body;
     if (suggestion) {
       var params = {
@@ -2061,7 +2036,7 @@ module.exports = function () {
     const data = req.body;
     if ((data) && (typeof (data) === 'object') && ('cityName' in data)) {
       const rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
-      const params = {...data, rowsCount: rowsCount};
+      const params = { ...data, rowsCount: rowsCount };
       common.filterCities(params, (err, rows) => {
         res.status(200).send(rows);
       });
@@ -2077,7 +2052,7 @@ module.exports = function () {
     const data = req.body;
     if ((data) && (typeof (data) === 'object') && ('streetName' in data) && ('cityId' in data)) {
       const rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
-      const params = {...data, rowsCount: rowsCount};
+      const params = { ...data, rowsCount: rowsCount };
       common.filterStreets(params, (err, rows) => {
         res.status(200).send(rows);
       });
@@ -2093,7 +2068,7 @@ module.exports = function () {
     const data = req.body;
     if ((data) && (typeof (data) === 'object') && ('houseNumber' in data) && ('streetId' in data)) {
       const rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
-      const params = {...data, rowsCount: rowsCount};
+      const params = { ...data, rowsCount: rowsCount };
       common.filterHouses(params, (err, rows) => {
         res.status(200).send(rows);
       });
@@ -2109,7 +2084,7 @@ module.exports = function () {
     const data = req.body;
     if ((data) && (typeof (data) === 'object') && ('porch' in data) && ('houseId' in data)) {
       const rowsCount = 'limit' in data ? data.limit : cfg.rowsLimit;
-      const params = {...data, rowsCount: rowsCount};
+      const params = { ...data, rowsCount: rowsCount };
       const rows = await common.filterPorches(params);
       res.status(200).send(rows);
     } else {
@@ -2226,54 +2201,56 @@ module.exports = function () {
     }
   });
 
-  router.post('/modify_payment', async (req, res) => {
-    const data = {
-      id: req.body.id,
-      oldAmount: req.body.oldAmount,
-      newAmount: req.body.newAmount,
-    };
-
-    const apartmentId = await modifyPayment(data);
-    const apartmentData = await apartment.convertAnApartment(apartmentId);
-    const paymentsData = await paymentsHistory(apartmentId);
-    const dateOfLastPayment = await apartment.getDateOfLastPayment(apartmentId);
-    res.status(200).send({
-      apartmentData,
-      paymentsData,
-      dateOfLastPayment,
-    });
-  });
-
   router.post('/add_payment', async (req, res) => {
 
     const obj = {
       apartmentId: +req.body.id,
       amount: parseFloat(req.body.amount),
       payDate: moment(req.body.date, 'DD.MM.YYYY').format('YYYY-MM-DD'),
-      // mode: 2,
+      // // mode: 2,
       mode: +req.body.option,
-      isRegistered: 0,
+      // isRegistered: 0,
     };
 
-    const data = {
-      ...obj,
-      ...{ payMonth: moment(obj.payDate).month() + 1 },
-      ...{ payYear: moment(obj.payDate).year() },
-      ...{ createDate: obj.payDate },
-    };
+    const apartmentData = await apartmentInfo(obj.apartmentId);
 
     try {
-      const uid = await addPayment(data);
+      const data = {
+        ...obj,
+        ...{ personalAccount: utils.buildPersonalAccount(0, apartmentData.prolongedContractNumber, apartmentData.letter, apartmentData.number) },
+        ...{ number: apartmentData.number },
+        ...{ letter: utils.decodeApartmentLetter(apartmentData.letter) },
+        ...{ payMonth: moment(obj.payDate).month() + 1 },
+        ...{ payYear: moment(obj.payDate).year() },
+        ...{ createDate: obj.payDate },
+        ...{ transaction: uuidv4() },
+        ...{ fileName: uuidv4() },
+        ...{ zipCode: '' },
+        ...{ method: obj.mode },
+      };
+
+      const newPaymentId = await addPayment(data);
+      await sp.calcPaymentAndDebt(obj.apartmentId);
       const apartmentInfo = await apartment.convertAnApartment(obj.apartmentId);
       const paymentsData = await paymentsHistory(obj.apartmentId);
       const dateOfLastPayment = await apartment.getDateOfLastPayment(obj.apartmentId);
+
+      saveToLog(
+        {
+          prolongedContractNumber: apartmentData.prolongedContractNumber,
+          number: apartmentData.number,
+          letter: apartmentData.letter,
+          amount: obj.amount,
+          id: newPaymentId,
+        }, 1);
+
       res.status(200).send({
         apartmentInfo,
         paymentsHistory: paymentsData,
         dateOfLastPayment,
       });
     } catch (error) {
-      console.log(`Error: (/add_payment) - ${error.message}`);
+      console.log(`Error: (/add_payment) - ${error}`);
       res.status(500).send({
         success: 'Bad',
       });
@@ -2321,31 +2298,28 @@ module.exports = function () {
   router.post('/delete_payment', async (req, res) => {
     const data = req.body;
     if ((data) && (typeof (data) === 'object') && ('id' in data)) {
-      const { apartmentId } = await getApartmentId(data.id);
+      const { apartmentId, amount } = await getApartmentId(data.id);
       await deletePayment(data.id);
-      const apartmentInfo = await apartment.convertAnApartment(apartmentId);
+      await sp.calcPaymentAndDebt(apartmentId);
+      const info = await apartment.convertAnApartment(apartmentId);
       const dateOfLastPayment = await apartment.getDateOfLastPayment(apartmentId);
-      res.status(200).send({ apartmentInfo, dateOfLastPayment });
-      //
-      //
-      // .then(function (info) {
-      //   paymentId = info.apartment_id;
-      //   return deletePayment(data.id);
-      // })
-      // .then(function () {
-      //   return apartment.convertAnApartment(paymentId);
-      // })
-      // .then(function (apartmentInfo) {
-      //   res.status(200).send(apartmentInfo);
-      // })
-      // .catch(function (error) {
-      //   console.log(error.message);
-      //   res.status(500).send(error.message);
-      // });
+      const payments = await getPayments(apartmentId);
+
+      const apartmentData = await apartmentInfo(apartmentId);
+      saveToLog(
+        {
+          prolongedContractNumber: apartmentData.prolongedContractNumber,
+          number: apartmentData.number,
+          letter: apartmentData.letter,
+          amount,
+          id: data.id,
+        }, 0);
+
+      res.status(200).send({ info, dateOfLastPayment, payments });
     } else {
       res.status(500).send({
         code: 500,
-        msg: 'Incorrect parameter'
+        msg: 'Incorrect parameter',
       });
     }
   });
@@ -2353,8 +2327,8 @@ module.exports = function () {
   router.post('/print_receipt_for_apartment', function (req, res) {
     var id = req.body.id;
     getOrderIdFromApartment(id).then(function (orderId) {
-        printingReceipts(orderId, res);
-      })
+      printingReceipts(orderId, res);
+    })
       .catch(function (error) {
         console.log(error);
         res.status(500).send(error);
@@ -2362,13 +2336,13 @@ module.exports = function () {
   });
 
   router.post('/change_address', (req, res) => {
-    changeAddress(req.body).then( (data) => {
+    changeAddress(req.body).then((data) => {
       res.status(200).send(data);
     })
-    .catch((error) => {
-      console.log(error);
-      res.status(500).send(error);
-    });
+      .catch((error) => {
+        console.log(error);
+        res.status(500).send(error);
+      });
   });
 
   router.post('/save_client', (req, res) => {
@@ -2589,7 +2563,7 @@ const saveClientData = async (data, res) => {
   clientModel.certificate.typeId = data.certificateId;
   clientModel.certificate.series = data.certificateSeries;
   clientModel.certificate.number = data.certificateNumber;
-  clientModel.certificate.issued =  ((data.issued != null) && (data.issued.trim().length > 0)) ? moment(data.issued, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
+  clientModel.certificate.issued = ((data.issued != null) && (data.issued.trim().length > 0)) ? moment(data.issued, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
   clientModel.certificate.department = data.department;
   clientModel.certificate.phones = data.phones;
 
@@ -2617,7 +2591,7 @@ const saveClientData = async (data, res) => {
       await operationsWithClient.addClientRegisteredAddress(clientModel);
       await operationsWithClient.addClientActualAddress(clientModel);
     }
-    res.status(200).send({id: clientModel.id});
+    res.status(200).send({ id: clientModel.id });
   }
   catch (error) {
     if (clientModel.id > 0) {

@@ -1,6 +1,4 @@
-// 'use strict';
-
-var socket;
+let socket;
 
 const ACTION_ADD_APARTMENT = 0;
 const ACTION_EDIT_APARTMENT = 1;
@@ -138,13 +136,14 @@ function showHistory(ev) {
 
     if (data.payments.length > 0) {
       data.payments.forEach((element) => {
+        const originalAmount = element.isFragmented === 0 ? '' : `(${element.originalAmount.toFixed(2)})`;
         body.payments += `<tr data-uid="${element.uid}">
-          <td class="text-center align-middle">${moment(element.createDate).format('DD.MM.YYYY')}</td>
           <td class="text-center align-middle">${moment(element.payDate).format('DD.MM.YYYY')}</td>
+          <td class="text-center align-middle">${element.isFragmented === 0 ? '' : moment(element.payDate).format('DD.MM.YYYY')}</td>
           <td class="text-center align-middle">${element.uid}</td>
           <td class="text-center align-middle">${element.payMonth}</td>
           <td class="text-center align-middle">${element.payYear}</td>
-          <td class="text-right align-middle">${element.amount.toFixed(2)}</td>
+          <td class="text-right align-middle" ${element.isFragmented === 0 ? '' : 'style="color: red"'}>${element.amount.toFixed(2)} ${originalAmount}</td>
           <td class="text-center align-middle">${element.organizationName}</td>
           <td class="text-center align-middle">
             <button type="button" class="btn btn-success btn-xs" onclick="modifyPayment(event)">
@@ -1468,59 +1467,89 @@ function showAlert2(hidden, htmlText) {
   document.getElementById('alertApartment').innerHTML = htmlText;
 }
 
-function deletePayment() {
-  axios.post('/orders/delete_payment', {
+async function deletePayment() {
+  const response = await axios.post('/orders/delete_payment', {
     id: application.deletedPayment.uid,
-  }).then((response) => {
-    document.getElementById('tablePayments').deleteRow(application.deletedPayment.rowIndex);
-
-    // const { data } = response;
-    const { apartmentInfo } = response.data;
-    const { dateOfLastPayment } = response.data;
-
-    const table = document.getElementById('tableApartments');
-    const rowLength = table.rows.length;
-    for (let ind = 2; ind < rowLength; ind += 1) {
-      // if ((Number(table.rows.item(ind).getAttribute('data-uid'))) === Number(data.apartmentId)) {
-      if ((Number(table.rows.item(ind).getAttribute('data-uid'))) === Number(apartmentInfo.apartmentId)) {
-        table.rows.item(ind).classList.remove('info2');
-        table.rows.item(ind).classList.remove('warning2');
-        table.rows.item(ind).classList.remove('success2');
-        table.rows.item(ind).classList.remove('danger2');
-
-        let className = '';
-        if ((+apartmentInfo.paid === 1) && (+apartmentInfo.halfPaid === 2)) {
-          className = 'info2';
-        }
-
-        if ((+apartmentInfo.paid === 1) && (+apartmentInfo.halfPaid === 1)) {
-          className = 'warning2';
-        }
-
-        if ((+apartmentInfo.paid === 1) && (+apartmentInfo.halfPaid === 0)) {
-          className = 'success2';
-        }
-
-        if (+apartmentInfo.exempt === 1) {
-          className = 'danger2';
-        }
-        if (className.length > 0) {
-          table.rows.item(ind).classList.add(className);
-        }
-
-        const cell = table.rows.item(ind).cells[6];
-        cell.innerText = dateOfLastPayment.payDate
-          ? moment(dateOfLastPayment.payDate)
-            .format('DD.MM.YYYY HH:mm:ss')
-          : '\u00A0';
-
-        break;
-      }
-    }
-    showNumberInBadge(document.getElementById('tablePayments').getElementsByTagName('tbody')[0].rows.length, 'badge payments');
-  }).catch((error) => {
-    console.log(error);
   });
+
+  const { apartmentInfo } = response.data;
+  const { dateOfLastPayment } = response.data;
+  const { payments } = response.data;
+  let bodyPayments = '';
+
+  if ((payments) && (Array.isArray(payments))) {
+    payments.forEach((element) => {
+      const originalAmount = element.isFragmented === 0 ? '' : `(${element.originalAmount.toFixed(2)})`;
+      bodyPayments += `<tr data-uid="${element.uid}">
+          <td class="text-center align-middle">${moment(element.payDate).format('DD.MM.YYYY')}</td>
+          <td class="text-center align-middle">${element.isFragmented === 0 ? '' : moment(element.payDate).format('DD.MM.YYYY')}</td>
+          <td class="text-center align-middle">${element.uid}</td>
+          <td class="text-center align-middle">${element.payMonth}</td>
+          <td class="text-center align-middle">${element.payYear}</td>
+          <td class="text-right align-middle" ${element.isFragmented === 0 ? '' : 'style="color: red"'}>${element.amount.toFixed(2)} ${originalAmount}</td>
+          <td class="text-center align-middle">${element.organizationName}</td>
+          <td class="text-center align-middle">
+            <button type="button" class="btn btn-success btn-xs" onclick="modifyPayment(event)">
+              <span class="glyphicon glyphicon-pencil" aria-hidden="true">
+              </span>
+            </button>
+            <button type="button" class="btn btn-danger btn-xs" onclick="removePayment(event)">
+              <span class="glyphicon glyphicon-minus" aria-hidden="true">
+              </span>
+            </button>
+           </td>
+         </tr>`;
+    });
+  }
+  const bodyPaymentsRef = document.getElementById('tablePayments').getElementsByTagName('tbody')[0];
+  bodyPaymentsRef.innerHTML = bodyPayments;
+  showNumberInBadge((payments ? payments.length : 0), 'badge payments');
+
+  // document.getElementById('tablePayments').deleteRow(application.deletedPayment.rowIndex);
+
+  const table = document.getElementById('tableApartments');
+  const rowLength = table.rows.length;
+  for (let ind = 2; ind < rowLength; ind += 1) {
+    // if ((Number(table.rows.item(ind).getAttribute('data-uid'))) === Number(data.apartmentId)) {
+    if ((Number(table.rows.item(ind).getAttribute('data-uid'))) === Number(apartmentInfo.apartmentId)) {
+      table.rows.item(ind).classList.remove('info2');
+      table.rows.item(ind).classList.remove('warning2');
+      table.rows.item(ind).classList.remove('success2');
+      table.rows.item(ind).classList.remove('danger2');
+
+      let className = '';
+      if ((+apartmentInfo.paid === 1) && (+apartmentInfo.halfPaid === 2)) {
+        className = 'info2';
+      }
+
+      if ((+apartmentInfo.paid === 1) && (+apartmentInfo.halfPaid === 1)) {
+        className = 'warning2';
+      }
+
+      if ((+apartmentInfo.paid === 1) && (+apartmentInfo.halfPaid === 0)) {
+        className = 'success2';
+      }
+
+      if (+apartmentInfo.exempt === 1) {
+        className = 'danger2';
+      }
+      if (className.length > 0) {
+        table.rows.item(ind).classList.add(className);
+      }
+
+      const cell = table.rows.item(ind).cells[6];
+      cell.innerText = dateOfLastPayment.payDate
+        ? moment(dateOfLastPayment.payDate)
+          .format('DD.MM.YYYY HH:mm:ss')
+        : '\u00A0';
+
+      break;
+    }
+  }
+  showNumberInBadge(document.getElementById('tablePayments').getElementsByTagName('tbody')[0].rows.length, 'badge payments');
+  // }).catch((error) => {
+  //   console.log(error);
+  // });
 }
 
 function deletedPaymentFromRegister() {
@@ -1581,13 +1610,14 @@ document.getElementById('actionAddPayment').addEventListener('click', (e) => {
     // TODO: Убрать и почистить дублирующий код!
     let tablePayments = '';
     data1.payments.forEach(function (element) {
+      const originalAmount = element.isFragmented === 0 ? '' : `(${element.originalAmount.toFixed(2)})`;
       tablePayments += `<tr data-uid="${element.uid}">
-        <td class="text-center align-middle">${moment(element.createDate).format('DD.MM.YYYY')}</td>
         <td class="text-center align-middle">${moment(element.payDate).format('DD.MM.YYYY')}</td>
+        <td class="text-center align-middle">${element.isFragmented === 0 ? '' : moment(element.payDate).format('DD.MM.YYYY')}</td>
         <td class="text-center align-middle">${element.uid}</td>
         <td class="text-center align-middle">${element.payMonth}</td>
         <td class="text-center align-middle">${element.payYear}</td>
-        <td class="text-right align-middle">${element.amount.toFixed(2)}</td>
+        <td class="text-right align-middle" ${element.isFragmented === 0 ? '' : 'style="color: red"'}>${element.amount.toFixed(2)} ${originalAmount}</td>
         <td class="text-center align-middle">${element.organizationName}</td>
         <td class="text-center align-middle">
           <button type="button" class="btn btn-danger btn-xs" onclick="removePayment(event)">

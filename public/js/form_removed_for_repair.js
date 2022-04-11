@@ -4,19 +4,19 @@ function Address() {
   // this.level = 0;
   this.area = {
     id: 0,
-    name: ''
+    name: '',
   };
   this.city = {
     id: 0,
-    name: ''
+    name: '',
   };
   this.street = {
     id: 0,
-    name: ''
+    name: '',
   };
   this.house = {
     id: 0,
-    number: ''
+    number: '',
   };
   this.isCity = 0;
   this.noStreets = 0;
@@ -137,6 +137,7 @@ $('#fullAddress').typeahead({
         address.house.number = selectedElement.houseNumber;
 
         caption = `${selectedElement.cityName}, ${selectedElement.streetName}, ${selectedElement.houseNumber}`;
+        document.getElementById('office').focus();
         break;
       case 3:
         address.area.id = selectedElement.areaId;
@@ -198,6 +199,7 @@ $('#fullAddress').typeahead({
         address.house.number = selectedElement.houseNumber;
 
         caption = `${selectedElement.areaName}, ${selectedElement.cityName}, ${selectedElement.streetName}, ${selectedElement.houseNumber}`;
+        document.getElementById('office').focus();
         break;
     }
 
@@ -266,6 +268,7 @@ $('.filter-equipment').typeahead({
         name: map[element].value
       }
       document.getElementById('equipment').value = JSON.stringify(obj);
+      document.getElementById('series').focus();
     }
     if (lastActiveInput === 'newEquipmentName') {
       let obj = {
@@ -311,6 +314,7 @@ $('.fast-filter').typeahead({
           worker.id = map[element].id;
           worker.name = map[element].value;
           document.getElementById('worker').value = JSON.stringify(worker);
+          document.getElementById('serviceName').focus();
           break;
         case 'serviceName':
           let service = JSON.parse(document.getElementById('worker').value);

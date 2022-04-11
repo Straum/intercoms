@@ -235,7 +235,7 @@ function showHistory(ev) {
     }
 
     document.getElementById('historyDialogCapton').textContent = `История по квартире № ${apartmentInfo}`;
-    document.getElementById('printReceiptForApartment').setAttribute('href', `/orders/print_receipt_for_apartment/${id}`);
+    document.getElementById('printReceiptForApartment').setAttribute('href', `/gates/print_receipt_for_apartment/${id}`);
     $('#historyDialog').modal();
   }).catch((error) => {
     // eslint-disable-next-line no-console

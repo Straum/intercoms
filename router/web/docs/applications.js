@@ -12,31 +12,30 @@ const common = require('../../common/typeheads');
 const { ApplicationModel } = require('../../../models/application');
 const logger = require('../../../lib/winston');
 
-var generateReport = function (req, res) {
-
-  var tableFaults = [];
+function generateReport(req, res) {
+  let tableFaults = [];
   try {
     tableFaults = JSON.parse(req.body.faults);
   } catch (error) {
     //
   }
 
-  var doc = new PDFDocument();
+  const doc = new PDFDocument();
+  const filename = 'application.pdf';
   doc.registerFont('Fuh', 'fonts//DejaVuSans.ttf');
-  var filename = 'application.pdf';
-  res.setHeader('Content-disposition', 'attachment; filename="' + filename + '"');
+  res.setHeader('Content-disposition', `attachment; filename="${filename}"`);
   res.setHeader('Content-type', 'application/pdf');
 
   doc.registerFont('DejaVuSans', 'fonts//DejaVuSans.ttf');
   doc.font('DejaVuSans');
 
   doc.fontSize(14);
-  doc.text('Заявка от ' + req.body.createDate, 50, 50, { align: 'center' });
+  doc.text(`Заявка от ${req.body.createDate}`, 50, 50, { align: 'center' });
 
   doc.fontSize(12);
   doc
-    .text('Адрес: ' + req.body.address + ', подъезд: ' + req.body.porch, 50, 90)
-    .text('Телефон: ' + req.body.phone, 50, 110);
+    .text(`Адрес: {req.body.address}, подъезд: ${req.body.porch}`, 50, 90)
+    .text(`Телефон: ${req.body.phone}`, 50, 110);
 
   doc.moveDown();
   doc.x = 50;
@@ -44,96 +43,88 @@ var generateReport = function (req, res) {
     .text('Список неисправностей', { underline: true });
   doc.moveDown();
 
-  // var list = [];
-  // tableFaults.forEach(function (item) {
-  //   list.push(item.value);
-  // });
-  // doc.list(list);
-  // doc.moveDown();
-  doc.text('Всего неисправностей: ' + tableFaults.length);
+  doc.text(`Всего неисправностей: ${tableFaults.length}`);
 
   doc.moveDown();
-  doc.text('Исполнитель: ' + req.body.performer, 50);
+  doc.text(`Исполнитель: ${req.body.performer}`, 50);
 
   doc.pipe(res);
   doc.end();
-};
+}
 
-var getCity = function (cityName, callback) {
-  db.get().getConnection(function (err, connection) {
+function getCity(cityName, callback) {
+  db.get().getConnection((err, connection) => {
     connection.query(
-      ' SELECT a.city_id AS cityId' +
-      ' FROM cities a' +
-      ' WHERE (a.name = ?) AND (a.is_deleted = 0) AND (a.core = 1)' +
-      ' LIMIT 1', [cityName], function (err, rows) {
+      `SELECT a.city_id AS cityId
+      FROM cities a
+      WHERE (a.name = ?) AND (a.is_deleted = 0) AND (a.core = 1)
+      LIMIT 1`, [cityName], (error, rows) => {
         connection.release();
-
         if (typeof callback === 'function') {
           if (rows.length === 1) {
             callback(rows[0].cityId);
-          }
-          else {
+          } else {
             callback(null);
           }
         }
-      }
+      },
     );
   });
-};
+}
 
-var getStreets = function (cityId, streetName, rowsLimit, callback) {
-  var queryText = ' SELECT a.street_id AS streetId, a.name AS streetName' +
-    ' FROM streets a' +
-    ' WHERE (a.city_id = ' + cityId + ') AND (a.is_deleted = 0)';
+// eslint-disable-next-line no-shadow
+function getStreets(cityId, streetName, rowsLimit, callback) {
+  let queryText = `SELECT a.street_id AS streetId, a.name AS streetName
+    FROM streets a
+    WHERE (a.city_id = ${cityId}) AND (a.is_deleted = 0)`;
 
   if ((typeof streetName === 'string') && (streetName.trim() !== '')) {
-    queryText += ' AND (a.name LIKE ' + `'` + streetName.trim() + '%' + `'` + ')';
+    queryText += ` AND (a.name LIKE '${streetName.trim()}%')`;
   }
 
-  queryText += ' LIMIT ' + rowsLimit;
+  queryText += ` LIMIT ${rowsLimit}`;
 
-  db.get().getConnection(function (err, connection) {
+  db.get().getConnection((err, connection) => {
     connection.query(
-      queryText, [], function (err, rows) {
+      queryText, [], (error, rows) => {
         connection.release();
-
         if (typeof callback === 'function') {
           callback(rows);
         }
-      }
+      },
     );
   });
-};
+}
 
-var getHouses = function (cityId, streetName, houseNumber, rowsLimit, callback) {
-  getStreets(cityId, streetName, 1, function (streets) {
+// eslint-disable-next-line no-shadow
+function getHouses(cityId, streetName, houseNumber, rowsLimit, callback) {
+  getStreets(cityId, streetName, 1, (streets) => {
     if ((Array.isArray(streets)) && (streets.length === 1)) {
-      var streetId = streets[0].streetId;
+      const { streetId } = streets[0];
 
-      var queryText = ' SELECT a.house_id, a.number AS house_number, a.street_id' +
-        ' FROM houses a' +
-        ' WHERE (a.street_id = ' + streetId + ') AND (a.is_deleted = 0)';
+      let queryText = `SELECT a.house_id, a.number AS house_number, a.street_id
+        FROM houses a
+        WHERE (a.street_id = ${streetId}) AND (a.is_deleted = 0)`;
 
       if ((typeof houseNumber === 'string') && (houseNumber.trim().length > 0)) {
-        queryText += ' AND (a.number LIKE ' + `'` + houseNumber.trim() + '%' + `'` + ')';
+        queryText += ` AND (a.number LIKE '${houseNumber.trim()}%')`;
       }
 
-      queryText += ' LIMIT ' + rowsLimit;
+      queryText += ` LIMIT ${rowsLimit}`;
 
-      db.get().getConnection(function (err, connection) {
+      db.get().getConnection((err, connection) => {
         connection.query(
-          queryText, [], function (err, rows) {
+          queryText, [], (error, rows) => {
             connection.release();
-
             if (typeof callback === 'function') {
               callback(rows);
             }
-          }
+          },
         );
       });
     }
   });
-};
+}
 
 var saveTable = function (id, table, callback) {
 
@@ -214,8 +205,7 @@ var Filters = function () {
   this.orderBy = '';
 };
 
-var filterBuilder = function (req, isDone) {
-
+var filterBuilder = function(req, isDone) {
   var obj = {};
   var filters = new Filters();
   var cloneFilters = new Filters();
@@ -931,9 +921,8 @@ var redirectToAccepted = function (res, uid) {
   });
 };
 
-var findRecords = function (req, res) {
+function findRecords(req, res) {
   if ('downloadReport' in req.query) {
-    // downloadReport(req, res);
     applicationsReport(req, res);
     return;
   }
@@ -1057,7 +1046,7 @@ var findRecords = function (req, res) {
         });
       });
   });
-};
+}
 
 var findCompletedRecords = function (req, res) {
 
@@ -1187,40 +1176,37 @@ var findCompletedRecords = function (req, res) {
   });
 };
 
-module.exports = function () {
-  var router = express.Router();
+module.exports = () => {
+  const router = express.Router();
 
-  router.get('/', function (req, res) {
+  router.get('/', (req, res) => {
     findRecords(req, res);
   });
 
-  router.get('/edit/:id', function (req, res) {
-    var id = req.params.id;
-    var applicationModel = new ApplicationModel();
+  router.get('/edit/:id', (req, res) => {
+    const { id } = req.params;
+    const applicationModel = new ApplicationModel();
 
-    db.get().getConnection(function (err, connection) {
+    db.get().getConnection((err, connection) => {
       // Load table
       connection.query(
-        ' SELECT a.fault_id AS id, a.name AS faultName, a.decision, a.worker_id AS workerId,' +
-        ' a.is_done AS isDone, a.completion_dt AS completionDT,' +
-        ' b.name AS workerName' +
-        ' FROM faults a' +
-        ' LEFT JOIN workers b ON b.worker_id = a.worker_id' +
-        ' WHERE a.application_id = ?', [id], function (err, rows) {
+        `SELECT a.fault_id AS id, a.name AS faultName, a.decision, a.worker_id AS workerId,
+        a.is_done AS isDone, a.completion_dt AS completionDT,
+        b.name AS workerName
+        FROM faults a
+        LEFT JOIN workers b ON b.worker_id = a.worker_id
+        WHERE a.application_id = ?`, [id], (error, rows) => {
           connection.release();
-
-          if (err) {
-            console.error(err);
-            res.status(500).send(db.showDatabaseError(500, err));
+          if (error) {
+            console.error(error);
+            res.status(500).send(db.showDatabaseError(500, error));
           } else {
-
             if ((rows !== undefined) && (rows.length > 0)) {
               applicationModel.faults = rows;
               applicationModel.faults.forEach(function (item) {
                 item.faultName = item.faultName.replace(/\"/g, '\\\"');
               });
             }
-
             // Load Main form
             db.get().getConnection(function (err, connection) {
               connection.query(
@@ -1245,14 +1231,12 @@ module.exports = function () {
                 LEFT JOIN workers e ON a.worker_id = e.worker_id
                 LEFT JOIN cards f ON a.card_id = f.card_id
                 WHERE (a.application_id = ?)
-                LIMIT 1`, [id], function (err, rows) {
+                LIMIT 1`, [id], (err, rows) => {
                   connection.release();
-
                   if (err) {
                     console.error(err);
                     res.status(500).send(db.showDatabaseError(500, err));
                   } else {
-
                     applicationModel.id = rows[0].id;
                     applicationModel.createDate = rows[0].createDate;
                     applicationModel.completionDate = rows[0].completionDate;

@@ -43,7 +43,7 @@ app.use(bodyParser.json({
 app.use(bodyParser.urlencoded({
   extended: true,
   limit: '50mb',
-  parameterLimit: 50000,
+  parameterLimit: 100000,
 }));
 
 app.use(expressValidator());

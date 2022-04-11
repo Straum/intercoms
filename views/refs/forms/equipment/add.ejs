@@ -2,54 +2,73 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
-    <!-- <link rel="icon" href="../../../../favicon.ico"> -->
-    <title>Home page - <%= title %></title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <!-- <link rel="icon" href="../../../../favicon.ico"> -->
+  <title>Home page - <%= title %>
+  </title>
 
-    <% include ../../../common/bootstrap_css.ejs %>
+  <% include ../../../common/bootstrap_css.ejs %>
     <link href="/theme.css" rel="stylesheet">
 </head>
 
 <body>
-    <% include ../../../common/full_menu.ejs %>
+  <% include ../../../common/full_menu.ejs %>
 
     <div class="container">
-        <% if ((messages.errors) && (Object.keys(messages.errors).length > 0)) { %>
-            <h3><span class="text-danger">Выявлены ошибки:</span></h3>
-            <ul>
-                <% for (var key in messages.errors) { %>
-                    <li><span class="text-danger"><%= messages.errors[key].msg %></span></li>
-                <% }; %>
-            </ul>
+      <% if ((messages.errors) && (Object.keys(messages.errors).length> 0)) { %>
+        <h3><span class="text-danger">Выявлены ошибки:</span></h3>
+        <ul>
+          <% for (var key in messages.errors) { %>
+            <li><span class="text-danger">
+                <%= messages.errors[key].msg %>
+              </span></li>
+            <% }; %>
+        </ul>
         <% } %>
 
-        <div class="form-header">
-            <h3><%= title %></h3>
-        </div>
-        <form method="post" action="/equipment" novalidate>
+          <div class="form-header">
+            <h3>
+              <%= title %>
+            </h3>
+          </div>
+          <form method="post" action="/equipment" novalidate>
             <div class="well">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <div class="form-group">
-                                <label for="name">Наименование</label>
-                                <input type="text" class="form-control" id="name" name="name" placeholder="" autofocus="autofocus" value="<%= typeof data != 'undefined' ? data.name : ''  %>">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="years">Гарантия, в годах</label>
-                                <input type="text" class="form-control" id="years" name="years" placeholder="" value="<%= typeof data != 'undefined' ? (data.guaranteePeriod > 0 ? data.guaranteePeriod : '') : '' %>">
-                            </div>
-                        </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="name">Наименование</label>
+                      <input type="text" class="form-control" id="name" name="name" placeholder="" autofocus="autofocus"
+                        value="<%= typeof data != 'undefined' ? data.name : ''  %>">
                     </div>
-                    <button type="submit" class="btn btn-success" id="save">Записать</button>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="form-group">
+                      <label for="type_of_equipment">Тип ооборудования</label>
+                      <select class="form-control" id="type_of_equipment" name="type_of_equipment">
+                        <% data.typesOfEquipment.forEach((element, index) => { %>
+                          <option value="<%= element.typeOfEquipmentId %>" <%= element.typeOfEquipmentId === data.typeOfEquipmentId ? ' selected' : '' %> >
+                            <%= element.equipmentName %>
+                          </option>
+                          <% }); %>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-md-2">
+                    <div class="form-group">
+                      <label for="years">Гарантия, в годах</label>
+                      <input type="text" class="form-control" id="years" name="years" placeholder=""
+                        value="<%= typeof data != 'undefined' ? (data.guaranteePeriod > 0 ? data.guaranteePeriod : '') : '' %>">
+                    </div>
+                  </div>
                 </div>
+                <button type="submit" class="btn btn-success" id="save">Записать</button>
+              </div>
             </div>
-        </form>
+          </form>
     </div>
 
     <script src="/bower_components/jquery/dist/jquery.min.js"></script>

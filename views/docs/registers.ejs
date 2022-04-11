@@ -179,6 +179,10 @@
     <script src="/bower_components/axios/dist/axios.min.js"></script>
     <script src="/bower_components/file-saver/dist/FileSaver.min.js"></script>
     <script>
+
+      // const httpClient = axios.create();
+      // httpClient.defaults.timeout = 1000 * 60 * 10;
+
       function confirmDelete(id) {
         $('#deletedUID').val(id);
         $('#modalDeleteRecord').modal({ 'keyboard': true });
@@ -188,7 +192,13 @@
         evt.preventDefault();
         document.getElementById('progress').hidden = false;
 
-        axios.get('/registers/build', {responseType: 'blob'})
+        // httpClient.get('/registers/build', {responseType: 'blob'})
+        axios({
+          method: 'get',
+          url: '/registers/build',
+          responseType: 'blob',
+          timeout: 1000 * 60 * 20,
+        })
           .then(function (response) {
             document.getElementById('progress').hidden = true;
             console.log(response);

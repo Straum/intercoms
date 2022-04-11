@@ -18,6 +18,8 @@ const { PaymentsLogic } = require('../../../logic/docs/payments');
 const { rowsLimit } = require('../../../lib/config');
 const typeahead = require('../../common/typeheads');
 const apartment = require('../../common/apartments');
+const sp = require('../../common/stored_procedures');
+const logger = require('../../../lib/winston');
 
 function printReceipt(model, res) {
   const fullApartmentNumber = `${model.apartment.number}${utils.decodeApartmentLetter(Number(model.apartment.letter))}`;
@@ -503,23 +505,23 @@ function deletePayment(paymentId) {
   });
 }
 
-function getApartmentFromPayment(paymentId) {
-  return new Promise((resolve, reject) => {
-    db.get().getConnection((err, connection) => {
-      connection.query(
-        'SELECT apartment_id AS apartmentId FROM payments WHERE payment_id = ?', [paymentId],
-        (error, rows) => {
-          connection.release();
-          if (error) {
-            reject();
-          } else {
-            resolve({ ...rows[0] });
-          }
-        },
-      );
-    });
-  });
-}
+// function getApartmentFromPayment(paymentId) {
+//   return new Promise((resolve, reject) => {
+//     db.get().getConnection((err, connection) => {
+//       connection.query(
+//         'SELECT apartment_id AS apartmentId FROM payments WHERE payment_id = ?', [paymentId],
+//         (error, rows) => {
+//           connection.release();
+//           if (error) {
+//             reject();
+//           } else {
+//             resolve({ ...rows[0] });
+//           }
+//         },
+//       );
+//     });
+//   });
+// }
 
 function savePaymentsHistory(data) {
   return new Promise((resolve, reject) => {
@@ -532,6 +534,106 @@ function savePaymentsHistory(data) {
             reject();
           } else {
             resolve(rows);
+          }
+        },
+      );
+    });
+  });
+}
+
+function saveToLog(model, index) {
+  if (model instanceof PaymentModel) {
+    let descriptionOfOperation = '';
+    switch (index) {
+      case 0:
+        descriptionOfOperation = 'Удаление платежа';
+        break;
+      case 1:
+        descriptionOfOperation = 'Новый платеж';
+        break;
+      case 2:
+        descriptionOfOperation = 'Изменение платежа';
+        break;
+      default:
+        break;
+    }
+
+    logger.info();
+    logger.info('');
+    logger.info(`Платеж. ${descriptionOfOperation}`);
+    logger.info(`Договор ТО № ${model.contract.prolonged}`);
+    logger.info(`Квартира   : ${model.apartment.number}${utils.decodeApartmentLetter(model.apartment.letter)}`);
+    logger.info(`Сумма      : ${model.amount.toFixed(2)}`);
+    logger.info(`ID платежа : ${model.id}`);
+    logger.info('');
+  }
+}
+
+function getData(id) {
+  return new Promise((resolve, reject) => {
+    db.get().getConnection((err, connection) => {
+      connection.query(
+        `SELECT a.payment_id AS id,
+        a.create_date AS createDate,
+        a.apartment_id AS apartmentId,
+        a.pay_month AS payMonth,
+        a.pay_year AS payYear,
+        a.amount,
+        a.pay_date AS payDate,
+        a.mode,
+        a.transaction,
+        a.zip_code AS zipCode,
+        a.file_name AS fileName,
+        a.is_registered AS isRegistered,
+        b.number,
+        b.letter,
+        c.card_id AS cardId,
+        c.contract_number AS contractNumber,
+        c.m_contract_number AS prolongedContractNumber,
+        c.start_service AS startService,
+        c.end_service AS endService,
+        c.m_duplicate AS isDuplicate,
+        c.receipt_printing AS receiptPrint,
+        d.name AS cityName,
+        e.name AS streetName,
+        f.number AS houseNumber
+        FROM payments a
+        LEFT JOIN apartments b ON b.apartment_id = a.apartment_id
+        LEFT JOIN cards c ON c.card_id = b.card_id
+        LEFT JOIN cities d ON d.city_id = c.city_id
+        LEFT JOIN streets e ON e.street_id = c.street_id
+        LEFT JOIN houses f ON f.house_id = c.house_id
+        WHERE a.payment_id = ?`, [id], (error, rows) => {
+          connection.release();
+          if (error) {
+            reject();
+          } else {
+            const paymentModel = new PaymentModel();
+            const data = rows[0];
+            paymentModel.id = data.id;
+            paymentModel.createDate = data.createDate;
+            paymentModel.apartment.id = data.apartmentId;
+            paymentModel.apartment.number = data.number;
+            paymentModel.apartment.letter = data.letter;
+            paymentModel.amount = data.amount;
+            paymentModel.transaction = data.transaction;
+            paymentModel.payDate = data.payDate;
+            paymentModel.mode = data.mode;
+            paymentModel.zipCode = data.zipCode;
+            paymentModel.fileName = data.fileName;
+            paymentModel.isRegistered = data.isRegistered;
+
+            paymentModel.contract.id = data.cardId;
+            paymentModel.contract.normal = data.contractNumber;
+            paymentModel.contract.prolonged = data.prolongedContractNumber;
+            paymentModel.contract.startService = data.startService;
+            paymentModel.contract.endService = data.endService;
+            paymentModel.contract.isDuplicate = data.isDuplicate;
+            paymentModel.fullAddress = data.cityName.trim()
+              + (data.streetName.trim() !== '' ? (`, ${data.streetName.trim()}`) : '')
+              + (data.houseNumber.trim() !== '' ? (`, ${data.houseNumber.trim()}`) : '');
+
+            resolve(paymentModel);
           }
         },
       );
@@ -583,7 +685,7 @@ module.exports = () => {
               a.payment_id DESC
               LIMIT ?`, [visibleRows], (error2, rows2) => {
                 if (error2) {
-                  throw err;
+                  throw error2;
                 }
                 connection1.release();
                 const currentPage = 1;
@@ -610,41 +712,41 @@ module.exports = () => {
     const { id } = req.params;
     db.get().getConnection((err, connection) => {
       connection.query(
-        ' SELECT a.payment_id AS id,'
-        + ' a.create_date AS createDate,'
-        + ' a.apartment_id AS apartmentId,'
-        + ' a.pay_month AS payMonth,'
-        + ' a.pay_year AS payYear,'
-        + ' a.amount,'
-        + ' a.pay_date AS payDate,'
-        + ' a.mode,'
-        + ' a.transaction,'
-        + ' a.zip_code AS zipCode,'
-        + ' a.file_name AS fileName,'
-        + ' a.is_registered AS isRegistered,'
-        + ' b.number,'
-        + ' b.letter,'
-        + ' c.card_id AS cardId,'
-        + ' c.contract_number AS contractNumber,'
-        + ' c.m_contract_number AS prolongedContractNumber,'
-        + ' c.start_service AS startService,'
-        + ' c.end_service AS endService,'
-        + ' c.m_duplicate AS isDuplicate,'
-        + ' c.receipt_printing AS receiptPrint,'
-        + ' d.name AS cityName,'
-        + ' e.name AS streetName,'
-        + ' f.number AS houseNumber'
-        + ' FROM payments a'
-        + ' LEFT JOIN apartments b ON b.apartment_id = a.apartment_id'
-        + ' LEFT JOIN cards c ON c.card_id = b.card_id'
-        + ' LEFT JOIN cities d ON d.city_id = c.city_id'
-        + ' LEFT JOIN streets e ON e.street_id = c.street_id'
-        + ' LEFT JOIN houses f ON f.house_id = c.house_id'
-        + ' WHERE a.payment_id = ?', [id], (error, rows) => {
+        `SELECT a.payment_id AS id,
+        a.create_date AS createDate,
+        a.apartment_id AS apartmentId,
+        a.pay_month AS payMonth,
+        a.pay_year AS payYear,
+        a.amount,
+        a.pay_date AS payDate,
+        a.mode,
+        a.transaction,
+        a.zip_code AS zipCode,
+        a.file_name AS fileName,
+        a.is_registered AS isRegistered,
+        b.number,
+        b.letter,
+        c.card_id AS cardId,
+        c.contract_number AS contractNumber,
+        c.m_contract_number AS prolongedContractNumber,
+        c.start_service AS startService,
+        c.end_service AS endService,
+        c.m_duplicate AS isDuplicate,
+        c.receipt_printing AS receiptPrint,
+        d.name AS cityName,
+        e.name AS streetName,
+        f.number AS houseNumber
+        FROM payments a
+        LEFT JOIN apartments b ON b.apartment_id = a.apartment_id
+        LEFT JOIN cards c ON c.card_id = b.card_id
+        LEFT JOIN cities d ON d.city_id = c.city_id
+        LEFT JOIN streets e ON e.street_id = c.street_id
+        LEFT JOIN houses f ON f.house_id = c.house_id
+        WHERE a.payment_id = ?`, [id], (error, rows) => {
           connection.release();
-          if (err) {
+          if (error) {
             // eslint-disable-next-line no-console
-            console.error(err);
+            console.error(error);
             res.status(500).send({
               code: 500,
               msg: 'Database error',
@@ -799,7 +901,7 @@ module.exports = () => {
               OFFSET ?`, [visibleRows, offset], (error2, rows2) => {
                 connection1.release();
                 if (error2) {
-                  throw err;
+                  throw error2;
                 }
 
                 const currentPage = Math.ceil(offset / visibleRows) + 1;
@@ -918,11 +1020,15 @@ module.exports = () => {
         await updatePayment(paymentModel);
         await apartment.convertAnApartment(paymentModel.apartment.id);
         await apartment.getDateOfLastPayment(paymentModel.apartment.id);
+        await sp.calcPaymentAndDebt(paymentModel.apartment.id);
+        saveToLog(paymentModel, 2);
         res.redirect('/payments');
       } else {
         await savePayment(paymentModel);
         await apartment.convertAnApartment(paymentModel.apartment.id);
         await apartment.getDateOfLastPayment(paymentModel.apartment.id);
+        await sp.calcPaymentAndDebt(paymentModel.apartment.id);
+        saveToLog(paymentModel, 1);
         res.redirect('/payments');
       }
     } else {
@@ -939,10 +1045,13 @@ module.exports = () => {
 
   router.post('/delete', async (req, res) => {
     if ((req.body.id) && (Number.isFinite(+req.body.id))) {
-      const { apartmentId } = await getApartmentFromPayment(req.body.id);
+      const paymentModel = await getData(+req.body.id);
+      const apartmentId = paymentModel.apartment.id;
       await deletePayment(req.body.id);
       await apartment.convertAnApartment(apartmentId);
       await apartment.getDateOfLastPayment(apartmentId);
+      await sp.calcPaymentAndDebt(apartmentId);
+      saveToLog(paymentModel, 0);
       res.status(200).send({ result: 'OK' });
     } else {
       res.status(500).send({ code: 500, msg: 'Incorrect parameter' });

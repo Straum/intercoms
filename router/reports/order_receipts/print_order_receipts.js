@@ -3,73 +3,35 @@ const moment = require('moment');
 const PDFDocument = require('pdfkit');
 const SVGtoPDF = require('svg-to-pdfkit');
 const barcode = require('pure-svg-code/barcode');
-// const qrcode = require('pure-svg-code/qrcode');
 const QRCode = require('qrcode-svg');
 
-const db = require('./db');
-const utils = require('./utils');
-const { daysToPayReceipt } = require('./config').config;
-const { firm } = require('./firm_bank_details');
+const db = require('../../../lib/db');
+const utils = require('../../../lib/utils');
+const { daysToPayReceipt } = require('../../../lib/config').config;
+const { firm } = require('../../../lib/firm_bank_details');
+const logger = require('../../../lib/winston');
+const { Apartment } = require('./apartment');
+const { Order } = require('./order');
 
-class Apartment {
-  constructor() {
-    this.id = 0;
-    this.number = 0;
-    this.letter = 0;
-    this.privilege = 0;
-    this.locked = 0;
-    this.exempt = 0;
-    this.payment = {
-      current: 0,
-      firstYear: 0,
-      secondYear: 0,
-    };
-    this.debt = {
-      firstYear: 0,
-      secondYear: 0,
-    };
-  }
-}
-
-function Order() {
-  this.prolongedContractNumber = '';
-  this.startService = null;
-  this.endService = null;
-  this.normalPayment = 0.00;
-  this.privilegePayment = 0.00;
-  this.city = {
-    name: '',
-    printType: 1,
-    phone: '',
-    vkLink: '',
-    office: '',
-  };
-  this.streetName = '';
-  this.houseNumber = '';
-  this.isDuplicate = 0;
-  this.payMonth = 0;
-  this.payYear = 2000;
-  return this;
-}
 class PrintOrderReceipts {
   constructor(cardId, res) {
     this.cardId = cardId;
     this.order = new Order();
-
     this.apartments = [];
-
     this.res = res;
+    this.printReceiptsWithZeroDebt = true;
   }
 
   extractOrder() {
     return new Promise((resolve, reject) => {
       db.get().getConnection((err, connection) => {
         connection.query(
-          `SELECT a.m_contract_number AS prolongedContractNumber, a.start_service AS startService,
-          a.end_service AS endService, a.normal_payment AS normalPayment, a.privilege_payment AS privilegePayment,
-          b.name AS cityName, b.print_type AS printType, b.phone, b.link AS vkLink, b.office_address AS office,
-          c.name AS streetName, d.number AS houseNumber, m_duplicate AS isDuplicate,
-          MONTH(a.end_service) AS payMonth, YEAR(a.end_service) AS payYear
+          `SELECT a.contract_number AS contractNumber, a.m_contract_number AS prolongedContractNumber,
+          a.start_service AS startService, a.end_service AS endService, a.normal_payment AS normalPayment,
+          a.privilege_payment AS privilegePayment, b.name AS cityName, b.print_type AS printType,
+          b.phone, b.link AS vkLink, b.office_address AS office, c.name AS streetName, d.number AS houseNumber,
+          m_duplicate AS isDuplicate, MONTH(a.end_service) AS payMonth, YEAR(a.end_service) AS payYear,
+          a.rank
           FROM cards a
           LEFT JOIN cities b ON b.city_id = a.city_id
           LEFT JOIN streets c ON c.street_id = a.street_id
@@ -84,6 +46,7 @@ class PrintOrderReceipts {
             } else {
               const row = rows[0];
               resolve({
+                contractNumber: row.contractNumber,
                 prolongedContractNumber: row.prolongedContractNumber,
                 startService: row.startService,
                 endService: row.endService,
@@ -99,6 +62,7 @@ class PrintOrderReceipts {
                 isDuplicate: row.isDuplicate,
                 payMonth: row.payMonth,
                 payYear: row.payYear,
+                rank: row.rank,
               });
             }
           },
@@ -136,14 +100,62 @@ class PrintOrderReceipts {
     return personalAccount;
   }
 
+  fillOrder(data) {
+    this.order.contractNumber = data.contractNumber;
+    this.order.prolongedContractNumber = data.prolongedContractNumber;
+    this.order.startService = data.startService;
+    this.order.endService = data.endService;
+    this.order.normalPayment = data.normalPayment;
+    this.order.privilegePayment = data.privilegePayment;
+    this.order.city.name = data.cityName;
+    this.order.city.printType = data.printType;
+    this.order.city.phone = data.phone;
+    this.order.city.vkLink = data.vkLink;
+    this.order.city.office = data.office;
+    this.order.streetName = data.streetName;
+    this.order.houseNumber = data.houseNumber;
+    this.order.payMonth = data.payMonth;
+    this.order.payYear = data.payYear;
+    this.order.rank = data.rank;
+
+    if (this.order.rank) {
+      this.order.prolongedContractNumber = data.contractNumber.toString();
+    }
+  }
+
+  static fillApartment(data) {
+    const apartment = new Apartment();
+    apartment.id = data.apartmentId;
+    apartment.number = data.number;
+    apartment.letter = data.letter;
+    apartment.privilege = data.privilege;
+    apartment.locked = data.locked;
+    apartment.exempt = data.exempt;
+    apartment.debt.firstYear = data.lastOneYearDebt;
+    apartment.debt.secondYear = data.lastSecondYearDebt;
+    apartment.payment.current = data.currentPayment;
+    if (apartment.privilege) {
+      apartment.payment.currentYear = data.privilegePaymentCurrentYear;
+      apartment.payment.firstYear = data.privilegePaymentFirstYear;
+      apartment.payment.secondYear = data.privilegePaymentSecondYear;
+    } else {
+      apartment.payment.currentYear = data.normalPaymentCurrentYear;
+      apartment.payment.firstYear = data.normalPaymentFirstYear;
+      apartment.payment.secondYear = data.normalPaymentSecondYear;
+    }
+    apartment.enableCalc.firstYear = data.enableCalculateFirstYear !== 0;
+    apartment.enableCalc.secondYear = data.enableCalculateSecondYear !== 0;
+    return apartment;
+  }
+
   generatePdf() {
     const doc = new PDFDocument();
     const filename = 'receipts.pdf';
     this.res.setHeader('Content-disposition', `attachment; filename="${filename}"`);
     this.res.setHeader('Content-type', 'application/pdf');
 
-    const vkImage = path.join(__dirname, '../public/images/vk_logo_icon.jpg');
-    const adImage = path.join(__dirname, '../public/images/new_logo_2.jpg');
+    const vkImage = path.join(__dirname, '../../../public/images/vk_logo_icon.jpg');
+    const adImage = path.join(__dirname, '../../../public/images/new_logo_2.jpg');
 
     doc.margins = {
       top: 14,
@@ -159,53 +171,57 @@ class PrintOrderReceipts {
 
     // First third
     const address = `${this.order.city.name}, ${this.order.streetName}, ${this.order.houseNumber}`;
+    logger.info(`Договор ТО № ${this.order.prolongedContractNumber}`);
+    logger.info(`Дата начала ТО : ${moment(this.order.startService).format('DD.MM.YYYY')}`);
+    logger.info(`Дата конца ТО  : ${moment(this.order.endService).format('DD.MM.YYYY')}`);
+    logger.info(`Плата обычная  : ${this.order.normalPayment.toFixed(2)}`);
+    logger.info(`Плата льготная : ${this.order.privilegePayment.toFixed(2)}`);
+    logger.info('');
 
     this.apartments.forEach((item, index) => {
+      let apartmentInfoForLog = '';
       if (item.exempt === 0) {
         doc.fontSize(8);
 
-        const fullAddress = `${address}, кв. ${item.number}${utils.decodeApartmentLetter(item.letter)}`;
+        apartmentInfoForLog = `Кв. ${item.number}${utils.decodeApartmentLetter(item.letter)}`;
+        let fullAddress = `${address}, кв. ${item.number}${utils.decodeApartmentLetter(item.letter)}`;
+        if (this.order.city.printType === 2) {
+          const VLuki = 'ВЕЛИКИЕ ЛУКИ';
+          if (fullAddress.indexOf(VLuki) !== -1) {
+            fullAddress = fullAddress.replace(VLuki, 'В.ЛУКИ');
+          }
+        }
 
         let rpts = 6 - (this.order.prolongedContractNumber.trim().length);
         const outContractNumber = (rpts > 0 ? '0'.repeat(rpts) : '') + this.order.prolongedContractNumber.trim();
 
         rpts = (3 - item.number.toString().trim().length);
-        const outApartment = (rpts > 0 ? '0'.repeat(rpts) : '') + item.number.toString().trim();
+        const outApartment = (rpts > 0 ? '0'.repeat(rpts) : '') + item.number.toString()
+          .trim();
 
         const clientAccountData = [];
-        clientAccountData.push(this.order.isDuplicate ? '1' : '0');
+        clientAccountData.push(this.order.rank ? '5' : '0');
         clientAccountData.push(outContractNumber);
         clientAccountData.push(item.letter.toString());
         clientAccountData.push(outApartment);
 
         const clientAccount = clientAccountData.join('');
 
-        const amount = item.payment.current;
-        let debt = 0;
-
-        // Если есть долги за прошлый и второй год
-        if (item.debt.firstYear + item.debt.secondYear !== 0) {
-          // Первый год оплачен полностью и второй в минусе, т.е.переплата - пропустить, все ok.
-          if (!((item.debt.firstYear === 0) && (item.debt.secondYear < 0))) {
-            // Флаг полного платежа, по умолчанию да.
-            let isFullDebt = true;
-            // Если долг за прошлый год равен сумме начисления за прошлый год
-            // и вдобавок долг за второй год равен сумме начисления за второй год.
-            // Т.е. если долг за прошлый год 495 и за второй год 470 и суммы долгов сооотвествуют
-            // выставленным суммам за прошый и второй год - то платеж неполный.
-            if ((item.debt.firstYear === item.payment.firstYear)
-              && (item.debt.secondYear === item.payment.secondYear)) {
-              isFullDebt = false; // Платеж неполный, только первый год
-            }
-            debt = item.debt.firstYear;
-            // Если полный платеж - то кроме первого года плюсуем и второй год
-            if (isFullDebt) {
-              debt += item.debt.secondYear;
-            }
+        let debt = item.calcDebt();
+        let amount = item.payment.current;
+        if (item.payment.current + item.payment.currentYear !== 0) {
+          const totalCurrent = item.payment.currentYear - item.payment.current;
+          const delta = debt - totalCurrent;
+          if (delta > 0) {
+            amount = item.payment.currentYear;
+            debt -= totalCurrent;
+          } else {
+            amount = item.payment.currentYear + delta;
+            debt = 0;
           }
         }
 
-        const subtotal = item.payment.current + debt;
+        const subtotal = amount + debt;
 
         const sum = parseInt(subtotal * 100, 10);
 
@@ -225,7 +241,7 @@ class PrintOrderReceipts {
         barCodeData.push((this.order.payYear - 2000) < 10 ? `0${this.order.payYear - 2000}` : (this.order.payYear - 2000).toString());
         barCodeData.push(outSum);
         barCodeData.push('00');
-        barCodeData.push(this.order.isDuplicate ? '1' : '0');
+        barCodeData.push(this.order.rank ? '5' : '0');
         barCodeData.push(outContractNumber);
         barCodeData.push(item.letter.toString());
         barCodeData.push(outApartment);
@@ -242,6 +258,8 @@ class PrintOrderReceipts {
         contentData.push(`Category=${firm.category}|`);
         contentData.push(`TechCode=${firm.techCode}|`);
         contentData.push(`PayeeINN=${firm.payeeINN}|`);
+        contentData.push(`KPP=${firm.KPP}|`);
+        contentData.push(`Purpose=${firm.name}|`);
 
         contentData.push(`Sum=${sum.toString()}`);
         const content = contentData.join('');
@@ -274,10 +292,15 @@ class PrintOrderReceipts {
         doc.text('30101810300000000602', 341, 99, { align: 'center', width: 198 });
 
         doc.font('ArialBold');
-        doc.text(`Оплата за ГОДОВОЕ обслуживание домофона с ${moment(this.order.startService).format('DD.MM.YYYY')} по ${moment(this.order.endService).format('DD.MM.YYYY')} г., (Договор № ${this.order.prolongedContractNumber})`, 154, 114, { align: 'left', width: 419 });
-
-        doc.font('Arial');
-        doc.text('(наименование платежа)', 154, 123, { align: 'center', width: 419 });
+        if (this.order.rank) {
+          doc.text('Оплата за ГОДОВОЕ обслуживание дополнительного оборудования', 154, 114, { align: 'left', width: 419 });
+          doc.text(`с ${moment(this.order.startService).format('DD.MM.YYYY')}  по  ${moment(this.order.endService).format('DD.MM.YYYY')} г., (Договор № ${this.order.contractNumber})`, 154, 123, { align: 'left', width: 419 });
+          doc.font('Arial');
+        } else {
+          doc.text(`Оплата за ГОДОВОЕ обслуживание домофона с ${moment(this.order.startService).format('DD.MM.YYYY')} по ${moment(this.order.endService).format('DD.MM.YYYY')} г., (Договор № ${this.order.prolongedContractNumber})`, 154, 114, { align: 'left', width: 419 });
+          doc.font('Arial');
+          doc.text('(наименование платежа)', 154, 123, { align: 'center', width: 419 });
+        }
 
         doc.text('Адрес плательщика', 154, 139, { align: 'left', width: 79 });
 
@@ -290,11 +313,17 @@ class PrintOrderReceipts {
           .text('Сумма платежа, руб.', 154, 152, { align: 'left', width: 342 })
           .text(amount.toFixed(2), 500, 152, { align: 'left', width: 72 });
 
+        apartmentInfoForLog += `, платеж: ${parseFloat(amount).toFixed(2)}`;
+
         if (debt !== 0) {
           doc
             .text(`Задолженность за период с ${moment(this.order.startService).subtract(1, 'years').format('DD.MM.YYYY')} по ${moment(this.order.endService).subtract(1, 'years').format('DD.MM.YYYY')}, руб.`, 154, 165, { align: 'left', width: 342 })
             .text(parseFloat(debt).toFixed(2), 500, 165, { align: 'left', width: 72 });
+          apartmentInfoForLog += `, задолженность: ${parseFloat(debt).toFixed(2)}`;
         }
+
+        apartmentInfoForLog += `, к оплате: ${subtotal.toFixed(2)}`;
+        logger.info(apartmentInfoForLog);
 
         doc.font('ArialBold')
           .fontSize(11)
@@ -308,7 +337,9 @@ class PrintOrderReceipts {
           .fontSize(9)
           .text('Подпись плательщика', 367, 193, { align: 'right', width: 99 });
 
-        doc.image(vkImage, 154, 193, { width: 12 });
+        if (!this.order.rank) {
+          doc.image(vkImage, 154, 193, { width: 12 });
+        }
 
         // // Second third
         doc.fontSize(8);
@@ -341,10 +372,18 @@ class PrintOrderReceipts {
         doc.text('30101810300000000602', 341, 291, { align: 'center', width: 198 });
 
         doc.font('ArialBold');
-        doc.text(`Оплата за ГОДОВОЕ обслуживание домофона с ${moment(this.order.startService).format('DD.MM.YYYY')} по ${moment(this.order.endService).format('DD.MM.YYYY')} г., (Договор № ${this.order.prolongedContractNumber})`, 154, 305, { align: 'left', width: 419 });
+        if (this.order.rank) {
+          doc.text('Оплата за ГОДОВОЕ обслуживание дополнительного оборудования', 154, 305, { align: 'left', width: 419 });
+          doc.text(`с ${moment(this.order.startService).format('DD.MM.YYYY')}  по  ${moment(this.order.endService).format('DD.MM.YYYY')} г., (Договор № ${this.order.contractNumber})`, 154, 314, { align: 'left', width: 419 });
+          doc.font('Arial');
+        } else {
+          doc.text(`Оплата за ГОДОВОЕ обслуживание домофона с ${moment(this.order.startService).format('DD.MM.YYYY')} по ${moment(this.order.endService).format('DD.MM.YYYY')} г., (Договор № ${this.order.prolongedContractNumber})`, 154, 305, { align: 'left', width: 419 });
+          doc.font('Arial');
+          doc.text('(наименование платежа)', 154, 314, { align: 'center', width: 419 });
+        }
 
-        doc.font('Arial');
-        doc.text('(наименование платежа)', 154, 314, { align: 'center', width: 419 });
+        // doc.font('Arial');
+        // doc.text('(наименование платежа)', 154, 314, { align: 'center', width: 419 });
 
         doc.text('Адрес плательщика', 154, 326, { align: 'left', width: 79 });
 
@@ -376,14 +415,19 @@ class PrintOrderReceipts {
           .font('Arial')
           .text('Подпись плательщика', 368, 352, { align: 'right', width: 99 });
 
-        doc.image(vkImage, 154, 369, { width: 12 });
+        if (!this.order.rank) {
+          doc.image(vkImage, 154, 369, { width: 12 });
+        }
 
         const y = Number(this.order.city.printType) === 1 ? 348 : 338;
-        doc.font('ArialBold')
-          .fontSize(10)
-          .text(this.order.city.vkLink, 169, 369, { align: 'left', width: 108 })
+        doc.font('ArialBold');
 
-          .fontSize(16)
+        if (!this.order.rank) {
+          doc.fontSize(10)
+            .text(this.order.city.vkLink, 169, 369, { align: 'left', width: 108 });
+        }
+
+        doc.fontSize(16)
           .text(`Тел. ${this.order.city.phone}`, 35, y, { align: 'center', width: 102 })
 
           .fontSize(11)
@@ -499,117 +543,39 @@ class PrintOrderReceipts {
   }
 
   async go() {
-    await this.extractOrder()
-      .then((data) => {
-        this.order.prolongedContractNumber = data.prolongedContractNumber;
-        this.order.startService = data.startService;
-        this.order.endService = data.endService;
-        this.order.normalPayment = data.normalPayment;
-        this.order.privilegePayment = data.privilegePayment;
-        this.order.city.name = data.cityName;
-        this.order.city.printType = data.printType;
-        this.order.city.phone = data.phone;
-        this.order.city.vkLink = data.vkLink;
-        this.order.city.office = data.office;
-        this.order.streetName = data.streetName;
-        this.order.houseNumber = data.houseNumber;
-        this.order.payMonth = data.payMonth;
-        this.order.payYear = data.payYear;
-      })
-      .catch((error) => {
-        // eslint-disable-next-line no-console
-        console.log(`Error: ${error.message}`);
-      });
+    const orderData = await this.extractOrder();
+    this.fillOrder(orderData);
 
-    await this.calculateAccrual()
-      .then((data) => {
-        if (Array.isArray(data)) {
-          data.forEach((item) => {
-            const apartment = new Apartment();
-            apartment.id = item.apartmentId;
-            apartment.number = item.number;
-            apartment.letter = item.letter;
-            apartment.privilege = item.privilege;
-            apartment.locked = item.locked;
-            apartment.exempt = item.exempt;
-            apartment.debt.firstYear = item.lastOneYearDebt;
-            apartment.debt.secondYear = item.lastSecondYearDebt;
-            apartment.payment.current = item.currentPayment;
-            if (apartment.privilege) {
-              apartment.payment.firstYear = item.privilegePaymentFirstYear;
-              apartment.payment.secondYear = item.privilegePaymentSecondYear;
-            } else {
-              apartment.payment.firstYear = item.normalPaymentFirstYear;
-              apartment.payment.secondYear = item.normalPaymentSecondYear;
-            }
-            this.apartments.push(apartment);
-          });
-        }
-      })
-      .catch((error) => {
-        // eslint-disable-next-line no-console
-        console.log(`Error: ${error.message}`);
-      });
+    const data = await this.calculateAccrual();
+    data.forEach((item) => {
+      const apartment = PrintOrderReceipts.fillApartment(item);
+      if (apartment.calcDebt() + apartment.payment.current !== 0) {
+        this.apartments.push(apartment);
+      }
+    });
 
+    logger.info('');
+    logger.info('Печать квитаниций по квартирам');
     this.generatePdf();
+    logger.info('');
   }
 
   async oneApartment(apartmentId) {
-    await this.extractOrder()
-      .then((data) => {
-        this.order.prolongedContractNumber = data.prolongedContractNumber;
-        this.order.startService = data.startService;
-        this.order.endService = data.endService;
-        this.order.normalPayment = data.normalPayment;
-        this.order.privilegePayment = data.privilegePayment;
-        this.order.city.name = data.cityName;
-        this.order.city.printType = data.printType;
-        this.order.city.phone = data.phone;
-        this.order.city.vkLink = data.vkLink;
-        this.order.city.office = data.office;
-        this.order.streetName = data.streetName;
-        this.order.houseNumber = data.houseNumber;
-        this.order.payMonth = data.payMonth;
-        this.order.payYear = data.payYear;
-      })
-      .catch((error) => {
-        // eslint-disable-next-line no-console
-        console.log(`Error: ${error.message}`);
-      });
+    const orderData = await this.extractOrder();
+    this.fillOrder(orderData);
 
-    await this.calculateAccrual()
-      .then((data) => {
-        if (Array.isArray(data)) {
-          const out = data.filter((item) => item.apartmentId === +apartmentId);
-          if (out.length === 1) {
-            const obj = { ...out[0] };
-            const apartment = new Apartment();
-            apartment.id = obj.apartmentId;
-            apartment.number = obj.number;
-            apartment.letter = obj.letter;
-            apartment.privilege = obj.privilege;
-            apartment.locked = obj.locked;
-            apartment.exempt = obj.exempt;
-            apartment.debt.firstYear = obj.lastOneYearDebt;
-            apartment.debt.secondYear = obj.lastSecondYearDebt;
-            apartment.payment.current = obj.currentPayment;
-            if (apartment.privilege) {
-              apartment.payment.firstYear = obj.privilegePaymentFirstYear;
-              apartment.payment.secondYear = obj.privilegePaymentSecondYear;
-            } else {
-              apartment.payment.firstYear = obj.normalPaymentFirstYear;
-              apartment.payment.secondYear = obj.normalPaymentSecondYear;
-            }
-            this.apartments.push(apartment);
-          }
-        }
-      })
-      .catch((error) => {
-        // eslint-disable-next-line no-console
-        console.log(`Error: ${error.message}`);
-      });
+    const data = await this.calculateAccrual();
+    const oneApartment = data.filter((item) => item.apartmentId === +apartmentId);
+    if (oneApartment.length === 1) {
+      const obj = { ...oneApartment[0] };
+      const apartment = PrintOrderReceipts.fillApartment(obj);
+      this.apartments.push(apartment);
+    }
 
+    logger.info('');
+    logger.info('Печать квитаниции по квартире');
     this.generatePdf();
+    logger.info('');
   }
 }
 

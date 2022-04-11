@@ -1,31 +1,28 @@
-'use strict';
-
 const express = require('express');
-var db = require('../../../lib/db.js');
-const visibleRows = require('../../../lib/config.js').config.visibleRows;
-var moment = require('moment');
-var utils = require('../../../lib/utils.js');
+// const moment = require('moment');
+// const db = require('../../../lib/db');
+// const { visibleRows } = require('../../../lib/config').config;
+// const utils = require('../../../lib/utils');
 
-module.exports = function () {
-  var router = express.Router();
+module.exports = () => {
+  const router = express.Router();
 
-  router.get('/', function (req, res) {
+  router.get('/', (req, res) => {
     res.render('docs/requests.ejs');
   });
 
-  router.get('/edit/:id', function (req, res) {
-    //
-  });
+  // router.get('/edit/:id', (req, res) => {
+  // });
 
-  router.get('/edit_done', function (req, res) {
+  router.get('/edit_done', (req, res) => {
     res.render('docs/forms/done_application.ejs');
   });
 
-  router.get('/add', function (req, res) {
+  router.get('/add', (req, res) => {
     res.render('docs/forms/request.ejs');
   });
 
-  router.get('/completed', function (req, res) {
+  router.get('/completed', (req, res) => {
     res.render('docs/done_request.ejs');
   });
 

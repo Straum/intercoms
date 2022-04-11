@@ -39,6 +39,7 @@
     "save": "^2.4.0",
     "shelljs": "^0.8.4",
     "svg-to-pdfkit": "^0.1.8",
+    "uuid": "^8.3.2",
     "winston": "^3.3.3",
     "winston-daily-rotate-file": "^4.5.0",
     "ws": "^7.4.2"
