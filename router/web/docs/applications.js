@@ -1323,9 +1323,7 @@ module.exports = () => {
     findCompletedRecords(req, res);
   });
 
-  router.post('/save', function (req, res) {
-    // var tableFaults = [];
-
+  router.post('/save', (req, res) => {
     if (req.body.generateReport) {
       generateReport(req, res);
       return;
@@ -1336,9 +1334,7 @@ module.exports = () => {
       return;
     }
 
-
-
-    var applicationModel = new ApplicationModel();
+    const applicationModel = new ApplicationModel();
     applicationModel.id = Number(req.body.documentId);
     applicationModel.createDate = ((req.body.createDate != null) && (req.body.createDate.trim().length > 0)) ? moment(req.body.createDate, 'DD.MM.YYYY HH:mm').format('YYYY-MM-DD HH:mm') : null;
     applicationModel.completionDate = ((req.body.completionDate != null) && (req.body.completionDate.trim().length > 0)) ? moment(req.body.completionDate, 'DD.MM.YYYY').format('YYYY-MM-DD') : null;
@@ -1356,8 +1352,8 @@ module.exports = () => {
     applicationModel.isDisablingApartments = req.body.isDisablingApartments ? 1 : 0;
     applicationModel.isDisablingApartments = req.body.isDisablingApartments ? 1 : (req.body.isConnectionApartments ? 2 : 0);
     applicationModel.isTimeRange = req.body.isTimeRange ? 1 : 0;
-    applicationModel.hourFrom = parseInt(req.body.hourFrom);
-    applicationModel.hourTo = parseInt(req.body.hourTo);
+    applicationModel.hourFrom = parseInt(req.body.hourFrom, 10);
+    applicationModel.hourTo = parseInt(req.body.hourTo, 10);
 
     try {
       applicationModel.faults = JSON.parse(req.body.faults);
@@ -1384,9 +1380,8 @@ module.exports = () => {
       });
     }
 
-    var errors = req.validationErrors();
+    const errors = req.validationErrors();
     if (!errors) {
-
       logger.info('Действие: Запись заявки');
       if ((req.session) && (req.session.userName)) {
         logger.info(`Автор: ${req.session.userName}`);
@@ -1408,17 +1403,20 @@ module.exports = () => {
       }
 
       if (applicationModel.completionDate != null) {
-        var dt = moment(applicationModel.completionDate).startOf('day');
-        var now = moment(new Date()).startOf('day');
-        var offset = dt - now;
+        const dt = moment(applicationModel.completionDate).startOf('day');
+        const now = moment(new Date()).startOf('day');
+        const offset = dt - now;
         if (offset <= 0) {
-          // weight = -1;
           applicationModel.weight = -1;
         }
       }
 
-      var queryText = getCard(applicationModel.address.kind, applicationModel.address.house.id, applicationModel.address.number);
-      db.get().getConnection(function (err, connection) {
+      const queryText = getCard(
+        applicationModel.address.kind,
+        applicationModel.address.house.id,
+        applicationModel.address.number
+      );
+      db.get().getConnection((err, connection) => {
         connection.query(queryText, [], function (err, rows) {
 
           connection.release();
@@ -1782,19 +1780,19 @@ module.exports = () => {
 
   });
 
-  router.post('/order_info', function (req, res) {
-
-    var queryText = getCard(+req.body.kind, +req.body.houseId, +req.body.porch);
-
-    db.get().getConnection(function (err, connection) {
+  router.post('/order_info', (req, res) => {
+    const {kind, houseId, porch} = req.body;
+    const queryText = getCard(+kind, +houseId, +porch);
+    db.get().getConnection((err, connection) => {
       connection.query(
-        queryText, [], function (err, rows) {
+        queryText, [], (error, rows) => {
           connection.release();
-
-          if (err) {
+          if (error) {
             res.status(500).send(db.showDatabaseError(500, err));
           } else {
-            res.status(200).send(rows.length > 0 ? rows[0] : null);
+            res.status(200).send(rows.length > 0
+              ? {...rows[0], thereIsData: true}
+              : {thereIsData: false});
           }
         });
     });
