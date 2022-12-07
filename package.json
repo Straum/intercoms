@@ -18,11 +18,11 @@
   },
   "homepage": "https://gitlab.com/straum/intercoms#README",
   "dependencies": {
-    "body-parser": "^1.18.3",
+    "body-parser": "^1.20.1",
     "cookie-parser": "^1.4.3",
     "docxtemplater": "^3.17.6",
     "ejs": "^2.6.1",
-    "express": "^4.16.3",
+    "express": "^4.18.2",
     "express-flash": "0.0.2",
     "express-session": "^1.15.6",
     "express-validator": "^5.3.0",
