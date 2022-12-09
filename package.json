@@ -22,7 +22,7 @@
     "cookie-parser": "^1.4.3",
     "docxtemplater": "^3.17.6",
     "ejs": "^2.6.1",
-    "express": "^4.16.3",
+    "express": "^4.17.3",
     "express-flash": "0.0.2",
     "express-session": "^1.15.6",
     "express-validator": "^5.3.0",
